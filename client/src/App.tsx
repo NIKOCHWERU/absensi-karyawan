@@ -55,7 +55,7 @@ function ProtectedRoute({ component: Component, adminOnly }: { component: React.
 function DashboardSwitcher() {
   const { user } = useAuth();
   if (user?.role === 'admin') {
-    return <AdminDashboard />;
+    return <AdminLayout><AdminDashboard /></AdminLayout>;
   }
   return <EmployeeDashboard />;
 }
