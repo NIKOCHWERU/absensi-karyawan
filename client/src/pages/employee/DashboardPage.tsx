@@ -50,35 +50,31 @@ function ShiftModal({
                 <div className="grid grid-cols-1 gap-3">
                     <Button
                         variant="outline"
-                        className="h-12 justify-start px-4 text-base"
+                        className="h-12 justify-center px-4 text-base"
                         onClick={() => onSelect('Shift 1')}
                     >
-                        <span className="font-bold mr-2">Shift 1</span>
-                        <span className="text-muted-foreground text-xs">(07:00 WIB)</span>
+                        <span className="font-bold">Shift 1</span>
                     </Button>
                     <Button
                         variant="outline"
-                        className="h-12 justify-start px-4 text-base"
+                        className="h-12 justify-center px-4 text-base"
                         onClick={() => onSelect('Shift 2')}
                     >
-                        <span className="font-bold mr-2">Shift 2</span>
-                        <span className="text-muted-foreground text-xs">(12:00 WIB)</span>
+                        <span className="font-bold">Shift 2</span>
                     </Button>
                     <Button
                         variant="outline"
-                        className="h-12 justify-start px-4 text-base"
+                        className="h-12 justify-center px-4 text-base"
                         onClick={() => onSelect('Shift 3')}
                     >
-                        <span className="font-bold mr-2">Shift 3</span>
-                        <span className="text-muted-foreground text-xs">(15:00 WIB)</span>
+                        <span className="font-bold">Shift 3</span>
                     </Button>
                     <Button
                         variant="outline"
-                        className="h-12 justify-start px-4 text-base"
+                        className="h-12 justify-center px-4 text-base"
                         onClick={() => onSelect('Long Shift')}
                     >
-                        <span className="font-bold mr-2">Long Shift</span>
-                        <span className="text-muted-foreground text-xs">(07:00 WIB)</span>
+                        <span className="font-bold">Long Shift</span>
                     </Button>
                 </div>
             </DialogContent>
@@ -587,7 +583,7 @@ export default function EmployeeDashboard() {
                             <p>NIK: <span className="font-semibold text-gray-700">{user?.username}</span></p>
                             <p>Cabang: <span className="font-semibold text-gray-700">{user?.branch || '-'}</span></p>
                             <p>Jabatan: <span className="font-semibold text-gray-700">{user?.position || '-'}</span></p>
-                            <p>Shift: <span className="font-semibold text-gray-700">{(today as any)?.shift || user?.shift || '-'}</span></p>
+                            <p>Shift: <span className="font-bold text-orange-600">{(today as any)?.shift || selectedShift || 'Belum Absen Masuk'}</span></p>
                         </div>
                     </div>
                     <div className="z-10">
