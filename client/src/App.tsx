@@ -22,6 +22,7 @@ import AdminLeave from "@/pages/admin/AdminLeavePage";
 import AdminLeaveHistory from "@/pages/admin/AdminLeaveHistoryPage";
 import AdminAttendanceHistory from "@/pages/admin/AttendanceHistoryPage";
 import EmployeeComplaint from "@/pages/employee/ComplaintPage";
+import AdminLayout from "@/components/layout/AdminLayout";
 import EmployeeLeave from "@/pages/employee/LeavePage";
 import NotFound from "@/pages/not-found";
 
@@ -66,31 +67,31 @@ function Router() {
 
       {/* Admin Routes */}
       <Route path="/admin">
-        <ProtectedRoute component={AdminDashboard} adminOnly />
+        <ProtectedRoute component={() => <AdminLayout><AdminDashboard /></AdminLayout>} adminOnly />
       </Route>
       <Route path="/admin/employees">
-        <ProtectedRoute component={AdminEmployeeList} adminOnly />
+        <ProtectedRoute component={() => <AdminLayout><AdminEmployeeList /></AdminLayout>} adminOnly />
       </Route>
       <Route path="/admin/attendance-history">
-        <ProtectedRoute component={AdminAttendanceHistory} adminOnly />
+        <ProtectedRoute component={() => <AdminLayout><AdminAttendanceHistory /></AdminLayout>} adminOnly />
       </Route>
       <Route path="/admin/recap">
-        <ProtectedRoute component={AdminRecap} adminOnly />
+        <ProtectedRoute component={() => <AdminLayout><AdminRecap /></AdminLayout>} adminOnly />
       </Route>
       <Route path="/admin/attendance-summary">
-        <ProtectedRoute component={AttendanceSummaryPage} adminOnly />
+        <ProtectedRoute component={() => <AdminLayout><AttendanceSummaryPage /></AdminLayout>} adminOnly />
       </Route>
       <Route path="/admin/info-board">
-        <ProtectedRoute component={InfoBoardPage} adminOnly />
+        <ProtectedRoute component={() => <AdminLayout><InfoBoardPage /></AdminLayout>} adminOnly />
       </Route>
       <Route path="/admin/complaints">
-        <ProtectedRoute component={AdminComplaints} adminOnly />
+        <ProtectedRoute component={() => <AdminLayout><AdminComplaints /></AdminLayout>} adminOnly />
       </Route>
       <Route path="/admin/leave">
-        <ProtectedRoute component={AdminLeave} adminOnly />
+        <ProtectedRoute component={() => <AdminLayout><AdminLeave /></AdminLayout>} adminOnly />
       </Route>
       <Route path="/admin/leave-history">
-        <ProtectedRoute component={AdminLeaveHistory} adminOnly />
+        <ProtectedRoute component={() => <AdminLayout><AdminLeaveHistory /></AdminLayout>} adminOnly />
       </Route>
 
       {/* Employee & Shared Routes */}

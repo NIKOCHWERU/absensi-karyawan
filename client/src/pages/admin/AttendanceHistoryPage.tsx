@@ -8,10 +8,7 @@ import { id } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import {
-    Menu, Users, Clock, CalendarDays, LogOut, FileText, MessageSquare, History, Image as ImageIcon, MapPin, ChevronLeft, ChevronRight
-} from "lucide-react";
+import { MapPin, ChevronLeft, ChevronRight, History } from "lucide-react";
 
 // Helper: resolve photo URL — handles both local uploads and Google Drive File IDs
 function getPhotoUrl(value: string | null): string {
@@ -70,60 +67,6 @@ export default function AttendanceHistoryPage() {
         setSelectedDate(prev => format(addDays(new Date(prev), 1), 'yyyy-MM-dd'));
     };
 
-    const SidebarContent = () => (
-        <>
-            <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-                <img src="/logo_elok_buah.jpg" alt="Logo" className="w-12 h-12 object-contain" />
-                <div>
-                    <h1 className="text-xl font-bold text-green-600">Admin Panel</h1>
-                    <p className="text-xs text-gray-400">PT ELOK JAYA ABADHI</p>
-                </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto">
-                <nav className="p-4 space-y-2">
-                    <Button variant="ghost" className="w-full justify-start text-gray-600 hover:text-green-600 hover:bg-green-50" onClick={() => setLocation("/admin")}>
-                        <CalendarDays className="mr-2 h-4 w-4" />
-                        Dashboard
-                    </Button>
-                    <Button variant="ghost" className="w-full justify-start text-gray-600 hover:text-green-600 hover:bg-green-50" onClick={() => setLocation("/admin/employees")}>
-                        <Users className="mr-2 h-4 w-4" />
-                        Daftar Karyawan
-                    </Button>
-                    <Button variant="ghost" className="w-full justify-start text-gray-600 hover:text-green-600 hover:bg-green-50" onClick={() => setLocation("/admin/recap")}>
-                        <Clock className="mr-2 h-4 w-4" />
-                        Rekap Absensi
-                    </Button>
-                    <Button variant="ghost" className="w-full justify-start text-green-600 bg-green-50 font-medium">
-                        <ImageIcon className="mr-2 h-4 w-4" />
-                        Riwayat Absensi
-                    </Button>
-                    <Button variant="ghost" className="w-full justify-start text-gray-600 hover:text-green-600 hover:bg-green-50" onClick={() => setLocation("/admin/leave")}>
-                        <CalendarDays className="mr-2 h-4 w-4" />
-                        Manajemen Cuti
-                    </Button>
-                    <Button variant="ghost" className="w-full justify-start text-gray-600 hover:text-green-600 hover:bg-green-50" onClick={() => setLocation("/admin/leave-history")}>
-                        <History className="mr-2 h-4 w-4" />
-                        Riwayat Cuti
-                    </Button>
-                    <Button variant="ghost" className="w-full justify-start text-gray-600 hover:text-green-600 hover:bg-green-50" onClick={() => setLocation("/admin/info-board")}>
-                        <FileText className="mr-2 h-4 w-4" />
-                        Papan Informasi
-                    </Button>
-                    <Button variant="ghost" className="w-full justify-start text-gray-600 hover:text-green-600 hover:bg-green-50" onClick={() => setLocation("/admin/complaints")}>
-                        <MessageSquare className="mr-2 h-4 w-4" />
-                        Pengaduan Karyawan
-                    </Button>
-                </nav>
-            </div>
-            <div className="p-4 border-t border-gray-100">
-                <Button variant="outline" className="w-full text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => logout()}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
-                </Button>
-            </div>
-        </>
-    );
 
     const PhotoThumbnail = ({ url, label, location }: { url: string | null, label: string, location?: string | null }) => {
         if (!url) return null;
@@ -159,32 +102,9 @@ export default function AttendanceHistoryPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
-            {/* Mobile Header / Sidebar Toggle */}
-            <div className="md:hidden flex items-center justify-between bg-white p-4 border-b border-gray-200 sticky top-0 z-10">
-                <div className="flex items-center gap-2">
-                    <img src="/logo_elok_buah.jpg" alt="Logo" className="w-8 h-8 object-contain" />
-                    <h1 className="text-lg font-bold text-green-600">Admin Panel</h1>
-                </div>
-                <Sheet>
-                    <SheetTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                            <Menu className="h-6 w-6" />
-                        </Button>
-                    </SheetTrigger>
-                    <SheetContent side="left" className="p-0 flex flex-col w-72">
-                        <SidebarContent />
-                    </SheetContent>
-                </Sheet>
-            </div>
-
-            {/* Desktop Sidebar */}
-            <aside className="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col h-screen sticky top-0">
-                <SidebarContent />
-            </aside>
-
+        <div className="w-full flex">
             {/* Main Content */}
-            <main className="flex-1 p-4 md:p-8 overflow-auto">
+            <main className="flex-1 w-full p-4 md:p-8 overflow-auto">
                 <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                     <div>
                         <h2 className="text-2xl font-bold text-gray-800">Riwayat Absensi</h2>

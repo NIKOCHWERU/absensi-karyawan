@@ -149,90 +149,12 @@ export default function AdminDashboard() {
     // Actually, standard Date() is fine as long as system time is correct.
 
     return (
-        <div className="min-h-screen bg-gray-50 flex">
+        <div className="w-full flex">
             {/* Sidebar (Simple version for now) */}
-            <aside className="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col">
-                <div className="p-6 border-b border-gray-100 flex items-center gap-3">
-                    <img src="/logo_elok_buah.jpg" alt="Logo" className="w-12 h-12 object-contain" />
-                    <div>
-                        <h1 className="text-xl font-bold text-green-600">Admin Panel</h1>
-                        <p className="text-xs text-gray-400">PT ELOK JAYA ABADHI</p>
-                    </div>
-                </div>
-
-                <div className="flex-1 overflow-y-auto">
-                    {("Notification" in window && Notification.permission === "default") && (
-                        <div className="m-4 p-4 bg-orange-50 rounded-2xl border border-orange-100">
-                            <p className="text-[10px] font-bold text-orange-700 uppercase mb-2">Notifikasi Desktop:</p>
-                            <p className="text-[11px] text-orange-600 mb-3">Aktifkan untuk menerima info pengaduan baru secara real-time.</p>
-                            <Button
-                                size="sm"
-                                className="w-full bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-[10px] h-8 font-bold"
-                                onClick={requestNotificationPermission}
-                            >
-                                Aktifkan Sekarang
-                            </Button>
-                        </div>
-                    )}
-                    <nav className="p-4 space-y-2">
-                        <Button variant="ghost" className="w-full justify-start text-green-600 bg-green-50 font-medium">
-                            <CalendarDays className="mr-2 h-4 w-4" />
-                            Dashboard
-                        </Button>
-                        <Button variant="ghost" className="w-full justify-start text-gray-600 hover:text-green-600 hover:bg-green-50" onClick={() => setLocation("/admin/employees")}>
-                            <Users className="mr-2 h-4 w-4" />
-                            Daftar Karyawan
-                        </Button>
-                        <Button variant="ghost" className="w-full justify-start text-gray-600 hover:text-green-600 hover:bg-green-50" onClick={() => setLocation("/admin/recap")}>
-                            <Clock className="mr-2 h-4 w-4" />
-                            Rekap Absensi
-                        </Button>
-                        <Button variant="ghost" className="w-full justify-start text-gray-600 hover:text-green-600 hover:bg-green-50" onClick={() => setLocation("/admin/attendance-history")}>
-                            <ImageIcon className="mr-2 h-4 w-4" />
-                            Riwayat Absensi
-                        </Button>
-                        <Button variant="ghost" className="w-full justify-start text-gray-600 hover:text-green-600 hover:bg-green-50" onClick={() => setLocation("/admin/leave")}>
-                            <CalendarDays className="mr-2 h-4 w-4" />
-                            Manajemen Cuti
-                            {leaveRequests && leaveRequests.filter(r => r.status === 'pending').length > 0 && (
-                                <span className="ml-auto bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
-                                    {leaveRequests.filter(r => r.status === 'pending').length}
-                                </span>
-                            )}
-                        </Button>
-                        <Button variant="ghost" className="w-full justify-start text-gray-600 hover:text-green-600 hover:bg-green-50" onClick={() => setLocation("/admin/leave-history")}>
-                            <History className="mr-2 h-4 w-4" />
-                            Riwayat Cuti
-                        </Button>
-                        <Button variant="ghost" className="w-full justify-start text-gray-600 hover:text-green-600 hover:bg-green-50" onClick={() => setLocation("/admin/info-board")}>
-                            <FileText className="mr-2 h-4 w-4" />
-                            Papan Informasi
-                        </Button>
-                        <Button variant="ghost" className="w-full justify-start text-gray-600 hover:text-green-600 hover:bg-green-50" onClick={() => setLocation("/admin/complaints")}>
-                            <MessageSquare className="mr-2 h-4 w-4" />
-                            Pengaduan Karyawan
-                            {complaintsStats && complaintsStats.pendingCount > 0 && (
-                                <span className="ml-auto bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
-                                    {complaintsStats.pendingCount}
-                                </span>
-                            )}
-                        </Button>
-                        <Button variant="ghost" className="w-full justify-start h-auto py-2 text-left items-start whitespace-normal text-gray-600 hover:text-green-600 hover:bg-green-50" onClick={() => setLocation("/admin/attendance-summary")}>
-                            <FileText className="mr-2 h-4 w-4 shrink-0 mt-1" />
-                            <span>Absensi Karyawan PT ELOK JAYA ABADHI</span>
-                        </Button>
-                    </nav>
-                </div>
-                <div className="p-4 border-t border-gray-100">
-                    <Button variant="outline" className="w-full text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => logout()}>
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Logout
-                    </Button>
-                </div>
-            </aside>
+            {/* Sidebar replaced */}
 
             {/* Main Content */}
-            <main className="flex-1 p-8 overflow-auto">
+            <main className="flex-1 md:p-8 p-4 overflow-auto">
                 <header className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
                     <h2 className="text-2xl font-bold text-gray-800">Dashboard</h2>
                     <div className="flex items-center gap-4">
