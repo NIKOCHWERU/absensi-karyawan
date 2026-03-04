@@ -9,9 +9,10 @@
  * yang muncul ke file .env (GOOGLE_DRIVE_REFRESH_TOKEN=...)
  */
 
-const http = require('http');
-const { google } = require('googleapis');
-require('dotenv').config();
+import http from 'http';
+import { google } from 'googleapis';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const CLIENT_ID = process.env.GOOGLE_DRIVE_CLIENT_ID;
 const CLIENT_SECRET = process.env.GOOGLE_DRIVE_CLIENT_SECRET;

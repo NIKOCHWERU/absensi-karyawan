@@ -181,7 +181,13 @@ export default function EmployeeDashboard() {
             return;
         }
 
-        setActiveAction({ fn: actionFn, successTitle, type: 'attendance' });
+        let finalActionFn = actionFn;
+        if (isClockIn && sessionCount > 0) {
+            const initialShift = todaySessions && todaySessions.length > 0 ? (todaySessions[0] as any).shift : 'Karyawan';
+            finalActionFn = async (data: any) => actionFn({ ...data, shift: initialShift });
+        }
+
+        setActiveAction({ fn: finalActionFn, successTitle, type: 'attendance' });
         setIsCameraOpen(true);
     };
 
@@ -583,7 +589,13 @@ export default function EmployeeDashboard() {
                             <p>NIK: <span className="font-semibold text-gray-700">{user?.username}</span></p>
                             <p>Cabang: <span className="font-semibold text-gray-700">{user?.branch || '-'}</span></p>
                             <p>Jabatan: <span className="font-semibold text-gray-700">{user?.position || '-'}</span></p>
-                            <p>Shift: <span className="font-bold text-orange-600">{(today as any)?.shift || selectedShift || 'Belum Absen Masuk'}</span></p>
+                            <p>Shift: <span className="font-bold text-orange-600">
+                                {(() => {
+                                    const baseShift = (todaySessions && todaySessions.length > 0) ? (todaySessions[0] as any).shift : selectedShift;
+                                    if (!baseShift) return 'Belum Absen Masuk';
+                                    return sessionCount > 1 ? `${baseShift} ( Sesi ${sessionCount} )` : baseShift;
+                                })()}
+                            </span></p>
                         </div>
                     </div>
                     <div className="z-10">
