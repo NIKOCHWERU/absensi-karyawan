@@ -1,8 +1,8 @@
 import {
   User, InsertUser, Attendance, InsertAttendance, Announcement, InsertAnnouncement,
   Complaint, InsertComplaint, ComplaintPhoto, InsertComplaintPhoto,
-  LeaveRequest, InsertLeaveRequest,
-  users, attendance, announcements, complaints, complaintPhotos, leaveRequests
+  LeaveRequest, InsertLeaveRequest, PushSubscription, InsertPushSubscription,
+  users, attendance, announcements, complaints, complaintPhotos, leaveRequests, pushSubscriptions
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, gte, lte, sql, or, isNotNull } from "drizzle-orm";
@@ -209,20 +209,16 @@ export class DatabaseStorage implements IStorage {
   // Leave Requests
   async createLeaveRequest(data: InsertLeaveRequest): Promise<LeaveRequest> {
     const [result] = await db.insert(leaveRequests).values(data);
-    const id = result.insertId;
-    const [record] = await db.select().from(leaveRequests).where(eq(leaveRequests.id, id));
+    const [record] = await db.select().from(leaveRequests).where(eq(leaveRequests.id, result.insertId));
     return record!;
   }
 
   async getLeaveRequestsByUser(userId: number): Promise<LeaveRequest[]> {
-    return await db.select().from(leaveRequests)
-      .where(eq(leaveRequests.userId, userId))
-      .orderBy(desc(leaveRequests.startDate));
+    return await db.select().from(leaveRequests).where(eq(leaveRequests.userId, userId)).orderBy(desc(leaveRequests.createdAt));
   }
 
   async getAllLeaveRequests(): Promise<LeaveRequest[]> {
-    return await db.select().from(leaveRequests)
-      .orderBy(desc(leaveRequests.createdAt));
+    return await db.select().from(leaveRequests).orderBy(desc(leaveRequests.createdAt));
   }
 
   async getLeaveRequestById(id: number): Promise<LeaveRequest | undefined> {
@@ -231,43 +227,45 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateLeaveRequestStatus(id: number, status: string): Promise<LeaveRequest> {
-    await db.update(leaveRequests)
-      .set({ status: status as any })
-      .where(eq(leaveRequests.id, id));
+    await db.update(leaveRequests).set({ status }).where(eq(leaveRequests.id, id));
     const [record] = await db.select().from(leaveRequests).where(eq(leaveRequests.id, id));
     return record!;
   }
 
   async getApprovedLeaveDaysCount(userId: number, year: number): Promise<number> {
-    const records = await db.select().from(leaveRequests)
+    const records = await db.select()
+      .from(leaveRequests)
       .where(and(
         eq(leaveRequests.userId, userId),
-        eq(leaveRequests.status, "approved")
+        eq(leaveRequests.status, 'approved'),
+        gte(leaveRequests.startDate, new Date(`${year}-01-01`)),
+        lte(leaveRequests.startDate, new Date(`${year}-12-31`))
       ));
 
     let totalDays = 0;
     records.forEach(r => {
-      if (r.selectedDates) {
-        const dates = r.selectedDates.split(',').filter(d => d.startsWith(`${year}`));
-        totalDays += dates.length;
-      } else {
-        const start = new Date(r.startDate);
-        const end = new Date(r.endDate);
-        if (start.getFullYear() === year) {
-          const diffTime = Math.abs(end.getTime() - start.getTime());
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-          totalDays += diffDays;
-        }
-      }
+      // Very basic calculation, not accounting for weekends/holidays precisely here
+      const diffTime = Math.abs(new Date(r.endDate).getTime() - new Date(r.startDate).getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // inclusive
+      totalDays += diffDays;
     });
-
     return totalDays;
   }
 
   async getRecentLeaveRequests(limit: number = 5): Promise<LeaveRequest[]> {
-    return await db.select().from(leaveRequests)
-      .orderBy(desc(leaveRequests.createdAt))
-      .limit(limit);
+    return await db.select().from(leaveRequests).orderBy(desc(leaveRequests.createdAt)).limit(limit);
+  }
+
+  // Push Notifications
+  async addPushSubscription(sub: InsertPushSubscription): Promise<void> {
+    const existing = await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.endpoint, sub.endpoint));
+    if (existing.length === 0) {
+      await db.insert(pushSubscriptions).values(sub);
+    }
+  }
+
+  async getPushSubscriptions(): Promise<PushSubscription[]> {
+    return await db.select().from(pushSubscriptions);
   }
 }
 
@@ -315,4 +313,8 @@ export interface IStorage {
   updateLeaveRequestStatus(id: number, status: string): Promise<LeaveRequest>;
   getApprovedLeaveDaysCount(userId: number, year: number): Promise<number>;
   getRecentLeaveRequests(limit?: number): Promise<LeaveRequest[]>;
+
+  // Push Notifications
+  addPushSubscription(sub: InsertPushSubscription): Promise<void>;
+  getPushSubscriptions(): Promise<PushSubscription[]>;
 }

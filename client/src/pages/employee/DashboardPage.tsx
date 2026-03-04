@@ -96,6 +96,68 @@ export default function EmployeeDashboard() {
     const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
     const [selectedShift, setSelectedShift] = useState<string | null>(null);
 
+    // Push Notifications State
+    const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unavailable'>(
+        typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'unavailable'
+    );
+    const [isSubscribing, setIsSubscribing] = useState(false);
+
+    const subscribeToPush = async () => {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            toast({ title: "Tidak Didukung", description: "Browser Anda tidak mendukung Web Push.", variant: "destructive" });
+            return;
+        }
+
+        try {
+            setIsSubscribing(true);
+            const permission = await Notification.requestPermission();
+            setPushPermission(permission);
+
+            if (permission === 'granted') {
+                const reg = await navigator.serviceWorker.register('/sw.js');
+
+                // Fetch public key
+                const keyRes = await fetch('/api/push/public-key');
+                if (!keyRes.ok) throw new Error("Gagal mengambil kunci Notifikasi dari server");
+                const { publicKey } = await keyRes.json();
+
+                // Convert VAPID key
+                const urlBase64ToUint8Array = (base64String: string) => {
+                    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+                    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+                    const rawData = window.atob(base64);
+                    const outputArray = new Uint8Array(rawData.length);
+                    for (let i = 0; i < rawData.length; ++i) {
+                        outputArray[i] = rawData.charCodeAt(i);
+                    }
+                    return outputArray;
+                };
+
+                const subscription = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(publicKey)
+                });
+
+                const saveRes = await fetch('/api/push/subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(subscription)
+                });
+
+                if (saveRes.ok) {
+                    toast({ title: "Notifikasi Aktif!", description: "Anda akan menerima pengumuman dari Admin." });
+                }
+            } else {
+                toast({ title: "Izin Ditolak", description: "Anda telah menolak izin notifikasi.", variant: "destructive" });
+            }
+        } catch (err: any) {
+            console.error("Push Error", err);
+            toast({ title: "Gagal Mengaktifkan Notifikasi", description: err.message, variant: "destructive" });
+        } finally {
+            setIsSubscribing(false);
+        }
+    };
+
     const [activeAction, setActiveAction] = useState<{
         fn: (data: any) => Promise<any>,
         successTitle: string,
@@ -577,6 +639,29 @@ export default function EmployeeDashboard() {
             <CompanyHeader />
 
             <main className="px-4 -mt-8 max-w-lg mx-auto space-y-6">
+
+                {/* Push Notification Banner */}
+                {pushPermission !== 'granted' && pushPermission !== 'unavailable' && (
+                    <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex flex-col gap-3 shadow-md z-20 relative"
+                    >
+                        <div>
+                            <h3 className="text-blue-800 font-bold text-sm">Aktifkan Notifikasi Pengumuman</h3>
+                            <p className="text-blue-600 text-xs mt-0.5">Agar Anda tidak ketinggalan info penting dari Admin meskipun aplikasi ditutup.</p>
+                        </div>
+                        <Button
+                            onClick={subscribeToPush}
+                            disabled={isSubscribing}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl h-10 text-sm font-semibold"
+                        >
+                            {isSubscribing ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
+                            {isSubscribing ? 'Mengaktifkan...' : 'Izinkan Notifikasi'}
+                        </Button>
+                    </motion.div>
+                )}
+
                 {/* User Card */}
                 <motion.div
                     initial={{ y: 20, opacity: 0 }}

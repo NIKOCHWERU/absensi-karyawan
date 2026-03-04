@@ -105,12 +105,24 @@ export const sessions = mysqlTable("sessions", {
   data: text("data"),
 });
 
+export const pushSubscriptions = mysqlTable("push_subscriptions", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("user_id").notNull(),
+  endpoint: text("endpoint").notNull(),
+  p256dh: varchar("p256dh", { length: 255 }).notNull(),
+  auth: varchar("auth", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  userIdIdx: index("idx_push_sub_user_id").on(table.userId),
+}));
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   attendanceRecords: many(attendance),
   announcements: many(announcements),
   complaints: many(complaints),
   leaveRequests: many(leaveRequests),
+  pushSubscriptions: many(pushSubscriptions),
 }));
 
 export const attendanceRelations = relations(attendance, ({ one }) => ({
@@ -149,6 +161,7 @@ export const insertAnnouncementSchema = createInsertSchema(announcements).omit({
 export const insertComplaintSchema = createInsertSchema(complaints).omit({ id: true, createdAt: true });
 export const insertComplaintPhotoSchema = createInsertSchema(complaintPhotos).omit({ id: true });
 export const insertLeaveRequestSchema = createInsertSchema(leaveRequests).omit({ id: true, createdAt: true });
+export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions).omit({ id: true, createdAt: true });
 
 // Types
 export type User = typeof users.$inferSelect;
@@ -163,3 +176,5 @@ export type ComplaintPhoto = typeof complaintPhotos.$inferSelect;
 export type InsertComplaintPhoto = z.infer<typeof insertComplaintPhotoSchema>;
 export type LeaveRequest = typeof leaveRequests.$inferSelect;
 export type InsertLeaveRequest = z.infer<typeof insertLeaveRequestSchema>;
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema>;

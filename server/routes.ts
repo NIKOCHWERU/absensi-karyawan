@@ -14,6 +14,21 @@ import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import https from "https";
 import http from "http";
+import webpush from "web-push";
+
+// Configure web-push
+const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || "";
+const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || "";
+
+if (vapidPublicKey && vapidPrivateKey) {
+  webpush.setVapidDetails(
+    'mailto:admin@absensikaryawanpteja.com',
+    vapidPublicKey,
+    vapidPrivateKey
+  );
+} else {
+  console.warn("VAPID keys are missing. Web Push will not work.");
+}
 
 declare global {
   namespace Express {
@@ -781,6 +796,37 @@ export async function registerRoutes(
     });
   });
 
+  // --- Push Notifications ---
+  app.get("/api/push/public-key", (req, res) => {
+    if (!vapidPublicKey) {
+      return res.status(500).json({ message: "VAPID key is not configured" });
+    }
+    res.json({ publicKey: vapidPublicKey });
+  });
+
+  app.post("/api/push/subscribe", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+
+    try {
+      const subscription = req.body;
+      if (!subscription || !subscription.endpoint || !subscription.keys) {
+        return res.status(400).json({ message: "Invalid subscription data" });
+      }
+
+      await storage.addPushSubscription({
+        userId: req.user!.id,
+        endpoint: subscription.endpoint,
+        p256dh: subscription.keys.p256dh,
+        auth: subscription.keys.auth,
+      });
+
+      res.status(201).json({ message: "Subscription saved." });
+    } catch (e) {
+      console.error("Push Subscribe Error:", e);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
   // --- Announcement Routes ---
 
   // uploadsDir already declared and configured at the top of registerRoutes
@@ -827,6 +873,38 @@ export async function registerRoutes(
         ...inputData,
         authorId: req.user!.id,
       });
+
+      // Trigger Web Push Notifications for all subscribers
+      if (vapidPublicKey && vapidPrivateKey) {
+        try {
+          const subscriptions = await storage.getPushSubscriptions();
+          const payload = JSON.stringify({
+            title: "Pengumuman Baru!",
+            body: announcement.title,
+            url: "/" // Redirects to Dashboard/Info Board
+          });
+
+          // Send to all subscribers concurrently
+          const pushPromises = subscriptions.map((sub) => {
+            const pushSub = {
+              endpoint: sub.endpoint,
+              keys: {
+                p256dh: sub.p256dh,
+                auth: sub.auth,
+              }
+            };
+            return webpush.sendNotification(pushSub, payload).catch(err => {
+              console.error("Failed to send push notification to endpoint:", sub.endpoint, err.message);
+            });
+          });
+
+          await Promise.all(pushPromises);
+          console.log(`Pushed announcement to ${pushPromises.length} subscribers.`);
+        } catch (pushErr) {
+          console.error("General Push Error:", pushErr);
+        }
+      }
+
       res.status(201).json(announcement);
     } catch (e) {
       console.error("Announcement Create Error:", e);
