@@ -32,6 +32,9 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
+    watch: {
+      ignored: ['**/uploads/**']
+    },
     fs: {
       strict: true,
       deny: ["**/.*"],
