@@ -29,7 +29,7 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
-      secure: app.get("env") === "production",
+      secure: false, // Set false to allow HTTP testing before SSL
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     },
     rolling: true
