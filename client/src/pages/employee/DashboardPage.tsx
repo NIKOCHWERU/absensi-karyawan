@@ -54,7 +54,7 @@ function ShiftModal({
                         onClick={() => onSelect('Shift 1')}
                     >
                         <span className="font-bold mr-2">Shift 1</span>
-                        <span className="text-muted-foreground text-xs">(07:00 - 15:00)</span>
+                        <span className="text-muted-foreground text-xs">(07:00 WIB)</span>
                     </Button>
                     <Button
                         variant="outline"
@@ -62,7 +62,7 @@ function ShiftModal({
                         onClick={() => onSelect('Shift 2')}
                     >
                         <span className="font-bold mr-2">Shift 2</span>
-                        <span className="text-muted-foreground text-xs">(12:00 - 20:00)</span>
+                        <span className="text-muted-foreground text-xs">(12:00 WIB)</span>
                     </Button>
                     <Button
                         variant="outline"
@@ -70,15 +70,7 @@ function ShiftModal({
                         onClick={() => onSelect('Shift 3')}
                     >
                         <span className="font-bold mr-2">Shift 3</span>
-                        <span className="text-muted-foreground text-xs">(15:00 - 23:00)</span>
-                    </Button>
-                    <Button
-                        variant="outline"
-                        className="h-12 justify-start px-4 text-base"
-                        onClick={() => onSelect('Tim Karyawan')}
-                    >
-                        <span className="font-bold mr-2">Tim Karyawan</span>
-                        <span className="text-muted-foreground text-xs">(07:00 - 17:00)</span>
+                        <span className="text-muted-foreground text-xs">(15:00 WIB)</span>
                     </Button>
                     <Button
                         variant="outline"
@@ -86,7 +78,7 @@ function ShiftModal({
                         onClick={() => onSelect('Long Shift')}
                     >
                         <span className="font-bold mr-2">Long Shift</span>
-                        <span className="text-muted-foreground text-xs">(07:00 - ??)</span>
+                        <span className="text-muted-foreground text-xs">(07:00 WIB)</span>
                     </Button>
                 </div>
             </DialogContent>
@@ -187,25 +179,9 @@ export default function EmployeeDashboard() {
     };
 
     const startAttendanceFlow = async (actionFn: (data: any) => Promise<any>, successTitle: string, isClockIn = false) => {
-        // If it's a clock-in and session 1 and after 07:00, show late reason modal first
         if (isClockIn && sessionCount === 0) {
-            const now = new Date();
-            const hour = now.getHours();
-            const minute = now.getMinutes();
-            if (hour * 60 + minute > 420) { // After 07:00
-                setActiveAction({ fn: actionFn, successTitle, type: 'attendance' });
-                setIsLateReasonModalOpen(true);
-                return;
-            }
-        }
-
-        // For PT ELOK JAYA ABADHI, we only use 'Karyawan' shift.
-        if (isClockIn && sessionCount === 0) {
-            const wrappedClockIn = async (data: any) => {
-                return clockIn({ ...data, shift: 'Karyawan' });
-            };
-            setActiveAction({ fn: wrappedClockIn, successTitle, type: 'attendance' });
-            setIsCameraOpen(true);
+            setActiveAction({ fn: actionFn, successTitle, type: 'attendance' });
+            setIsShiftModalOpen(true);
             return;
         }
 
@@ -213,19 +189,45 @@ export default function EmployeeDashboard() {
         setIsCameraOpen(true);
     };
 
+    const handleShiftSelect = (shift: string) => {
+        setSelectedShift(shift);
+        setIsShiftModalOpen(false);
+
+        const now = new Date();
+        const hour = now.getHours();
+        const minute = now.getMinutes();
+        const timeInMinutes = hour * 60 + minute;
+
+        let isLate = false;
+        if (shift === 'Shift 2') {
+            isLate = timeInMinutes > 720; // 12:00
+        } else if (shift === 'Shift 3') {
+            isLate = timeInMinutes > 900; // 15:00
+        } else {
+            // Shift 1 or Long Shift
+            isLate = timeInMinutes > 420; // 07:00
+        }
+
+        const wrappedClockIn = async (data: any) => {
+            return clockIn({ ...data, shift });
+        };
+
+        if (activeAction) {
+            setActiveAction({ ...activeAction, fn: wrappedClockIn });
+        }
+
+        if (isLate) {
+            setIsLateReasonModalOpen(true);
+        } else {
+            setIsCameraOpen(true);
+        }
+    };
+
     const handleLateReasonSubmit = (reason: string, photo?: string) => {
         setLateReasonData({ reason, photo });
         setIsLateReasonModalOpen(false);
-
-        // Continue to Camera Modal with Karyawan shift
-        const wrappedClockIn = async (data: any) => {
-            return clockIn({ ...data, shift: 'Karyawan' });
-        };
-        setActiveAction({ fn: wrappedClockIn, successTitle: "Berhasil Absen Masuk", type: 'attendance' });
         setIsCameraOpen(true);
     };
-
-    // Removed handleShiftSelect logic as it's now defaulted to Karyawan
 
     const startPermitFlow = () => {
         setPermitOpen(true);
@@ -563,7 +565,12 @@ export default function EmployeeDashboard() {
                 locationAddress={locationAddress}
             />
 
-            {/* No Shift Selection Modal - Defaulting to Karyawan */}
+            {/* Shift Modal added back */}
+            <ShiftModal
+                open={isShiftModalOpen}
+                onSelect={handleShiftSelect}
+                onClose={() => setIsShiftModalOpen(false)}
+            />
 
             <CompanyHeader />
 

@@ -79,7 +79,6 @@ export default function AdminEmployeeList() {
         nik: z.string().min(1, "NIK wajib diisi"),
         branch: z.string().optional(),
         position: z.string().optional(),
-        shift: z.string().optional(),
         email: z.string().optional(),
         username: z.string().optional(),
         phoneNumber: z.string().optional(),
@@ -94,7 +93,6 @@ export default function AdminEmployeeList() {
             nik: "",
             branch: "Pusat",
             position: "Staff",
-            shift: "Shift 1",
             email: "",
             username: "",
             phoneNumber: ""
@@ -224,7 +222,7 @@ export default function AdminEmployeeList() {
                                 <DialogTitle>Upload Data Karyawan (CSV)</DialogTitle>
                                 <DialogDescription>
                                     Unggah file CSV dengan urutan kolom:
-                                    <br /><strong className="text-gray-900 mt-2 block">NIK, Nama Lengkap, Telepon, Cabang, Jabatan, Shift</strong>
+                                    <br /><strong className="text-gray-900 mt-2 block">NIK, Nama Lengkap, Telepon, Cabang, Jabatan</strong>
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4 py-4">
@@ -257,7 +255,6 @@ export default function AdminEmployeeList() {
                                         nik: "",
                                         branch: "Pusat",
                                         position: "Staff",
-                                        shift: "Shift 1",
                                         email: "",
                                         username: "",
                                         phoneNumber: ""
@@ -365,17 +362,6 @@ export default function AdminEmployeeList() {
                                             </FormItem>
                                         )}
                                     />
-                                    <FormField
-                                        control={form.control}
-                                        name="shift"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Shift</FormLabel>
-                                                <FormControl><Input {...field} value={field.value || ''} /></FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
                                     <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white" disabled={upsertMutation.isPending}>
                                         {upsertMutation.isPending ? "Menyimpan..." : "Simpan Data"}
                                     </Button>
@@ -446,7 +432,6 @@ export default function AdminEmployeeList() {
                                                         role: emp.role,
                                                         branch: emp.branch || "",
                                                         position: emp.position || "",
-                                                        shift: emp.shift || "",
                                                         phoneNumber: emp.phoneNumber || "",
                                                         username: emp.username || "",
                                                         password: "" // Keep empty to not change
