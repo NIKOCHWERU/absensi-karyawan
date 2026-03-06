@@ -1,0 +1,23 @@
+{
+    "name": "Absensi PT EJA",
+    "short_name": "Absensi EJA",
+    "description": "Aplikasi Absensi Karyawan PT Elok Jaya Abadhi",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#2e7d32",
+    "icons": [
+        {
+            "src": "/logo_elok_buah.jpg",
+            "sizes": "192x192",
+            "type": "image/jpeg",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/logo_elok_buah.jpg",
+            "sizes": "512x512",
+            "type": "image/jpeg",
+            "purpose": "any maskable"
+        }
+    ]
+}

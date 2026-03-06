@@ -115,8 +115,31 @@ export default function InfoBoardPage() {
         }
     };
 
+    // Fullscreen Image State
+    const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+
+    // Event listener for opening images inline
+    useState(() => {
+        const handleOpenImage = (e: any) => setFullscreenImage(e.detail);
+        window.addEventListener('open-image', handleOpenImage);
+        return () => window.removeEventListener('open-image', handleOpenImage);
+    });
+
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
+            <Dialog open={!!fullscreenImage} onOpenChange={(open) => !open && setFullscreenImage(null)}>
+                <DialogContent className="max-w-4xl max-h-[90vh] p-1 bg-transparent border-none shadow-none flex items-center justify-center">
+                    <DialogTitle className="sr-only">Lihat Gambar</DialogTitle>
+                    <DialogDescription className="sr-only">Tampilan penuh gambar pengumuman</DialogDescription>
+                    {fullscreenImage && (
+                        <img
+                            src={fullscreenImage}
+                            alt="Full Size"
+                            className="w-auto h-auto max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
             <header className="bg-white border-b border-gray-200 p-4 px-8 flex items-center justify-between sticky top-0 z-10">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" size="icon" onClick={() => setLocation("/admin")}>
@@ -205,15 +228,29 @@ export default function InfoBoardPage() {
                         {announcements?.map((item) => (
                             <div key={item.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 flex flex-col hover:shadow-lg transition-all group">
                                 {item.imageUrl && (
-                                    <div className="relative h-48 overflow-hidden">
-                                        <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                                        <h3 className="absolute bottom-3 left-4 right-12 text-white font-bold text-base leading-tight drop-shadow-lg line-clamp-2">{item.title}</h3>
+                                    <div className="relative h-48 overflow-hidden group/image">
+                                        <div
+                                            className="w-full h-full cursor-pointer"
+                                            onClick={() => {
+                                                // We can use a simple window/modal state for full size image
+                                                // Creating a quick inline dialog state handler 
+                                                const event = new CustomEvent('open-image', { detail: item.imageUrl });
+                                                window.dispatchEvent(event);
+                                            }}
+                                        >
+                                            <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                            <div className="absolute inset-0 bg-black/0 group-hover/image:bg-black/20 transition-colors flex items-center justify-center">
+                                                <ImageIcon className="text-white opacity-0 group-hover/image:opacity-100 w-8 h-8 drop-shadow-md transition-opacity" />
+                                            </div>
+                                        </div>
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent pointer-events-none" />
+                                        <h3 className="absolute bottom-3 left-4 right-12 text-white font-bold text-base leading-tight drop-shadow-lg line-clamp-2 pointer-events-none">{item.title}</h3>
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="absolute top-2 right-2 h-8 w-8 text-white bg-black/30 hover:bg-red-500 hover:text-white rounded-full"
-                                            onClick={() => {
+                                            className="absolute top-2 right-2 h-8 w-8 text-white bg-black/30 hover:bg-red-500 hover:text-white rounded-full z-10"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
                                                 if (confirm("Hapus pengumuman ini?")) {
                                                     deleteMutation.mutate(item.id);
                                                 }

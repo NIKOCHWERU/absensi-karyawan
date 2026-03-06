@@ -62,8 +62,32 @@ export default function InfoPage() {
     }
   };
 
+  // Fullscreen Image State
+  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+
+  // Event listener for opening images inline
+  useState(() => {
+    const handleOpenImage = (e: any) => setFullscreenImage(e.detail);
+    window.addEventListener('open-fullscreen-image', handleOpenImage);
+    return () => window.removeEventListener('open-fullscreen-image', handleOpenImage);
+  });
+
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
+      <Dialog open={!!fullscreenImage} onOpenChange={(open) => !open && setFullscreenImage(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] p-1 bg-transparent border-none shadow-none flex items-center justify-center">
+          <DialogTitle className="sr-only">Lihat Gambar</DialogTitle>
+          <DialogDescription className="sr-only">Tampilan penuh gambar pengumuman</DialogDescription>
+          {fullscreenImage && (
+            <img
+              src={fullscreenImage}
+              alt="Full Size"
+              className="w-auto h-auto max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
       <CompanyHeader />
 
       <main className="px-4 -mt-8 max-w-lg mx-auto space-y-4">
@@ -107,8 +131,8 @@ export default function InfoPage() {
                       alt={ann.title}
                       className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    <h3 className="absolute bottom-3 left-4 right-4 text-white font-bold text-base leading-tight drop-shadow-lg">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+                    <h3 className="absolute bottom-3 left-4 right-4 text-white font-bold text-base leading-tight drop-shadow-lg pointer-events-none">
                       {ann.title}
                     </h3>
                   </div>
@@ -140,14 +164,25 @@ export default function InfoPage() {
       <Dialog open={!!selectedAnnouncement} onOpenChange={() => setSelectedAnnouncement(null)}>
         <DialogContent className="rounded-3xl max-w-sm md:max-w-md p-0 overflow-hidden max-h-[90vh] overflow-y-auto">
           {selectedAnnouncement?.imageUrl && (
-            <div className="relative">
+            <div
+              className="relative cursor-pointer group/zoom"
+              onClick={() => {
+                // Dispatch custom event to open fullscreen image (handled by a top-level listener or state)
+                // We'll add local state for easier handling here
+                const event = new CustomEvent('open-fullscreen-image', { detail: selectedAnnouncement.imageUrl });
+                window.dispatchEvent(event);
+              }}
+            >
               <img
                 src={selectedAnnouncement.imageUrl}
                 alt={selectedAnnouncement.title}
                 className="w-full h-56 object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-              <h2 className="absolute bottom-4 left-5 right-5 text-white font-bold text-lg leading-tight drop-shadow-lg">
+              <div className="absolute inset-0 bg-black/0 group-hover/zoom:bg-black/20 transition-colors flex items-center justify-center">
+                <ExternalLink className="text-white opacity-0 group-hover/zoom:opacity-100 w-8 h-8 drop-shadow-md transition-opacity" />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent pointer-events-none" />
+              <h2 className="absolute bottom-4 left-5 right-5 text-white font-bold text-lg leading-tight drop-shadow-lg pointer-events-none">
                 {selectedAnnouncement.title}
               </h2>
             </div>
@@ -199,6 +234,7 @@ export default function InfoPage() {
           </div>
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }

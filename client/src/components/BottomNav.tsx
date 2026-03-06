@@ -1,16 +1,39 @@
 import { Link, useLocation } from "wouter";
 import { LayoutDashboard, CalendarDays, Info, MessageSquare } from "lucide-react";
 import { motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
 
 export function BottomNav() {
   const [location] = useLocation();
+  const { user } = useAuth();
+
+  // Fetch announcements for Info badge
+  const { data: announcements } = useQuery<any[]>({
+    queryKey: ["/api/announcements"],
+  });
+
+  // Fetch complaints for Pengaduan badge
+  const { data: complaints } = useQuery<any[]>({
+    queryKey: ["/api/complaints"],
+    enabled: !!user,
+  });
+
+  // Determine badge values
+  // 1. Info badge: show total active announcements (as requested for simplicity)
+  const infoBadgeCount = announcements && announcements.length > 0 ? announcements.length : 0;
+
+  // 2. Complaint badge: show pending complaints for the current user
+  const complaintBadgeCount = complaints
+    ? complaints.filter(c => c.status === 'pending').length
+    : 0;
 
   const tabs = [
     { href: "/", label: "Absensi", icon: LayoutDashboard },
     { href: "/recap", label: "Rekap", icon: CalendarDays },
     { href: "/leave", label: "Cuti", icon: CalendarDays },
-    { href: "/info", label: "Info", icon: Info },
-    { href: "/complaint", label: "Pengaduan", icon: MessageSquare },
+    { href: "/info", label: "Info", icon: Info, badge: infoBadgeCount },
+    { href: "/complaint", label: "Pengaduan", icon: MessageSquare, badge: complaintBadgeCount },
   ];
 
   return (
@@ -28,10 +51,17 @@ export function BottomNav() {
                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
                   />
                 )}
-                <tab.icon
-                  className={`w-6 h-6 mb-1 transition-colors duration-200 ${isActive ? "text-primary stroke-[2.5]" : "text-muted-foreground group-hover:text-primary/70"
-                    }`}
-                />
+                <div className="relative">
+                  <tab.icon
+                    className={`w-6 h-6 mb-1 transition-colors duration-200 ${isActive ? "text-primary stroke-[2.5]" : "text-muted-foreground group-hover:text-primary/70"
+                      }`}
+                  />
+                  {tab.badge && tab.badge > 0 ? (
+                    <div className="absolute -top-1 -right-2 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm border border-white">
+                      {tab.badge > 99 ? '99+' : tab.badge}
+                    </div>
+                  ) : null}
+                </div>
                 <span className={`text-[10px] md:text-xs font-medium transition-colors duration-200 ${isActive ? "text-primary" : "text-muted-foreground"
                   }`}>
                   {tab.label}

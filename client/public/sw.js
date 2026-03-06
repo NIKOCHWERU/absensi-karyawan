@@ -1,3 +1,14 @@
+self.addEventListener('install', function (event) {
+    self.skipWaiting();
+});
+
+self.addEventListener('fetch', function (event) {
+    // Basic fetch handler to satisfy PWA requirements
+    event.respondWith(fetch(event.request).catch(() => {
+        return new Response("Koneksi terputus. Mohon periksa internet Anda.");
+    }));
+});
+
 self.addEventListener('push', function (event) {
     let data = { title: 'Pengumuman Baru!', body: 'Papan Informasi telah diperbarui.', url: '/' };
     if (event.data) {
