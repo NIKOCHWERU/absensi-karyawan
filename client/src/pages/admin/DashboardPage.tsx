@@ -1,7 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { User, Attendance } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Clock, CalendarDays, UserPlus, LogOut, FileText, MessageSquare, History, Info, AlertCircle , Image as ImageIcon} from "lucide-react";
+import { Users, Clock, CalendarDays, UserPlus, LogOut, FileText, MessageSquare, History, Info, AlertCircle, Image as ImageIcon, DatabaseBackup, Loader2 } from "lucide-react";
 import {
     BarChart,
     Bar,
@@ -45,6 +46,23 @@ export default function AdminDashboard() {
     const { logout } = useAuth();
     const { toast } = useToast();
     const [absenceDate, setAbsenceDate] = useState(new Date().toISOString().split('T')[0]);
+
+    const backupMutation = useMutation({
+        mutationFn: async () => {
+            const res = await apiRequest("POST", "/api/admin/backup");
+            return await res.json();
+        },
+        onSuccess: (data: any) => {
+            if (data.success) {
+                toast({ title: "Backup Selesai", description: data.message });
+            } else {
+                toast({ title: "Gagal Backend", description: data.message, variant: "destructive" });
+            }
+        },
+        onError: (err: any) => {
+            toast({ title: "Gagal Backup", description: err.message, variant: "destructive" });
+        }
+    });
 
     const { data: stats } = useQuery<{ totalEmployees: number; presentToday: number }>({
         queryKey: ["/api/admin/stats"],
@@ -157,7 +175,16 @@ export default function AdminDashboard() {
             <main className="flex-1 md:p-8 p-4 overflow-auto">
                 <header className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
                     <h2 className="text-2xl font-bold text-gray-800">Dashboard</h2>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-4">
+                        <Button
+                            variant="outline"
+                            className="border-blue-200 text-blue-700 hover:bg-blue-50 shadow-sm"
+                            onClick={() => backupMutation.mutate()}
+                            disabled={backupMutation.isPending}
+                        >
+                            {backupMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <DatabaseBackup className="w-4 h-4 mr-2" />}
+                            Backup Database
+                        </Button>
                         <Dialog>
                             <DialogTrigger asChild>
                                 <Button variant="outline" className="border-green-200 text-green-700 hover:bg-green-50 shadow-sm">

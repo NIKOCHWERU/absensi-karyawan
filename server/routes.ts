@@ -15,6 +15,7 @@ import { id } from "date-fns/locale";
 import https from "https";
 import http from "http";
 import webpush from "web-push";
+import { createBackup } from "./backup";
 
 // Configure web-push
 const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || "";
@@ -308,14 +309,17 @@ export async function registerRoutes(
     const { notes, type } = req.body;
     const today = getJakartaDate();
     const userId = req.user!.id;
-    const labelType = type === 'sick' ? 'Sakit' : 'Izin';
+    const labelType = type === 'sick' ? 'Sakit' : type === 'off' ? 'Libur' : 'Izin';
 
     // Get ALL sessions today to find the ACTIVE one (not checked-out)
     const allSessions = await storage.getAttendanceSessionsByUserAndDate(userId, today);
     const activeSession = allSessions.find(s => !s.checkOut);
 
-    // Upload photo
-    const photoFileId = await handlePhotoUpload(req, 'clockIn');
+    // Upload photo (if any for off day, we bypass it)
+    let photoFileId = undefined;
+    if (req.body.checkInPhoto) {
+      photoFileId = await handlePhotoUpload(req, 'clockIn');
+    }
     const now = new Date();
 
     if (activeSession) {
@@ -794,6 +798,18 @@ export async function registerRoutes(
       totalEmployees,
       presentToday: todayRecords.length,
     });
+  });
+
+  app.post("/api/admin/backup", async (req, res) => {
+    if (!req.isAuthenticated() || req.user!.role !== 'admin') return res.sendStatus(401);
+
+    try {
+      const fileName = await createBackup();
+      res.json({ success: true, fileName, message: `Backup berhasil dibuat: ${fileName}` });
+    } catch (error: any) {
+      console.error("Manual Backup Error:", error);
+      res.status(500).json({ success: false, message: "Gagal membuat backup database" });
+    }
   });
 
   // --- Push Notifications ---

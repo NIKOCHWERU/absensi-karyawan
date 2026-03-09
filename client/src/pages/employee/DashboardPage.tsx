@@ -89,7 +89,7 @@ export default function EmployeeDashboard() {
 
     const [permitOpen, setPermitOpen] = useState(false);
     const [permitNote, setPermitNote] = useState("");
-    const [permitType, setPermitType] = useState<"sick" | "permission">("permission");
+    const [permitType, setPermitType] = useState<"sick" | "permission" | "off">("permission");
     const [isCameraOpen, setIsCameraOpen] = useState(false);
 
     // Shift Selection State
@@ -304,14 +304,37 @@ export default function EmployeeDashboard() {
                 return permit({
                     type: permitType,
                     notes: permitNote,
-                    checkInPhoto: data.checkInPhoto,
-                    location: data.location
+                    checkInPhoto: data?.checkInPhoto, // Make optional for off day
+                    location: data?.location
                 });
             },
-            successTitle: "Izin Diajukan",
+            successTitle: permitType === "off" ? "Off Day Tercatat" : "Izin Diajukan",
             type: 'permit'
         });
-        setIsCameraOpen(true);
+
+        if (permitType === "off") {
+            // Bypass camera
+            const offAction = async () => {
+                const { address } = await getCoordinates(false);
+                await permit({
+                    type: 'off',
+                    notes: permitNote || "Libur Bekerja",
+                    checkInPhoto: null,
+                    location: address
+                });
+            };
+
+            toast({ title: "Memproses...", description: "Mencatat absensi libur anda." });
+            offAction().then(() => {
+                toast({ title: "Off Day Tercatat", description: "Selamat beristirahat!", className: "bg-green-500 text-white" });
+                setActiveAction(null);
+            }).catch(err => {
+                handleError(err);
+                setActiveAction(null);
+            });
+        } else {
+            setIsCameraOpen(true);
+        }
     }
 
     const handlePhotoCaptured = async (photoData: string) => {
@@ -434,6 +457,7 @@ export default function EmployeeDashboard() {
         if (!today) return "Belum Absen";
         if (today.status === 'sick') return "Sakit";
         if (today.status === 'permission') return "Izin";
+        if (today.status === 'off') return "Libur";
         if (today.status === 'late') return "Telat";
         if (today.status === 'present') return "Hadir";
         if (today.checkOut) return "Absensi Selesai";
@@ -457,15 +481,16 @@ export default function EmployeeDashboard() {
         // --- PERMIT / SICK STATE ---
         // After permit or sick is submitted, today always has checkOut set (server always closes session).
         // Show an informational card + "Lanjut Bekerja" option.
-        if (today?.status === 'sick' || today?.status === 'permission') {
-            const permitLabel = today.status === 'sick' ? 'Sakit' : 'Izin';
-            const permitColor = today.status === 'sick' ? 'blue' : 'purple';
+        if (today?.status === 'sick' || today?.status === 'permission' || today?.status === 'off') {
+            const permitLabel = today.status === 'sick' ? 'Sakit' : today.status === 'off' ? 'Libur' : 'Izin';
+            const permitColor = today.status === 'sick' ? 'blue' : today.status === 'off' ? 'gray' : 'purple';
+            const emoji = today.status === 'sick' ? '🤒' : today.status === 'off' ? '😴' : '📋';
             return (
                 <div className="flex flex-col gap-3 w-full">
                     {/* Info card */}
                     <div className={`rounded-2xl p-4 bg-${permitColor}-50 border border-${permitColor}-200 flex items-start gap-3`}>
                         <span className={`text-${permitColor}-500 text-2xl leading-none mt-0.5`}>
-                            {today.status === 'sick' ? '🤒' : '📋'}
+                            {emoji}
                         </span>
                         <div>
                             <p className={`text-xs font-bold text-${permitColor}-700 uppercase tracking-wide`}>
@@ -744,10 +769,10 @@ export default function EmployeeDashboard() {
                     <div className="flex flex-col gap-3 w-full max-w-sm mx-auto">
                         {renderMainButton()}
 
-                        <div className="grid grid-cols-2 gap-3 mt-2">
+                        <div className="grid grid-cols-3 gap-2 mt-2">
                             <Button
                                 variant="outline"
-                                disabled={!!today?.checkOut || today?.status === 'sick' || today?.status === 'permission'}
+                                disabled={!!today?.checkOut || today?.status === 'sick' || today?.status === 'permission' || today?.status === 'off'}
                                 onClick={() => {
                                     setPermitType('sick');
                                     setPermitNote("");
@@ -756,12 +781,12 @@ export default function EmployeeDashboard() {
                                 className="h-14 rounded-xl border-blue-100 hover:bg-blue-50 text-blue-700 bg-white"
                             >
                                 <div className="flex flex-col items-center gap-0.5">
-                                    <span className="font-bold">Sakit</span>
+                                    <span className="font-bold text-sm">Sakit</span>
                                 </div>
                             </Button>
                             <Button
                                 variant="outline"
-                                disabled={!!today?.checkOut || today?.status === 'sick' || today?.status === 'permission'}
+                                disabled={!!today?.checkOut || today?.status === 'sick' || today?.status === 'permission' || today?.status === 'off'}
                                 onClick={() => {
                                     setPermitType('permission');
                                     setPermitNote("");
@@ -770,7 +795,23 @@ export default function EmployeeDashboard() {
                                 className="h-14 rounded-xl border-purple-100 hover:bg-purple-50 text-purple-700 bg-white"
                             >
                                 <div className="flex flex-col items-center gap-0.5">
-                                    <span className="font-bold">Izin</span>
+                                    <span className="font-bold text-sm">Izin</span>
+                                </div>
+                            </Button>
+                            <Button
+                                variant="outline"
+                                disabled={!!today?.checkOut || today?.status === 'sick' || today?.status === 'permission' || today?.status === 'off'}
+                                onClick={() => {
+                                    if (confirm("Apakah Anda yakin ingin menyatakan Off Day/Libur Bekerja hari ini? Anda tidak akan perlu absen kamera hari ini.")) {
+                                        setPermitType('off');
+                                        setPermitNote("Libur Bekerja / Off Day");
+                                        setPermitOpen(true);
+                                    }
+                                }}
+                                className="h-14 rounded-xl border-gray-200 hover:bg-gray-100 text-gray-700 bg-white"
+                            >
+                                <div className="flex flex-col items-center gap-0.5">
+                                    <span className="font-bold text-sm">Libur</span>
                                 </div>
                             </Button>
                         </div>

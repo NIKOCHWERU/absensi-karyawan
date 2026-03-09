@@ -61,6 +61,8 @@ app.use((req, res, next) => {
   next();
 });
 
+import { initAutoBackup } from "./backup";
+
 (async () => {
   // Auto-migration: Ensure late_reason columns exist
   try {
@@ -101,6 +103,8 @@ app.use((req, res, next) => {
   }
 
   await registerRoutes(httpServer, app);
+
+  initAutoBackup();
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

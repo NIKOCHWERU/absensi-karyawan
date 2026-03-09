@@ -411,8 +411,9 @@ export default function RecapPage() {
                 row.status === 'late' ? 'Telat' :
                     row.status === 'sick' ? 'Sakit' :
                         row.status === 'permission' ? 'Izin' :
-                            row.status === 'cuti' ? 'Cuti' :
-                                row.status === 'absent' ? 'Alpha' : (row.status || '-');
+                            row.status === 'off' ? 'Libur' :
+                                row.status === 'cuti' ? 'Cuti' :
+                                    row.status === 'absent' ? 'Alpha' : (row.status || '-');
             const statusClass = row.status === 'present' ? 'st-hadir' :
                 row.status === 'late' ? 'st-telat' :
                     row.status === 'sick' ? 'st-sakit' :
@@ -456,7 +457,7 @@ export default function RecapPage() {
           <td class="col-time ${outTime === '-' ? 't-dash' : 't-out'}">${outTime}</td>
           <td class="col-work">${jamKerja}</td>
           <td class="col-brk">${breakMins > 0 ? formatDuration(breakMins) : '-'}</td>
-          <td class="col-stat"><span class="${statusClass}">${statusLabel}</span></td>
+          <td class="col-stat"><span class="${statusClass} ${row.status === 'off' ? 'st-off' : ''}">${statusLabel}</span></td>
           <td class="col-note">${keterangan}${lateNote}</td>
         </tr>`;
         }).join('')}
@@ -671,14 +672,16 @@ export default function RecapPage() {
                                                             row.status === 'late' ? 'bg-orange-100 text-orange-700' :
                                                                 row.status === 'sick' ? 'bg-blue-100 text-blue-700' :
                                                                     row.status === 'permission' ? 'bg-purple-100 text-purple-700' :
-                                                                        row.status === 'cuti' ? 'bg-teal-100 text-teal-700' :
-                                                                            'bg-gray-100 text-gray-700'}`}>
+                                                                        row.status === 'off' ? 'bg-gray-200 text-gray-800' :
+                                                                            row.status === 'cuti' ? 'bg-teal-100 text-teal-700' :
+                                                                                'bg-gray-100 text-gray-700'}`}>
                                                         {row.status === 'present' ? 'Hadir' :
                                                             row.status === 'late' ? 'Telat' :
                                                                 row.status === 'sick' ? 'Sakit' :
                                                                     row.status === 'permission' ? 'Izin' :
-                                                                        row.status === 'cuti' ? 'Cuti' :
-                                                                            row.status === 'absent' ? 'Alpha' : row.status}
+                                                                        row.status === 'off' ? 'Libur' :
+                                                                            row.status === 'cuti' ? 'Cuti' :
+                                                                                row.status === 'absent' ? 'Alpha' : row.status}
                                                         {(row as any).sessionNumber > 1 && ` (Sesi ${(row as any).sessionNumber})`}
                                                     </span>
                                                 </td>

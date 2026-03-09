@@ -25,6 +25,7 @@ import EmployeeComplaint from "@/pages/employee/ComplaintPage";
 import AdminLayout from "@/components/layout/AdminLayout";
 import EmployeeLeave from "@/pages/employee/LeavePage";
 import NotFound from "@/pages/not-found";
+import InstallAppBanner from "@/components/InstallAppBanner";
 
 function ProtectedRoute({ component: Component, adminOnly }: { component: React.ComponentType, adminOnly?: boolean }) {
   const { user, isLoading } = useAuth();
@@ -121,6 +122,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
+        <InstallAppBanner />
         <Router />
       </TooltipProvider>
     </QueryClientProvider>
