@@ -3,6 +3,7 @@ import { LayoutDashboard, CalendarDays, Info, MessageSquare } from "lucide-react
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { useEffect, useState } from "react";
 
 export function BottomNav() {
   const [location] = useLocation();
@@ -19,9 +20,23 @@ export function BottomNav() {
     enabled: !!user,
   });
 
-  // Determine badge values
-  // 1. Info badge: show total active announcements (as requested for simplicity)
-  const infoBadgeCount = announcements && announcements.length > 0 ? announcements.length : 0;
+  // Force re-render when localStorage changes if on the same page
+  const [lastReadTime, setLastReadTime] = useState(() => {
+    return typeof window !== 'undefined' ? parseInt(localStorage.getItem('lastReadInfoTime') || '0', 10) : 0;
+  });
+
+  useEffect(() => {
+    if (location === '/info') {
+      const now = Date.now();
+      localStorage.setItem('lastReadInfoTime', now.toString());
+      setLastReadTime(now);
+    }
+  }, [location]);
+
+  // 1. Info badge: show total active announcements that are newer than lastReadTime
+  const infoBadgeCount = announcements
+    ? announcements.filter(a => new Date(a.createdAt).getTime() > lastReadTime).length
+    : 0;
 
   // 2. Complaint badge: show pending complaints for the current user
   const complaintBadgeCount = complaints
