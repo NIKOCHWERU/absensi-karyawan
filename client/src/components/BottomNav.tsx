@@ -23,8 +23,12 @@ export function BottomNav() {
   });
 
   // Force re-render when localStorage changes if on the same page
-  const [lastReadTime, setLastReadTime] = useState(() => {
+  const [lastReadInfoTime, setLastReadInfoTime] = useState(() => {
     return typeof window !== 'undefined' ? parseInt(localStorage.getItem('lastReadInfoTime') || '0', 10) : 0;
+  });
+
+  const [lastReadComplaintTime, setLastReadComplaintTime] = useState(() => {
+    return typeof window !== 'undefined' ? parseInt(localStorage.getItem('lastReadComplaintTime') || '0', 10) : 0;
   });
 
   useEffect(() => {
@@ -38,22 +42,39 @@ export function BottomNav() {
         }
       }
       localStorage.setItem('lastReadInfoTime', maxTime.toString());
-      setLastReadTime(maxTime);
+      setLastReadInfoTime(maxTime);
     }
   }, [location, announcements]);
 
-  // 1. Info badge: show total active announcements that are newer than lastReadTime
+  useEffect(() => {
+    if (location === '/complaint') {
+      let maxTime = Date.now();
+      if (complaints && complaints.length > 0) {
+        const latestCreatedAt = Math.max(...complaints.map(c => new Date(c.createdAt).getTime() || 0));
+        if (latestCreatedAt > maxTime) {
+          maxTime = latestCreatedAt;
+        }
+      }
+      localStorage.setItem('lastReadComplaintTime', maxTime.toString());
+      setLastReadComplaintTime(maxTime);
+    }
+  }, [location, complaints]);
+
+  // 1. Info badge: show total active announcements that are newer than lastReadInfoTime
   // Hide badge entirely if we are currently on the Info tab
   const infoBadgeCount = location === '/info'
     ? 0
     : (announcements
-      ? announcements.filter(a => new Date(a.createdAt).getTime() > lastReadTime).length
+      ? announcements.filter(a => new Date(a.createdAt).getTime() > lastReadInfoTime).length
       : 0);
 
-  // 2. Complaint badge: show pending complaints for the current user
-  const complaintBadgeCount = complaints
-    ? complaints.filter(c => c.status === 'pending').length
-    : 0;
+  // 2. Complaint badge: show pending complaints for the current user that are newer than lastReadComplaintTime
+  // Hide badge entirely if we are currently on the Complaint tab
+  const complaintBadgeCount = location === '/complaint'
+    ? 0
+    : (complaints
+      ? complaints.filter(c => c.status === 'pending' && new Date(c.createdAt).getTime() > lastReadComplaintTime).length
+      : 0);
 
   const tabs = [
     { href: "/", label: "Absensi", icon: LayoutDashboard },

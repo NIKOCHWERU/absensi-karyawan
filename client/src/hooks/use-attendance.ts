@@ -53,7 +53,7 @@ export function useAttendance() {
   });
 
   const permitMutation = useMutation({
-    mutationFn: async (data: { type: "sick" | "permission"; notes: string; checkInPhoto?: string; location?: string }) => {
+    mutationFn: async (data: { type: "sick" | "permission" | "off"; notes: string; checkInPhoto?: string | null; location?: string }) => {
       await apiRequest("POST", "/api/attendance/permit", data);
     },
     onSuccess: () => {
