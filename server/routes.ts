@@ -15,7 +15,7 @@ import { id } from "date-fns/locale";
 import https from "https";
 import http from "http";
 import webpush from "web-push";
-import { createBackup } from "./backup";
+import { createBackup, importBackup } from "./backup";
 
 // Configure web-push
 const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || "";
@@ -811,6 +811,65 @@ export async function registerRoutes(
       res.status(500).json({ success: false, message: "Gagal membuat backup database" });
     }
   });
+
+  app.get("/api/admin/backups/download/:fileName", async (req, res) => {
+    if (!req.isAuthenticated() || req.user!.role !== 'admin') return res.sendStatus(401);
+
+    const fileName = req.params.fileName;
+    // Validate filename to prevent path traversal
+    if (!fileName.match(/^backup-.*?\.sql$/)) {
+      return res.status(400).send("Invalid backup file name");
+    }
+
+    const filePath = path.join(process.cwd(), "backups", fileName);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).send("Backup file not found");
+    }
+
+    res.download(filePath, fileName, (err) => {
+      if (err) {
+        console.error("Error downloading backup:", err);
+        if (!res.headersSent) {
+          res.status(500).send("Gagal mengunduh file backup");
+        }
+      }
+    });
+  });
+
+  app.post("/api/admin/backups/import", upload.single('file'), async (req, res) => {
+    if (!req.isAuthenticated() || req.user!.role !== 'admin') return res.sendStatus(401);
+
+    try {
+      const multerReq = req as any;
+      if (!multerReq.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      // Check file extension
+      if (!multerReq.file.originalname.endsWith('.sql')) {
+        return res.status(400).json({ message: "File must be a .sql file" });
+      }
+
+      const filename = `import-${Date.now()}-${multerReq.file.originalname}`;
+      const backupsDir = path.join(process.cwd(), "backups");
+      if (!fs.existsSync(backupsDir)) fs.mkdirSync(backupsDir, { recursive: true });
+
+      const filepath = path.join(backupsDir, filename);
+      fs.writeFileSync(filepath, multerReq.file.buffer);
+
+      // Execute import
+      await importBackup(filepath);
+
+      // Clean up the temporary uploaded file
+      fs.unlinkSync(filepath);
+
+      res.status(200).json({ message: "Database berhasil di-import" });
+    } catch (err: any) {
+      console.error("Database Import Error:", err);
+      res.status(500).json({ message: "Gagal meng-import database: " + (err.message || "Internal error") });
+    }
+  });
+
 
   // --- Push Notifications ---
   app.get("/api/push/public-key", (req, res) => {

@@ -50,6 +50,42 @@ export const createBackup = (): Promise<string> => {
     });
 };
 
+export const importBackup = (filePath: string): Promise<boolean> => {
+    return new Promise((resolve, reject) => {
+        const dbUrlStr = process.env.DATABASE_URL;
+        if (!dbUrlStr) {
+            return reject(new Error("DATABASE_URL is not defined"));
+        }
+
+        try {
+            const url = new URL(dbUrlStr);
+            const host = url.hostname;
+            const port = url.port || 3306;
+            const user = url.username;
+            const pass = url.password;
+            const dbName = url.pathname.replace("/", "");
+
+            let cmd = `mysql -h ${host} -P ${port} -u ${user} `;
+            if (pass) {
+                cmd += `-p${pass} `;
+            }
+            cmd += `${dbName} < "${filePath}"`;
+
+            exec(cmd, (error) => {
+                if (error) {
+                    console.error("Restore error:", error);
+                    reject(error);
+                } else {
+                    console.log(`Database restored from ${filePath}`);
+                    resolve(true);
+                }
+            });
+        } catch (e) {
+            reject(e);
+        }
+    });
+};
+
 export const initAutoBackup = () => {
     // Backup every 30 minutes
     const INTERVAL = 30 * 60 * 1000;
