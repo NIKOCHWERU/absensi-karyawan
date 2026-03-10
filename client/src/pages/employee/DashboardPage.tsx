@@ -803,9 +803,21 @@ export default function EmployeeDashboard() {
                                 disabled={!!today?.checkOut || today?.status === 'sick' || today?.status === 'permission' || today?.status === 'off'}
                                 onClick={() => {
                                     if (confirm("Apakah Anda yakin ingin menyatakan Off Day/Libur Bekerja hari ini? Anda tidak akan perlu absen kamera hari ini.")) {
-                                        setPermitType('off');
-                                        setPermitNote("Libur Bekerja / Off Day");
-                                        setPermitOpen(true);
+                                        const offAction = async () => {
+                                            const { address } = await getCoordinates(false);
+                                            await permit({
+                                                type: 'off',
+                                                notes: "Libur Bekerja / Off Day",
+                                                checkInPhoto: null,
+                                                location: address
+                                            });
+                                        };
+                                        toast({ title: "Memproses...", description: "Mencatat absensi libur anda." });
+                                        offAction().then(() => {
+                                            toast({ title: "Off Day Tercatat", description: "Selamat beristirahat!", className: "bg-green-500 text-white" });
+                                        }).catch(err => {
+                                            handleError(err);
+                                        });
                                     }
                                 }}
                                 className="h-14 rounded-xl border-gray-200 hover:bg-gray-100 text-gray-700 bg-white"
