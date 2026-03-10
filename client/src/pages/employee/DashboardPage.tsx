@@ -800,7 +800,7 @@ export default function EmployeeDashboard() {
                             </Button>
                             <Button
                                 variant="outline"
-                                disabled={!!today?.checkOut || today?.status === 'sick' || today?.status === 'permission' || today?.status === 'off'}
+                                disabled={!!today?.checkOut || today?.status === 'sick' || today?.status === 'permission' || today?.status === 'off' || hasCheckedIn}
                                 onClick={() => {
                                     if (confirm("Apakah Anda yakin ingin menyatakan Off Day/Libur Bekerja hari ini? Anda tidak akan perlu absen kamera hari ini.")) {
                                         const offAction = async () => {

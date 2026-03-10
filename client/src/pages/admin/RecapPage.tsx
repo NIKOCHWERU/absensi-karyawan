@@ -492,6 +492,7 @@ export default function RecapPage() {
         btn.href = window.location.href;
         btn.download = _fn;
       }
+      window.onafterprint = function() { window.close(); };
       setTimeout(function() { window.print(); }, 600);
     };
   </script>
