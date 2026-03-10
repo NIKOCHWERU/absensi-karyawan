@@ -1,0 +1,369 @@
+/*M!999999\- enable the sandbox mode */ 
+-- MariaDB dump 10.19  Distrib 10.11.13-MariaDB, for debian-linux-gnu (x86_64)
+--
+-- Host: localhost    Database: absensi_tenaga_kerja_pt_eja
+-- ------------------------------------------------------
+-- Server version	10.11.13-MariaDB-0ubuntu0.24.04.1
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `announcements`
+--
+
+DROP TABLE IF EXISTS `announcements`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `announcements` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) NOT NULL,
+  `content` text NOT NULL,
+  `image_url` varchar(512) DEFAULT NULL,
+  `expires_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `author_id` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_announcements_created_at` (`created_at`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `announcements`
+--
+
+LOCK TABLES `announcements` WRITE;
+/*!40000 ALTER TABLE `announcements` DISABLE KEYS */;
+INSERT INTO `announcements` VALUES
+(1,'Selamat Datang di Sistem Absensi','Ini adalah pengumuman pertama. Silahkan melakukan absensi setiap hari kerja.',NULL,NULL,'2026-03-04 01:44:30',1),
+(2,'test','wwwwwwwwwwwwwwwwwwww','/uploads/1772618142196-ABSENSI MANAGEMENT PT ELOK JAYA ABADHI.jpeg','2026-03-04 16:00:00','2026-03-04 09:55:42',2);
+/*!40000 ALTER TABLE `announcements` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `attendance`
+--
+
+DROP TABLE IF EXISTS `attendance`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `attendance` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `date` date NOT NULL,
+  `check_in` timestamp NULL DEFAULT NULL,
+  `check_in_photo` varchar(255) DEFAULT NULL,
+  `check_in_location` text DEFAULT NULL,
+  `break_start` timestamp NULL DEFAULT NULL,
+  `break_start_photo` varchar(255) DEFAULT NULL,
+  `break_start_location` text DEFAULT NULL,
+  `break_end` timestamp NULL DEFAULT NULL,
+  `break_end_photo` varchar(255) DEFAULT NULL,
+  `break_end_location` text DEFAULT NULL,
+  `check_out` timestamp NULL DEFAULT NULL,
+  `check_out_photo` varchar(255) DEFAULT NULL,
+  `check_out_location` text DEFAULT NULL,
+  `shift` varchar(50) DEFAULT NULL,
+  `session_number` int(11) DEFAULT 1,
+  `status` enum('present','late','sick','permission','cuti','absent') DEFAULT 'absent',
+  `notes` text DEFAULT NULL,
+  `late_reason` text DEFAULT NULL,
+  `late_reason_photo` varchar(255) DEFAULT NULL,
+  `permit_exit_at` timestamp NULL DEFAULT NULL,
+  `permit_resume_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_attendance_user_id` (`user_id`),
+  KEY `idx_attendance_date` (`date`),
+  KEY `idx_attendance_user_date` (`user_id`,`date`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `attendance`
+--
+
+LOCK TABLES `attendance` WRITE;
+/*!40000 ALTER TABLE `attendance` DISABLE KEYS */;
+INSERT INTO `attendance` VALUES
+(1,3,'2026-03-06','2026-03-06 00:57:13','1Hj7Pth2FXHjc6JL0sWW_B4so6TscK3Eo','Karawang Kulon, Karawang Barat, Karawang, West Java, Java, 41311, Indonesia',NULL,NULL,NULL,NULL,NULL,NULL,'2026-03-06 07:59:59',NULL,NULL,'Shift 3',1,'late','Sesi ditutup otomatis: Lupa Absen Pulang','Tes','1BWb-aDRJkwzwpx3RqL3IscY05c4u1vLW',NULL,NULL),
+(2,3,'2026-03-09','2026-03-08 18:24:16','1hz2fggwv9D_x0vMPk0issCEOu8QTdksH','Jalan Teratai, Karawang, Nagasari, Karawang Barat, Karawang, Jawa Barat, Jawa, 41312, Indonesia',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'Shift 1',1,'late',NULL,'Terlambat','1kHh2JmF6Y_zi4l4d4VQ-xppuNiwtrdRJ',NULL,NULL),
+(3,76,'2026-03-10','2026-03-09 20:31:06','1nM_W1AE0cbaFGYOcWh4LEcEy0paQhUyf','Karawang Kulon, Karawang Barat, Karawang, West Java, Java, 41311, Indonesia',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'Shift 1',1,'late',NULL,'p',NULL,NULL,NULL);
+/*!40000 ALTER TABLE `attendance` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `complaint_photos`
+--
+
+DROP TABLE IF EXISTS `complaint_photos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `complaint_photos` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `complaint_id` int(11) NOT NULL,
+  `photo_url` varchar(512) NOT NULL,
+  `caption` text DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `complaint_photos`
+--
+
+LOCK TABLES `complaint_photos` WRITE;
+/*!40000 ALTER TABLE `complaint_photos` DISABLE KEYS */;
+/*!40000 ALTER TABLE `complaint_photos` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `complaints`
+--
+
+DROP TABLE IF EXISTS `complaints`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `complaints` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `description` text NOT NULL,
+  `status` enum('pending','reviewed','resolved') DEFAULT 'pending',
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_complaints_user_id` (`user_id`),
+  KEY `idx_complaints_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `complaints`
+--
+
+LOCK TABLES `complaints` WRITE;
+/*!40000 ALTER TABLE `complaints` DISABLE KEYS */;
+/*!40000 ALTER TABLE `complaints` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `leave_requests`
+--
+
+DROP TABLE IF EXISTS `leave_requests`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `leave_requests` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `start_date` date NOT NULL,
+  `end_date` date NOT NULL,
+  `selected_dates` text DEFAULT NULL,
+  `reason` text NOT NULL,
+  `status` enum('pending','approved','rejected','cancelled') DEFAULT 'pending',
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_leave_request_user_id` (`user_id`),
+  KEY `idx_leave_request_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `leave_requests`
+--
+
+LOCK TABLES `leave_requests` WRITE;
+/*!40000 ALTER TABLE `leave_requests` DISABLE KEYS */;
+/*!40000 ALTER TABLE `leave_requests` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `push_subscriptions`
+--
+
+DROP TABLE IF EXISTS `push_subscriptions`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `push_subscriptions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `endpoint` text NOT NULL,
+  `p256dh` varchar(255) NOT NULL,
+  `auth` varchar(255) NOT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_push_sub_user_id` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `push_subscriptions`
+--
+
+LOCK TABLES `push_subscriptions` WRITE;
+/*!40000 ALTER TABLE `push_subscriptions` DISABLE KEYS */;
+INSERT INTO `push_subscriptions` VALUES
+(1,3,'https://fcm.googleapis.com/fcm/send/dNxzGi_dmEU:APA91bFbXC6A3QmSiyYZsqUu4kJrAyrRjlZylqx0ApZIu6CnHAAO6wEhroc2vePwQfqWwvIymklDeKHTsebQ6tfFHh0bUf7SmpmVR8Z2h8m3juSbwbalpI077qpX3fdMUCYvHpRRH1QZ','BHijAkbT20FZDtOWq1BmESs1_U6g1LwcJq0FEv74S2IgLHyN4kZnFtvzoWvDnrzATeLwoygBb2nYHvY4egx_B8I','i8MZQb32lEa6C1x6ufcHzw','2026-03-04 09:55:16'),
+(2,3,'https://fcm.googleapis.com/fcm/send/eDn4OWeE4ts:APA91bFgoeQnB9rRd573GnzHKAsOhn042uAYBnI8E1B23Bo2qawheJ3Az9evq3DbTkEMGF3_0okzpGBuUkwC8F1IlObG6dzmbKiZ3LCpmoQdBzfOKsx0PW_n165IDJI0nvdHsnJEsxVQ','BAn4rNDzquXpU7JcnQ11yOnefB6t3OX9gDSHb1mfX8b41ehCQBB12dYwulJOu5i6eR61RFW4ysKh4pxEOyu9Occ','Fu6s0vckVAhNgUKHUN_MdQ','2026-03-06 18:38:48'),
+(3,3,'https://fcm.googleapis.com/fcm/send/c7RDzmV8yhs:APA91bEEVNAxbs8KfB7zb85sNTo5AzxFm1ZjHbu-WRwhBu7WlvwTiRGtmQIfQmwqKqPMhdpIo4SeemaNZGhqHrONNaBKx27rNXARnZ8zPhLv9yngNKruQ9QCkPH2vX3dyTIAAKGSbVot','BM2aZhkkbS9asZyNzaSKc4dSv9l0SDNp7D3qNHHfVp1z3GuiiOtF-CgMLaZbrSh45z0dMtWHB7v43ZG8mhp5FWk','-DEAzVZZlocXp7Zwiq6jqg','2026-03-06 18:40:22'),
+(4,3,'https://fcm.googleapis.com/fcm/send/c2_YEHZJM4Q:APA91bFxScWlVYErLZTLq9IUK_LHj9fH2A2c2d-y2wRg0MTBmFsiXqgS0ir7pqq73KOeRjo8BVcFrTjAnWbkL5SrS-OCnj_LH7ptXX9EUfsF-RTM7Fi_-3fUEnVYlENPniUOb1u0WHj_','BGLOEooanG4LD5UJxKgr_D5r1P7Y_KZOARPGO5ZPIOzB1wanbRzrHyJ0SDFXXUG8T3rZThdZasKP-DB7w73pE1Q','j_Lyl2Delp_zsMmSkfW1cg','2026-03-09 02:21:49'),
+(5,3,'https://fcm.googleapis.com/fcm/send/dXeIzKDzxHo:APA91bECPtKNpaaWn7Ii7VeDx4VkYJahPVkhc3EepvFrN3NfIJXe18iG92hxAWQNrYt3RbpVHwQyFzyZ1p2w8DWH7Z2kxp3E7PPHAdSJf57BmxIm2v13sfLDBfZpuBxLaQlYlVWoU7s5','BPAtL8GHWXNFip4Dn1-S_d5Q86A0EdzkV-tfKkO4rq0KD-LvJFsF8Kucp2l3qb4e6bdIJlFemagmX1lYlNAiKrI','Yrvy1z1vSD8-YbVIqgtdbw','2026-03-09 02:21:49');
+/*!40000 ALTER TABLE `push_subscriptions` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `sessions`
+--
+
+DROP TABLE IF EXISTS `sessions`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `sessions` (
+  `session_id` varchar(128) NOT NULL,
+  `expires` int(11) NOT NULL,
+  `data` text DEFAULT NULL,
+  PRIMARY KEY (`session_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `sessions`
+--
+
+LOCK TABLES `sessions` WRITE;
+/*!40000 ALTER TABLE `sessions` DISABLE KEYS */;
+INSERT INTO `sessions` VALUES
+('a17rckiseEb1yQIlbLfc66fASOvKKnYA',1775707107,'{\"cookie\":{\"originalMaxAge\":2592000000,\"expires\":\"2026-04-03T09:46:53.168Z\",\"secure\":false,\"httpOnly\":true,\"path\":\"/\"},\"passport\":{\"user\":2}}'),
+('bCy4X2RTr6VwnUB8Tc7rAc7jnLcfucnD',1775709074,'{\"cookie\":{\"originalMaxAge\":2592000000,\"expires\":\"2026-04-05T15:13:58.854Z\",\"secure\":false,\"httpOnly\":true,\"path\":\"/\"},\"passport\":{\"user\":2}}'),
+('EXJAAHtuHFE9e54xH8LnOMf08y3W8I20',1775497095,'{\"cookie\":{\"originalMaxAge\":2592000000,\"expires\":\"2026-04-03T09:55:07.327Z\",\"secure\":false,\"httpOnly\":true,\"path\":\"/\"},\"passport\":{\"user\":3}}'),
+('HBYR5zf9FqK_NoVcniw2h9q3i_ijjfWe',1775709067,'{\"cookie\":{\"originalMaxAge\":2592000000,\"expires\":\"2026-04-08T02:42:47.531Z\",\"secure\":false,\"httpOnly\":true,\"path\":\"/\"},\"passport\":{\"user\":76}}'),
+('vwgk_iP2yqYZZGN1t1_nY-RIf4mQzXrE',1775615083,'{\"cookie\":{\"originalMaxAge\":2592000000,\"expires\":\"2026-04-08T02:23:03.314Z\",\"secure\":false,\"httpOnly\":true,\"path\":\"/\"},\"passport\":{\"user\":3}}');
+/*!40000 ALTER TABLE `sessions` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `users`
+--
+
+DROP TABLE IF EXISTS `users`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `email` varchar(255) DEFAULT NULL,
+  `username` varchar(255) DEFAULT NULL,
+  `password` varchar(255) NOT NULL,
+  `full_name` varchar(255) NOT NULL,
+  `role` enum('admin','employee') NOT NULL DEFAULT 'employee',
+  `nik` varchar(50) DEFAULT NULL,
+  `branch` varchar(100) DEFAULT NULL,
+  `position` varchar(100) DEFAULT NULL,
+  `shift` varchar(50) DEFAULT NULL,
+  `photo_url` varchar(512) DEFAULT NULL,
+  `is_admin` tinyint(1) DEFAULT 0,
+  `phone_number` varchar(20) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `users_username_unique` (`username`),
+  UNIQUE KEY `users_nik_unique` (`nik`)
+) ENGINE=InnoDB AUTO_INCREMENT=77 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `users`
+--
+
+LOCK TABLES `users` WRITE;
+/*!40000 ALTER TABLE `users` DISABLE KEYS */;
+INSERT INTO `users` VALUES
+(1,'admin@company.com','admin@company.com','e9e970ed7e8ad201dd7ac843facf642d2c830b3321961e5a68996b8fc84133c47e88578e04f87635100f78e3350a5f99d491882576f8dc279ef7c442f47e00d3.c3f6f83ce95682e30309cbb9cf7b221c','Admin Utama','admin',NULL,NULL,NULL,NULL,NULL,1,NULL),
+(2,'admin@nh.com','admin@nh.com','4944d8924c46558c806570ea711d96b9227e574e19be855b783dc5c7fb713253e714e682a7b99b509f7b722ebcd9669da3aa9cd1f8016721c78abe0f0426a479.cbfe015bb7b256093305eebfaa3dbc6c','Admin','admin',NULL,NULL,NULL,NULL,NULL,1,NULL),
+(4,NULL,'3215010108040001','4f5e99a40e149c538431065d51b3d03c68662a4ac49f4d929d0b07d2f993694ad24de97953367ec2a1ddc5747ece67e6a942477de7b831e70e2ca0ad7dc682ad.ce24c4015af4cfdb9f173a4c7d16b0ee','AGUSTIAN PUTRA PRATAMA','employee','3215010108040001','-','-','Shift 1',NULL,0,'08388427574'),
+(5,NULL,'3320080902010003','420efe80b422f06a925882d07ccba934d4c4aff24d6ffc5c09ac8f8b8819013c99230117e2587ac2e4b95ca4e0abec59c68d6d1c1a0f93399faeefc8def6d4e4.a20966d8ed88bc02b9a10e7c143bf008','AH ANTON PURNAMA SETIYA','employee','3320080902010003','-','-','Shift 1',NULL,0,'081237151845'),
+(6,NULL,'3321130404050005','234c5822c34a38a580b3f27369b123ac5e6fe8387ebd4d89e077fa987fc1ffe547e65cd5baac84e59b3a40da1da4dbdc445a143a9e4ebf36b880cdb225c737bf.004b13f08c491c986d0c1518bd510ca0','AHMAD ALFARUQ','employee','3321130404050005','-','-','Shift 1',NULL,0,'082131566152'),
+(7,NULL,'3321130806960005','bcc2e1d94222b35c953650a6758aaaa0154b2de02aa960cef77784cb8f0530e66d1fc41ca52a59527d30541ab6d5b8c2028e436cc2eebd68da6e5dc77519d148.1615ab86e64f0c07886ca9d6bc29b3e7','AHMAD KHAZINUL MIZAN','employee','3321130806960005','-','-','Shift 1',NULL,0,'081295615674'),
+(8,NULL,'3321131507050003','c81ea2d5d6523d04a8bbfd14230ac19d5cba18e9220a78579d2af9d9e4e9088fdce6d079de40fee44253f11d5c27880d53f04fcf55a46aa581e30d4d21fbcd0e.4e1445047e028f5ee24165693b24ef1d','AHMAD KHOIRUR ROZIQIN','employee','3321131507050003','-','-','Shift 1',NULL,0,'082335644798'),
+(9,NULL,'3321131108910004','5bbd777099630e9e8d4e12425d6b044ccb76a0673f6e32319ac0a023c0882f6afc0de67b7886125162ecede4dce127247283c279826a4b9cabdc999e130b9184.627dddb2d341182a8d6b2d816b5abea5','AHMAD KHOTIBUL UMAM','employee','3321131108910004','-','-','Shift 1',NULL,0,'081298711818'),
+(10,NULL,'3321132906020001','6f48a045c5ec5a6a0a62d567e3f9ff7959f5fc3779e345a284aa84a1914ffb902f5da18ae7a5a6e5de09610b8b3d59b1ba5a893a1121d55625081b05a7564f3b.98fadda4649505bb9cef3c9a69c3eceb','AHMAD RIFAL BALFAS','employee','3321132906020001','-','-','Shift 1',NULL,0,'085692575016'),
+(11,NULL,'3321131106040002','a894b1b397c6b8d02a6fbad683d584fc233547d50d5ab077c87e1e56c4bc79fd1d814a13e3be5ad6a70fdf4529696f3a36adfcedc33e9ad280c67c0e548dbfa5.8e87be565eeb45134b24a51cde0b2c92','AKHMAD NOR KHAQIM','employee','3321131106040002','-','-','Shift 1',NULL,0,'085871683808'),
+(12,NULL,'3321131807860002','30f1b647e190f59912eb8c60e68a6761bba6c2de97f5a8e6d7b2ad8327858b8d04689ae0b1a10fff62fadeedacc4b818155f17bfbb0dc319f0da23706b5839e3.76575b7c7a2c0f5adba1ccaa12e43a46','ALI AZADI','employee','3321131807860002','-','-','Shift 1',NULL,0,'0885333772470'),
+(13,NULL,'3215266903050002','f47e87823fe885d74e5bcde143055cf21583f58f6d3f206edf3b541f968c8a35f386dc7611406afe90995e1069a2ac0dcec415e837cf38a3b7f2c32d937a1b72.15c9b9da00c9c67616c0e1c21cb92fe4','ALLYA SHALSABILA','employee','3215266903050002','-','-','Shift 1',NULL,0,'0895636475070'),
+(14,NULL,'3321130704030002','ec19a9541bd10bc61d9a2dac3fb4efb7cd18e0c090245442f34e337bcbd3cc4719f68cb20297a36928308ea1343a96d91e41266f12ee3ac1386fd15b66afb0c8.8826ad7dd65ef440d01025445cb5fe05','ALVIANTO ZAENAL ABID','employee','3321130704030002','-','-','Shift 1',NULL,0,'085717538054'),
+(15,NULL,'3321130111010002','9f05efab3c0a7d6cbcd7867220ababf1e79cbb2690343cfa05bebed26f57c8f238b46b089e0ffab1dea70d7d0044682498f468e3b078136930d6bb68e29b8aa1.d766be84ba97a6fdf3b6d16ebc70e917','ANANG SHOFYAN','employee','3321130111010002','-','-','Shift 1',NULL,0,'085876167560'),
+(16,NULL,'3321130510020003','704605d3373a73a6436f5bd9a0a999a1b05a042009ad1af4f0538a66892c7075f44ecddae8ae1f5929ceccdecdb4c870d4170f8cef4750a579bc55aa5d797920.b4a89eb25fe002e783ac846e529838e6','ANAS SOBRI RAHMATULLAH','employee','3321130510020003','-','-','Shift 1',NULL,0,'088576519876'),
+(17,NULL,'3214136408060001','0febf24ebb6a243d40aa7ba4531c6dd0807eafc3de371e4dabe315042c510be48189efdbbd2ec3fcf4655a56415be5800fb3882a1337130c01dbc180d4bea6e1.119a20134496fd11bbca10a2185c3a9c','ANEU AGUSTIANTI PUTRI SUHEMI','employee','3214136408060001','-','-','Shift 1',NULL,0,'089676569966'),
+(18,NULL,'3321132802930005','0de2e01c1c6b73207f75083dcb318345f64d50b9c048428d2a74203420cb30fe82ec6d5a4b54131cb5daaff4f5e197912765fda39b536f1dca421009fb4fc62a.e4fa47590438d4efefd58ee58d8d9138','ANOM SUROTO','employee','3321132802930005','-','-','Shift 1',NULL,0,'0882006452333'),
+(19,NULL,'3321046707060001','eeb09c8872bc0df03bf0389d9c73f4ff5e55be718d02791533b1f71c4f684ce505301f7a090492219eb14f744b860b2f44de0942131c8aeda4e5e011ac3a7d12.18803a781793c1d62b5d0a792130fc1d','AQILLA PUTRI ARISMA','employee','3321046707060001','-','-','Shift 1',NULL,0,'089678189352'),
+(20,NULL,'3311010508980005','f75567516ef059f9578ee135912233f5dfba7b24e6ed8fe5c227fb82f2f9edb1592dcd45918ec1fd87e8b4727a844e098b04c787c8815f05ab7d92a286e13a80.0c3ee8b9989435c44305174fb443cf83','BIMA DWI ENGGAR PRASETYA','employee','3311010508980005','-','-','Shift 1',NULL,0,'085720525882'),
+(22,NULL,'3215014412050002','90200370748be3d6cd8cfc90645ae0f6ce6b4251f79b6965ab580dd3d4b1e88d7e40ee46edfe8a832eca36e9040264e62f6027fa13c08a709848c60de5fbf084.3ecacb3a7a27ba5ea0c0143c70c4f187','DITA ASTUTI','employee','3215014412050002','-','-','Shift 1',NULL,0,'085863107296'),
+(23,NULL,'3175096411020006','dd6bb646080b86310e9f451f273c8fb5a30310604edc822f405c43699f2768f09a4b3724610a6d3f5931333b71efa15b984dcae556893e9e0b3e16a8ece27641.1e94a6af7e1d742206086ba63b91ccf7','DWI NOVIYANTI','employee','3175096411020006','-','-','Shift 1',NULL,0,'085162942502'),
+(24,NULL,'3321132309940002','e953cc5ac4c3454fc2713db21c008c48dc06b41896ebc873388946d95f4dc6d74d7003c7f116becb7fb80906f1a430176c5e23d652f68aee42e5bccae6f6994d.fb3ca788fb583d51ddfe45556e437d08','EDI SAPUTRO','employee','3321132309940002','-','-','Shift 1',NULL,0,'088216168356'),
+(25,NULL,'3321130804790005','57008dff9e2f2adb932a0c7a197d088a61b58e14b4918e20dda365cacc17e1d8e3810a89c7e7f6ba13e5957415c7f055dafd3a4ac4ca761614980b99035c3e52.52ac9f03a0a146664957cd31edcb372f','FAHRURROZI','employee','3321130804790005','-','-','Shift 1',NULL,0,'087722797801'),
+(26,NULL,'3321131107050002','196b4a47a46780dd1b21bc4b8f1f2b4757ffed4ad1b948d8078f63aa645a36b15bb798636a076e3a602a5feebd36656ee3ec1e3776076046b7d2cb0c05f541b6.65a68017fa3fbbc98080335cbf3a0686','FAIS FAHRUDIN','employee','3321131107050002','-','-','Shift 1',NULL,0,'088211844617'),
+(27,NULL,'3321131607790006','5d0151d636790ed042dc2303b7147587079b9a7de9135b0d10c8034cb5b25dc85ffa9cbf2825cf2de0c453bf5505d2890c2b14ff2528683ae019ff164a2a394f.3a85ddf8e35ff94a1287d5a51eb2c040','FATHUR ROHMAN','employee','3321131607790006','-','-','Shift 1',NULL,0,'085702156065'),
+(28,NULL,'3321131511950001','c598fcca3ed5487a20e5a8e0d6526fe63179c3f78d4f04cdd34c5b4c7c02e61144f6fe239c1027cb7aa1f89b6b6ba71a7388e8efa399032868eda3c023513dc1.a70f4967757768146b8850497cf5b34e','FATUR ROHMAN','employee','3321131511950001','-','-','Shift 1',NULL,0,'085715837761'),
+(29,NULL,'3215240702010006','18fd7ec51a4523a4900aa4c5b3843a7e72ea2ed16c66c9c359ec9ce04d881bc5265448adcae513eb33f212efd534ecd45c53d486bbad67675c8eba6939d576e1.49f4f500f75b600ec65a885062fcf173','HAMZAH HAZ','employee','3215240702010006','-','-','Shift 1',NULL,0,'089630242085'),
+(30,NULL,'3321131709890002','6a13830b503c315ce7b2cfb80e9809c5ebde989b98f1635d2715378aa2bb48c4699b9cd447ead59f604ea477796663d0945a1c009e89afc4823780ccd7c9cc17.72a0775eaea5bf9561835f5aa44cd6cb','HERI GUNAWAN','employee','3321131709890002','-','-','Shift 1',NULL,0,'089636142758'),
+(31,NULL,'3321132209040004','cbc49c7285677c9c464d3c9fcbbc3e36be9ec36220e07859a693ab47517f8828ca709ee62fc9ce37bbdd2a7758b2b57991cc3c7af50a6acbe489baabe09c7040.7a1000dd246fc4e4312d56befdd527b2','IHSAN AMALUL HAQ','employee','3321132209040004','-','-','Shift 1',NULL,0,'088224212323'),
+(32,NULL,'3215013006960002','0fb24146b8980481e91f7c7d3d4743156ff28f9a9c9ec89b2e67beae2c880093711c70776e33b6827bc201bdb10ef8a0c70a03133079e78e41634f0578064b51.b18c5fb02dcd373cf43583921c2cb827','IMBRAN YUDISTIRA','employee','3215013006960002','-','-','Shift 1',NULL,0,'089530942071'),
+(33,NULL,'3321130712740002','fecadeff2911dddada53f42d33ca30293a66eabaf1b3f537486d51c408c8c7b97783958845c30d6f644a71b21b6891f52907a0125e8072b2a009ecceeaac7384.936f012863437d9c28c88f19fb92d303','JAMIL MISBAH','employee','3321130712740002','-','-','Shift 1',NULL,0,'082134321729'),
+(34,NULL,'3215132608980002','e90141ddc6352c096e93d4fbb45d3522b27a008501bd6ff55f4aa11b5cb34709a2275d3ba6c7207f62023247dc282773b193e63321f93ffee7ca45e67d42f12f.f30b148299f681958f1413c2f3262347','JOYO','employee','3215132608980002','-','-','Shift 1',NULL,0,'0859 5473 6107'),
+(35,NULL,'3321131208930001','a6968f0e802edd7f2df5aee84e7642208b101cf98e24d5a3fa0fa5d5e7de2a7891e73e2c7b5fb9155fe8365205ea2ce417878be3834badd5bfee67ecd3b45767.690e2c929fa766d0e4dccbaedaff9ca7','KHOIRUL IMAN','employee','3321131208930001','-','-','Shift 1',NULL,0,'081213824241'),
+(36,NULL,'3174106007960001','320dd84ec4aae6d569ff3df600b11d324f1c00837d214cf409897bc7b04bac1ac1d1acf79cfa232aa9279dfbf1cbf315492b4c114ac69bf193037340101f0826.8966e3ca17e207b189c299f17bb2e502','KIKI FATMALA','employee','3174106007960001','-','-','Shift 1',NULL,0,'082230475504'),
+(37,NULL,'3215200512970001','ae8fcae539a50d9160d1b78999e6f271e01973b0f1bae59287d0108a206aba9d20c5aa642a514cbf7d4d78b6e5ead998dabc6e6fe783b70ba9eeb84e475d7aed.60e45f41b9724400989273ac45004d31','KUSDI HIDAYAT','employee','3215200512970001','-','-','Shift 1',NULL,0,'085883338826'),
+(38,NULL,'3321130112830003','01c7491770c50c41623f3636a17d10ee597ef612b42bf2969d63a122327d95cbfba3b225df40a5f90139f5ff5782aa1cba877d7758aa955f7aa92c7a44f92527.da187a5a33f4ffb6ccb64434f70a0dd1','MAHMUDI','employee','3321130112830003','-','-','Shift 1',NULL,0,'081212837254'),
+(39,NULL,'3320031010890002','dd155e4ce0f71f804194e2166a3cb3c7fa8b409144f3b56a75a2cf5356e812b087dc81613e50e2e4de720596d01d4e6ed2defc6cb028e3393cb0b10e6fda4923.945c9474ca79846b62bb55728afb84fd','MOHAMAD SODIKIN','employee','3320031010890002','-','-','Shift 1',NULL,0,'081285369678'),
+(40,NULL,'3321130602770004','2f8e24e3608f483ce0027b11d4bd7e8840c603ad015481806a8501ac7ea96a83c5185941bd4b284ea10145ea68fb412fb95a29777df6d8ee20d7238bf8798e8b.18af07e118ee9fc97b4b7555741ba52c','MUHAMMAD AHSAN','employee','3321130602770004','-','-','Shift 1',NULL,0,'085780308263'),
+(41,NULL,'3320031707060001','b49a6a54148d0ec4cf47413a2973d1bb550978271e57771cf66d1bbc5105f61cd1f937486f2f0497d99b580908082fda1187332647efb93593e21b468c1e34da.e96097f13fc6cacc984705ab39497107','MUHAMMAD AJI WIJAYANTO','employee','3320031707060001','-','-','Shift 1',NULL,0,'082228956264'),
+(42,NULL,'3321130104960003','6fe4bcadc3cd66f8b6b1d95fb9f7aa335c21f6fe0f9a882b3e7dbcefeccb462645f629d620841fc2789234967a7f5e86cceca2149a10e9283e18140ef4f57bed.c16a4a6829910b185426d515323bfeb6','MUHAMMAD ARDIAN AKBAR','employee','3321130104960003','-','-','Shift 1',NULL,0,'085779566325'),
+(43,NULL,'3321132311000003','304ccd80f163e83d1ae5c27db370f21bba7e53f3b5e14edd3c5f2fddb13e262d63c4722f3920f6eceee11670a735de2ba2730d3ec979043fa178e18925730008.c533f555ccb0ed8d5cd072a53289074f','MUHAMMAD FAISAL ARIYANTO','employee','3321132311000003','-','-','Shift 1',NULL,0,'085861088365'),
+(44,NULL,'3321130203760003','e657083169600778225654406a2b9c1fe9cb41c7b469ea1ddf0eb662bdcbec2c8d7a7ac6b7c1952967e5556dce64478b3bc71313b0aa673dd32ba373e2819465.d942d82859406dd035c5d17bdc93ef4d','MUHAMMAD HARIS','employee','3321130203760003','-','-','Shift 1',NULL,0,'082111433677'),
+(45,NULL,'3321130601020005','05d9d54018c4d761439878c74df7d5be824c086159ce028231dbe95cb81bc053d52e37e47ab3b1a9942bc52a2cfa4b1742eaa675bf61bb3c3f333bd099aca173.4c40b782700ff51e4b57df02f2c72520','MUHAMMAD IBNU ADITYA','employee','3321130601020005','-','-','Shift 1',NULL,0,'082311922533'),
+(46,NULL,'3321131512010005','aa1f3fb6d705e80429a6346a0d1616ac5349a29a1e4a952472489a630aa289157c5c674c885dd9bb6d249fdc4e94176a8a4307020c8e05377deef7b7d651ec95.017653595d25c6251cbb8656a2f96ab7','MUHAMMAD RIFQI','employee','3321131512010005','-','-','Shift 1',NULL,0,'085877639956'),
+(47,NULL,'03321130410410990004','879b56349afd57e86bac3cc479453e67fbb2b7ff6717a8bb5629069cfc1854cc5cb64eddcd3f69f8cbb9efa1d33a33a41ab1a2c3d79172f7553c51cfd1516392.17de5c05ffe65d2b0757172c04e03c0b','MUHAMMAD ZAINUDDIN','employee','03321130410410990004','-','-','Shift 1',NULL,0,'081282307465'),
+(48,NULL,'3671060505770006','118c2fd22e9a68b6970cf5fd54343e6e82b6c1c9d868df48a20f2edd0e5adddcb1e4f8a12da3ece4ebf8abcf33ab223280ba7471c59c83dd122ffe11f37049b4.c17e1791009a6e0638e693d7b63a4c8b','MUSROIN','employee','3671060505770006','-','-','Shift 1',NULL,0,'087786482849'),
+(49,NULL,'3215045810060002','1b383c981fe777f24cc4598ff5f85fed7c4349eb26cc5a3282fdd805322eb7c61079e5b7183cfc44fcb7f82711b306dbcaeb19e03577a145ad5de88309765df0.e8744b85d2b0464564035a0d9cf917e4','NADYA ALISYA PUTRI ANANDA','employee','3215045810060002','-','-','Shift 1',NULL,0,'089671429266'),
+(50,NULL,'3175044405970006','1a531c5c03d18b0fff5c281ff4c2fd827ae09ce77714c32e1836b765651d8d03297dfa61d978bffa86344ca62005859480cc0490b177b53f7710fb2d0a5fb61c.ebea50a4f5d676b6c22066a89c671736','NUR AMALIYAH KHUSNAH','employee','3175044405970006','-','-','Shift 1',NULL,0,'082135629774'),
+(51,NULL,'3601252311760002','c79ec29f748901d453b7a1ad023024ac8ef31f61f8038c06f7e2ee989529c655547e43006a1a108fac74c0adea2272ab70af60ed80d245fc1f1e4824996ca667.a38f5149f3616d5485fa839c4af94186','NURHADI','employee','3601252311760002','-','-','Shift 1',NULL,0,'085921381978'),
+(52,NULL,'3216125910060005','b45581c77fa6315a67c338cc0e768207e4c127ffdda50bb3814c71f9eecfb6e1f8d4e1e4a9b355193df1cb796cee6ad9b252ee8c286b9cb000ec97eccde07848.653a1588cc738e53c04369e8d608ab21','NURHOLISAH','employee','3216125910060005','-','-','Shift 1',NULL,0,'0895343273273'),
+(53,NULL,'3215016801020006','c870584f301515056612314026da317e2669560d916316b62c31d6001ca611bce9dfc226e4c76b6e5090ad6297ab2d7f4d853968a9550a4b2b7d7f4955ea1350.4de4fa6fcca92e68708a2e08a7df2105','PUTRI SINDI GUNAWAN','employee','3215016801020006','-','-','Shift 1',NULL,0,'081399515960'),
+(54,NULL,'3321132910030005','5a8984fe5dd424d197fb0b88d16fa2a22d4cc6a83aecf0b508e5e979cc91e9188516dff5aacf214d108c132dd0504567d0223e2e5794995a043375515d737f22.56aaa9c259f93939a289e74f50d53bab','RAMADHAN RAFLI NUGROHO','employee','3321132910030005','-','-','Shift 1',NULL,0,'085712447030'),
+(55,NULL,'7501220708020001','1ddbcea57dd9d5f806fb920d3ac6f18ffec2151c9825216dceca10842769f0fa62912b08fc6a158b3d00a7cbf7ec13c5ff808f409869108f10fd3cda8567ed1e.c0eaa1d3cd09671c343cc81a224690fd','RICKY VAN GOBEL','employee','7501220708020001','-','-','Shift 1',NULL,0,'081226470809'),
+(56,NULL,'3175097012020010','41c329d37186177380b6d945ac023c5a7080320891063a6640b43ffc1c5ce0d0d598936e246c6b5d9363e5afb90beb6ec27cec58c9b127170970e44b0d14e253.1f774b9478e97c1992a63e9d8dadcba9','ROSA NURUL H','employee','3175097012020010','-','-','Shift 1',NULL,0,'085967275927'),
+(57,NULL,'3215260104930004','557eb67827649b9786c9d980a4211987e6daa117239d48c3c99fcbd38dafc143e6a783c972ba58e23380d14c17f09a2d7359a04af0f693239e8554dccc21c7be.fc6c68b9b5e6ad9f6a2655a62493aee5','RYADH FITRAYANA','employee','3215260104930004','-','-','Shift 1',NULL,0,'089519012121'),
+(58,NULL,'3216120512990007','0c12c0c3e7200d9cd9e147f84e9bea3cf33cde1b2a740a2b994eee172bcb13e26a9f7890dfcd80bb2b46e33698fcc0b18fc4124752d81e30cae61e0907d15945.580a656f06bceed10b363f1f6949b813','SAEFUL BAHRI','employee','3216120512990007','-','-','Shift 1',NULL,0,'08881184421'),
+(59,NULL,'3175042607930007','72454e78475d947fdb9bd013af889d8a36f74e8b1f741dc81d56ab50deaedbecd2326d883ee1ed9c61364f417889b76ca5c174430715f5fcff50604d17b59aa2.1a0549b8f016526ce780f198a2f96cf2','SAIFULAMIR','employee','3175042607930007','-','-','Shift 1',NULL,0,'088991606166'),
+(60,NULL,'3321132509810001','f84eee6ca04907d3f5462f157eb5c6a6934cdab33213ea2775fa5ca1dc42f41e90b9a1d9523bf3ffcd7c18fd7419a27baabb80fc346986845903e2303d3c61c4.86d0d7c04ef310b318763314c808a1b6','SAIFULLAH','employee','3321132509810001','-','-','Shift 1',NULL,0,'081285754372'),
+(61,NULL,'332113250487002','a0182360b1f2de9d5db148c0fb2256143d5337d68b843db3c5e9da0aa0488386ebb5fd3c3bf1d212671af902873bc96eadb6abffd3f866b74b5060bca15d904d.aea3814897f2b7008cf0c654e375960a','SASMINTO','employee','332113250487002','-','-','Shift 1',NULL,0,'088212705628'),
+(62,NULL,'337106470050001','9c827ecbfc29acd7d9e1449ad18b04736914be022a7df4da55bf88152089712335f403de379a3bfc195cc811efb1d26aa0e6212306511c363245702452afbfdc.1006b1beb31a0d2e8399a27cfc61a38c','SILVIA RAMADHANI PUTRI','employee','337106470050001','-','-','Shift 1',NULL,0,'08895467482'),
+(63,NULL,'3206064701030003','4db83e537088c5eb1e10822538fdcf4c3b829df3e94c09952881ddbaee3cba2b1c038eaabf78fd5a8e827c2e2dcd6e02522afb934ad48e4748b899d196a09955.76a3edeb569455e1c40c935d561d41f0','SITI AZZAHRA NURULAENI','employee','3206064701030003','-','-','Shift 1',NULL,0,'082113899220'),
+(64,NULL,'3216136006060004','6bfc85cec160be4bde92904bf84439fffae987ec5cde1a186bc08ce0f640fe20941355201587e294b5ccaa7028d8e33105c5fc84f0cb73aa8563ccc680929a91.55a055012d3095420289168f0e811088','SITI HALIMAH','employee','3216136006060004','-','-','Shift 1',NULL,0,'085814502166'),
+(65,NULL,'3215196711020005','a96a584793613f01cc108905c6b8387bffc816be523695ce70ad9b20f676796fec7d7bf43342b28625729eae47ba5f0c0eee8e774ac3d247ae12c9e890920045.c1be8b0c6ac4a26937c844c22a23d24a','SUCI NOVIRA RAMADHANI','employee','3215196711020005','-','-','Shift 1',NULL,0,'081219611497'),
+(67,NULL,'3321132309830001','6d7f9fe85a0eb548a2552a7857424febd8dc2346bd28154fb96bfc958fa904de8637dc7635e35ef5bcdddea4dd580aeecd9b0622741acbbc626b9a1369805fb1.83c0099d9c165878cc868fc31e654599','TURMUDI','employee','3321132309830001','-','-','Shift 1',NULL,0,'85217584379'),
+(68,NULL,'3321131203920001','dce38e363572723a8b755ba40b7c6fb984ee3a371fdcbfa9f9c4766b42010efd44364d053b9ea6c585b4a340d976f3a93397ca6c6fcbc72faacb9298349bec7e.a2c629b860806c4d3088dc2ba5bc00f3','ULUM HIDAYAT','employee','3321131203920001','-','-','Shift 1',NULL,0,'085730437543'),
+(69,NULL,'3215014304040006','78607842531b29bf6d741fbcea47eb621533bf856fb75fef87410996e712e872909fd38a1ffc1335a8a61557d370c80e1a1239adbe2cfb2796915c85af7cae41.67ed8258bb2755f6c2bb56a636b5ff57','VIRRA LAURA JAMALUDIN','employee','3215014304040006','-','-','Shift 1',NULL,0,'089530906321'),
+(70,NULL,'3321131602710003','f3de36d446d78c1c4bf4051a0e15607570b0c6e7bae9261f0d1c071d09e3d64651a51f88c6ea8185b9627846ca18eb823cf1e3666a46c4dcfc364f516208f849.64c397803cd2dbb9eb4fb76fa560edd7','YASROR','employee','3321131602710003','-','-','Shift 1',NULL,0,'081226878909'),
+(71,NULL,'3374021307020002','a7ae63e093458bf5077d5620a3a213440c48a6b8aaf9f561e08fcca1a773969fff8ab4535b7e859f8e46110f412ef0f228234f0ef91e78226c5dc78efb619e89.00d9c6ec3f43f4c62e9a67810218e2bf','YOGA MANDALA PUTRA','employee','3374021307020002','-','-','Shift 1',NULL,0,'+62882006484192'),
+(72,NULL,'3215176812040002','dc9ed356c6e1c3b072812d3a1a7b5c256cbdfa0a5fa9ca1ee6231b1ed4db4e216c98be313621d347421c76e64d940feb26bb52ad6990698b3f916036ff238bf3.fd953463a6c23ad198e66b20d03f1560','YULIA NINGRAT','employee','3215176812040002','-','-','Shift 1',NULL,0,'083893561665'),
+(74,NULL,'3471066606990002','e4fb94732ebfa9fd7733b6135f60899cf17bc98b2e6ab4afd452e1af50ae133c922b8380dc5e2b870df6310c6928b7c607a8bb162bbeaf9cc3015291ddf28015.cda28c383ef9b45c1616fe79e0a7f188','YUNIAR MIMA KUSUMANINGTYAS','employee','3471066606990002','-','-','Shift 1',NULL,0,'08176676961'),
+(75,NULL,'3320117103060001','dabe6ea19fe97d1fc5666eafe78d0ac058a7baf341bf3d44343fac0840ed7f8dc78b6e83af15e127c3475938b51c06882670f4be30b9b6ba4cb5db4b9db7c613.d6c9f20d7ab34956c03cb72fac60101a','YUSTI AULIA PRASTIWI','employee','3320117103060001','-','-','Shift 1',NULL,0,'089501264300'),
+(76,NULL,'12345','93bcf238f99b464e75f58748e8145b28a3df2d1f1465b22325ce193c9f59677dfd56a4c2c9d8d34f69d37a8c620d25776199cf1fb638142fd636837093521935.4cb0aaf027d61815ad5b32648987ccd3','TESTING','employee','12345','Cabang A','Pramuniaga',NULL,NULL,0,'12345678');
+/*!40000 ALTER TABLE `users` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2026-03-10 12:31:15
