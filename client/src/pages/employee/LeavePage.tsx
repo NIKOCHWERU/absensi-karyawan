@@ -23,10 +23,12 @@ export default function LeavePage() {
 
     const { data: balance, isLoading: isLoadingBalance } = useQuery<{ used: number, remaining: number, limit: number }>({
         queryKey: [api.leave.balance.path],
+        refetchInterval: 5000,
     });
 
     const { data: requests, isLoading: isLoadingRequests } = useQuery<LeaveRequest[]>({
         queryKey: [api.leave.list.path],
+        refetchInterval: 5000,
     });
 
     const mutation = useMutation({

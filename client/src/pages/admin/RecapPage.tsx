@@ -46,15 +46,17 @@ export default function RecapPage() {
 
     const { data: users } = useQuery<User[]>({
         queryKey: ["/api/admin/users"],
+        refetchInterval: 5000,
     });
 
     const { data: allAttendance } = useQuery<Attendance[]>({
         queryKey: ["/api/attendance"],
+        refetchInterval: 5000,
     });
 
     const { data: complaintsStats } = useQuery<{ pendingCount: number }>({
         queryKey: ["/api/admin/complaints/stats"],
-        refetchInterval: 10000,
+        refetchInterval: 5000,
     });
 
     const [reportType, setReportType] = useState<"daily" | "weekly" | "monthly">("daily");

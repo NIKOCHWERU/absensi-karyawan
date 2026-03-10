@@ -23,6 +23,7 @@ export default function InfoPage() {
 
   const { data, isLoading } = useQuery<Announcement[]>({
     queryKey: ["/api/announcements"],
+    refetchInterval: 5000, // Auto refresh every 5 seconds
   });
 
   const announcements = Array.isArray(data) ? data : [];

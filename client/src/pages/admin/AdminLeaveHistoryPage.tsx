@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { Loader2, ArrowLeft, Calendar, User as UserIcon, Search, Filter , Image as ImageIcon} from "lucide-react";
+import { Loader2, ArrowLeft, Calendar, User as UserIcon, Search, Filter, Image as ImageIcon } from "lucide-react";
 import { api } from "@shared/routes";
 import { useLocation } from "wouter";
 import { useState } from "react";
@@ -17,10 +17,12 @@ export default function AdminLeaveHistoryPage() {
 
     const { data: users } = useQuery<User[]>({
         queryKey: ["/api/admin/users"],
+        refetchInterval: 5000,
     });
 
     const { data: requests, isLoading } = useQuery<LeaveRequest[]>({
         queryKey: [api.admin.attendance.leave.list.path],
+        refetchInterval: 5000,
     });
 
     const getUserName = (userId: number) => {

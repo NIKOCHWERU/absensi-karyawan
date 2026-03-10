@@ -42,11 +42,13 @@ export default function ComplaintPage() {
 
     const { data: complaints = [], isLoading } = useQuery<Complaint[]>({
         queryKey: ["/api/complaints"],
+        refetchInterval: 5000,
     });
 
     const { data: complaintPhotos = [] } = useQuery<ComplaintPhoto[]>({
         queryKey: [`/api/complaints/${selectedComplaint?.id}/photos`],
         enabled: !!selectedComplaint,
+        refetchInterval: 5000,
     });
 
     const submitMutation = useMutation({

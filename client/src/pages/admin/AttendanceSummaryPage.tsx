@@ -29,10 +29,12 @@ export default function AttendanceSummaryPage() {
 
     const { data: users } = useQuery<User[]>({
         queryKey: ["/api/admin/users"],
+        refetchInterval: 5000,
     });
 
     const { data: allAttendance } = useQuery<Attendance[]>({
         queryKey: ["/api/attendance"],
+        refetchInterval: 5000,
     });
 
     const [reportType, setReportType] = useState<"daily" | "weekly" | "monthly">("daily");

@@ -5,6 +5,7 @@ import { Announcement } from "@shared/schema";
 export function useAnnouncements() {
   const { data: announcements, isLoading } = useQuery<Announcement[]>({
     queryKey: ["/api/announcements"],
+    refetchInterval: 5000,
   });
 
   const createMutation = useMutation({

@@ -35,12 +35,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     // Polling counts for notifications in sidebar
     const { data: complaintsStats } = useQuery<{ pendingCount: number }>({
         queryKey: ["/api/admin/complaints/stats"],
-        refetchInterval: 10000,
+        refetchInterval: 5000,
     });
 
     const { data: leaveRequests } = useQuery<{ status: string }[]>({
         queryKey: ["/api/admin/attendance/leave/list"],
-        refetchInterval: 10000,
+        refetchInterval: 5000,
     });
 
     const pendingLeaveCount = leaveRequests?.filter((r) => r.status === 'pending').length || 0;

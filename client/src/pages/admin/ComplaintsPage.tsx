@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
-import { Loader2, ArrowLeft, Clock, CheckCircle, AlertCircle, Eye, User , Image as ImageIcon} from "lucide-react";
+import { Loader2, ArrowLeft, Clock, CheckCircle, AlertCircle, Eye, User, Image as ImageIcon } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { motion } from "framer-motion";
@@ -42,15 +42,18 @@ export default function AdminComplaintsPage() {
 
     const { data: complaints = [], isLoading } = useQuery<Complaint[]>({
         queryKey: ["/api/admin/complaints"],
+        refetchInterval: 5000,
     });
 
     const { data: allUsers = [] } = useQuery<UserInfo[]>({
         queryKey: ["/api/admin/users"],
+        refetchInterval: 5000,
     });
 
     const { data: complaintPhotos = [] } = useQuery<ComplaintPhoto[]>({
         queryKey: [`/api/complaints/${selectedComplaint?.id}/photos`],
         enabled: !!selectedComplaint,
+        refetchInterval: 5000,
     });
 
     const statusMutation = useMutation({

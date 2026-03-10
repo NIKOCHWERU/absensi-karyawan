@@ -32,11 +32,12 @@ export default function AttendanceHistoryPage() {
 
     const { data: attendanceHistory, isLoading: isLoadingAttendance } = useQuery<Attendance[]>({
         queryKey: ["/api/attendance"],
-        refetchInterval: 10000,
+        refetchInterval: 5000,
     });
 
     const { data: users } = useQuery<User[]>({
         queryKey: ["/api/admin/users"],
+        refetchInterval: 5000,
     });
 
     // Filter by selected date

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { Loader2, Check, X, ArrowLeft, Calendar, User as UserIcon, MessageSquare, Info , Image as ImageIcon} from "lucide-react";
+import { Loader2, Check, X, ArrowLeft, Calendar, User as UserIcon, MessageSquare, Info, Image as ImageIcon } from "lucide-react";
 import { api } from "@shared/routes";
 import { useLocation } from "wouter";
 
@@ -16,10 +16,12 @@ export default function AdminLeavePage() {
 
     const { data: users } = useQuery<User[]>({
         queryKey: ["/api/admin/users"],
+        refetchInterval: 5000,
     });
 
     const { data: requests, isLoading } = useQuery<LeaveRequest[]>({
         queryKey: [api.admin.attendance.leave.list.path],
+        refetchInterval: 5000,
     });
 
     const mutation = useMutation({
@@ -101,9 +103,9 @@ export default function AdminLeavePage() {
                                         </div>
                                     </div>
                                     <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg border ${req.status === 'approved' ? 'text-green-600 bg-green-50 border-green-100' :
-                                            req.status === 'rejected' ? 'text-red-600 bg-red-50 border-red-100' :
-                                                req.status === 'cancelled' ? 'text-gray-600 bg-gray-50 border-gray-100' :
-                                                    'text-orange-600 bg-orange-50 border-orange-100'
+                                        req.status === 'rejected' ? 'text-red-600 bg-red-50 border-red-100' :
+                                            req.status === 'cancelled' ? 'text-gray-600 bg-gray-50 border-gray-100' :
+                                                'text-orange-600 bg-orange-50 border-orange-100'
                                         }`}>
                                         {req.status === 'approved' ? 'Disetujui' :
                                             req.status === 'rejected' ? 'Ditolak' :
