@@ -27,16 +27,26 @@ export function BottomNav() {
 
   useEffect(() => {
     if (location === '/info') {
-      const now = Date.now();
-      localStorage.setItem('lastReadInfoTime', now.toString());
-      setLastReadTime(now);
+      let maxTime = Date.now();
+      // Ensure we account for future-dated announcements due to client-server time discrepancy
+      if (announcements && announcements.length > 0) {
+        const latestCreatedAt = Math.max(...announcements.map(a => new Date(a.createdAt).getTime() || 0));
+        if (latestCreatedAt > maxTime) {
+          maxTime = latestCreatedAt;
+        }
+      }
+      localStorage.setItem('lastReadInfoTime', maxTime.toString());
+      setLastReadTime(maxTime);
     }
-  }, [location]);
+  }, [location, announcements]);
 
   // 1. Info badge: show total active announcements that are newer than lastReadTime
-  const infoBadgeCount = announcements
-    ? announcements.filter(a => new Date(a.createdAt).getTime() > lastReadTime).length
-    : 0;
+  // Hide badge entirely if we are currently on the Info tab
+  const infoBadgeCount = location === '/info'
+    ? 0
+    : (announcements
+      ? announcements.filter(a => new Date(a.createdAt).getTime() > lastReadTime).length
+      : 0);
 
   // 2. Complaint badge: show pending complaints for the current user
   const complaintBadgeCount = complaints
