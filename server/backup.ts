@@ -2,6 +2,7 @@ import { exec } from "child_process";
 import fs from "fs";
 import path from "path";
 import "dotenv/config";
+import cron from "node-cron";
 
 const backupsDir = path.join(process.cwd(), "backups");
 
@@ -87,15 +88,27 @@ export const importBackup = (filePath: string): Promise<boolean> => {
 };
 
 export const initAutoBackup = () => {
-    // Backup every 30 minutes
-    const INTERVAL = 30 * 60 * 1000;
+    // Backup 5 times a day:
+    // 1. 00:00 (Midnight)
+    // 2. 06:00 (Morning)
+    // 3. 12:00 (Noon)
+    // 4. 18:00 (Evening)
+    // 5. 23:59 (End of day)
 
-    setInterval(() => {
-        console.log("[AutoBackup] Starting scheduled database backup...");
-        createBackup().catch(err => console.error("[AutoBackup] Failed:", err));
-    }, INTERVAL);
+    const scheduleBackup = (cronTime: string, label: string) => {
+        cron.schedule(cronTime, () => {
+            console.log(`[AutoBackup - ${label}] Starting scheduled database backup...`);
+            createBackup().catch(err => console.error(`[AutoBackup - ${label}] Failed:`, err));
+        });
+    };
+
+    scheduleBackup('0 0 * * *', 'Midnight');
+    scheduleBackup('0 6 * * *', 'Morning');
+    scheduleBackup('0 12 * * *', 'Noon');
+    scheduleBackup('0 18 * * *', 'Evening');
+    scheduleBackup('59 23 * * *', 'End of Day');
 
     // Run one immediately on startup
-    console.log("[AutoBackup] Starting initial database backup...");
+    console.log("[AutoBackup] Starting initial database backup on startup...");
     createBackup().catch(err => console.error("[AutoBackup] Initial backup failed:", err));
 };

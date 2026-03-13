@@ -800,22 +800,71 @@ export async function registerRoutes(
     });
   });
 
-  app.post("/api/admin/backup", async (req, res) => {
+  app.get(api.admin.backup.list.path, async (req, res) => {
+    if (!req.isAuthenticated() || req.user!.role !== 'admin') return res.sendStatus(401);
+    try {
+      const backupsDir = path.join(process.cwd(), "backups");
+      if (!fs.existsSync(backupsDir)) {
+        return res.json([]);
+      }
+      
+      const files = fs.readdirSync(backupsDir)
+        .filter(f => f.endsWith('.sql'))
+        .map(f => {
+          const stats = fs.statSync(path.join(backupsDir, f));
+          return {
+            name: f,
+            size: stats.size,
+            createdAt: stats.birthtime.toISOString()
+          };
+        })
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        
+      res.json(files);
+    } catch (error: any) {
+      console.error("List Backups Error:", error);
+      res.status(500).json({ message: "Gagal mengambil daftar backup" });
+    }
+  });
+
+  app.post(api.admin.backup.create.path, async (req, res) => {
     if (!req.isAuthenticated() || req.user!.role !== 'admin') return res.sendStatus(401);
 
     try {
       const fileName = await createBackup();
-      res.json({ success: true, fileName, message: `Backup berhasil dibuat: ${fileName}` });
+      res.status(201).json({ fileName, message: `Backup berhasil dibuat: ${fileName}` });
     } catch (error: any) {
       console.error("Manual Backup Error:", error);
-      res.status(500).json({ success: false, message: "Gagal membuat backup database" });
+      res.status(500).json({ message: "Gagal membuat backup database" });
     }
   });
 
-  app.get("/api/admin/backups/download/:fileName", async (req, res) => {
+  app.delete(api.admin.backup.delete.path, async (req, res) => {
     if (!req.isAuthenticated() || req.user!.role !== 'admin') return res.sendStatus(401);
 
-    const fileName = req.params.fileName;
+    const fileName = req.params.name;
+    if (!fileName.match(/^backup-.*?\.sql$/)) {
+      return res.status(400).json({ message: "Format nama file tidak valid" });
+    }
+
+    const filePath = path.join(process.cwd(), "backups", fileName);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: "File backup tidak ditemukan" });
+    }
+
+    try {
+      fs.unlinkSync(filePath);
+      res.json({ message: "Backup berhasil dihapus" });
+    } catch (error: any) {
+      console.error("Delete Backup Error:", error);
+      res.status(500).json({ message: "Gagal menghapus file backup" });
+    }
+  });
+
+  app.get(api.admin.backup.download.path, async (req, res) => {
+    if (!req.isAuthenticated() || req.user!.role !== 'admin') return res.sendStatus(401);
+
+    const fileName = req.params.name;
     // Validate filename to prevent path traversal
     if (!fileName.match(/^backup-.*?\.sql$/)) {
       return res.status(400).send("Invalid backup file name");

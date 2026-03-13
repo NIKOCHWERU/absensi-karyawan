@@ -7,3 +7,5 @@ vite.config.ts.*
 .env
 .env
 node_modules
+backups/
+uploads/

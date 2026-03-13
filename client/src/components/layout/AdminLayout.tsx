@@ -179,6 +179,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                     <span className="truncate">Ringkasan Absensi</span>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton
+                                    tooltip="Backup Database"
+                                    isActive={location === "/admin/backup"}
+                                    onClick={() => setLocation("/admin/backup")}
+                                    className={location === "/admin/backup" ? "bg-green-50 text-green-700 font-medium" : "text-gray-600"}
+                                >
+                                    <FileText className="h-4 w-4" />
+                                    <span className="truncate">Backup Database</span>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
                         </SidebarMenu>
                     </SidebarContent>
 

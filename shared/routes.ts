@@ -262,6 +262,48 @@ export const api = {
           },
         },
       },
+      backup: {
+        list: {
+          method: 'GET' as const,
+          path: '/api/admin/backups',
+          responses: {
+            200: z.array(z.object({
+              name: z.string(),
+              size: z.number(),
+              createdAt: z.string()
+            })),
+            401: errorSchemas.unauthorized,
+          }
+        },
+        create: {
+          method: 'POST' as const,
+          path: '/api/admin/backups',
+          responses: {
+            201: z.object({ message: z.string(), fileName: z.string() }),
+            500: errorSchemas.internal,
+            401: errorSchemas.unauthorized,
+          }
+        },
+        delete: {
+          method: 'DELETE' as const,
+          path: '/api/admin/backups/:name',
+          responses: {
+            200: z.object({ message: z.string() }),
+            404: errorSchemas.notFound,
+            500: errorSchemas.internal,
+            401: errorSchemas.unauthorized,
+          }
+        },
+        download: {
+          method: 'GET' as const,
+          path: '/api/admin/backups/:name/download',
+          responses: {
+             200: z.any(), // File stream
+             404: errorSchemas.notFound,
+             401: errorSchemas.unauthorized,
+          }
+        }
+      }
     },
   },
 };
