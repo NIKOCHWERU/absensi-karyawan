@@ -33,20 +33,20 @@ export default function InstallAppBanner() {
             return;
         }
 
-        if (chromeBased) {
-            const dismissed = localStorage.getItem("installModalDismissed");
-            if (!dismissed) {
-                // First visit — show modal after 1s delay
-                setTimeout(() => setShowModal(true), 1000);
-            } else {
-                // Previously dismissed — show FAB only
-                setShowFab(true);
-            }
-        }
-
         const handleBeforeInstallPrompt = (e: Event) => {
             e.preventDefault();
             setDeferredPrompt(e as BeforeInstallPromptEvent);
+            
+            if (chromeBased) {
+                const dismissed = localStorage.getItem("installModalDismissed");
+                if (!dismissed) {
+                    // Show modal only when prompt is ready
+                    setShowModal(true);
+                } else {
+                    // Previously dismissed — show FAB only
+                    setShowFab(true);
+                }
+            }
         };
 
         const handleAppInstalled = () => {

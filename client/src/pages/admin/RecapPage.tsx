@@ -59,7 +59,7 @@ export default function RecapPage() {
         refetchInterval: 5000,
     });
 
-    const [reportType, setReportType] = useState<"daily" | "weekly" | "monthly">("daily");
+    const [reportType, setReportType] = useState<"daily" | "weekly" | "monthly">("monthly");
 
     // Calculate Period Range
     let startDate: Date;
