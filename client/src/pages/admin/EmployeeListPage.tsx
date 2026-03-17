@@ -15,6 +15,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { AttendanceCalendar } from "@/components/AttendanceCalendar";
 import { addMonths, subMonths, format, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, addDays, getWeek, getYear, addWeeks, subWeeks } from "date-fns";
 import { id } from "date-fns/locale";
@@ -391,6 +392,7 @@ export default function AdminEmployeeList() {
                                 <TableHead>NIK</TableHead>
                                 <TableHead>Jabatan</TableHead>
                                 <TableHead>Cabang</TableHead>
+                                <TableHead>Status Data</TableHead>
                                 <TableHead className="text-right">Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -420,6 +422,15 @@ export default function AdminEmployeeList() {
                                     <TableCell className="font-mono text-gray-600">{emp.nik}</TableCell>
                                     <TableCell>{emp.position}</TableCell>
                                     <TableCell>{emp.branch}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={
+                                            emp.registrationStatus === 'approved' ? 'default' :
+                                            emp.registrationStatus === 'pending' ? 'secondary' :
+                                            emp.registrationStatus === 'rejected' ? 'destructive' : 'outline'
+                                        } className="capitalize">
+                                            {emp.registrationStatus || 'unregistered'}
+                                        </Badge>
+                                    </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex items-center justify-end gap-2">
                                             <Button

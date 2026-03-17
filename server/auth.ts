@@ -112,6 +112,8 @@ export function setupAuth(app: Express) {
 
       req.login(user, (err) => {
         if (err) return next(err);
+        
+        // Return full user object including registration status
         res.status(200).json(user);
       });
     })(req, res, next);

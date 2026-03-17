@@ -16,10 +16,10 @@ const loginSchema = z.object({
   password: z.string().optional(),
 });
 
-export default function LoginPage() {
+export default function LoginPage({ defaultRole }: { defaultRole?: "employee" | "admin" }) {
   const { login, isLoggingIn, user } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const [activeTab, setActiveTab] = useState("employee");
+  const [activeTab, setActiveTab] = useState(defaultRole || "employee");
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -71,18 +71,20 @@ export default function LoginPage() {
         </div>
 
         <Tabs
-          defaultValue="employee"
+          defaultValue={activeTab}
           value={activeTab}
           onValueChange={(val) => {
-            setActiveTab(val);
+            setActiveTab(val as any);
             form.reset({ username: "", password: "" }); // reset form when swap
           }}
           className="w-full"
         >
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="employee">Karyawan</TabsTrigger>
-            <TabsTrigger value="admin">Admin</TabsTrigger>
-          </TabsList>
+          {!defaultRole && (
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="employee">Karyawan</TabsTrigger>
+              <TabsTrigger value="admin">Admin</TabsTrigger>
+            </TabsList>
+          )}
 
           <TabsContent value="employee">
             <LoginCard

@@ -31,51 +31,48 @@ function getPhotoUrl(value: string): string {
 // Helper component for Shift Selection Modal
 function ShiftModal({
     open,
+    shifts,
     onSelect,
     onClose
 }: {
     open: boolean,
-    onSelect: (shift: string) => void,
+    shifts: any[],
+    onSelect: (shiftId: number, name: string) => void,
     onClose: () => void
 }) {
     return (
         <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
             <DialogContent className="rounded-2xl max-w-xs md:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Pilih Shift Kerja</DialogTitle>
-                    <DialogDescription className="sr-only">
-                        Pilih shift kerja yang sesuai untuk mulai melakukan absensi.
+                    <DialogTitle className="text-center text-xl">Pilih Shift Kerja</DialogTitle>
+                    <DialogDescription className="text-center">
+                        Silakan pilih shift Anda hari ini untuk mulai absensi.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="grid grid-cols-1 gap-3">
-                    <Button
-                        variant="outline"
-                        className="h-12 justify-center px-4 text-base"
-                        onClick={() => onSelect('Shift 1')}
-                    >
-                        <span className="font-bold">Shift 1</span>
-                    </Button>
-                    <Button
-                        variant="outline"
-                        className="h-12 justify-center px-4 text-base"
-                        onClick={() => onSelect('Shift 2')}
-                    >
-                        <span className="font-bold">Shift 2</span>
-                    </Button>
-                    <Button
-                        variant="outline"
-                        className="h-12 justify-center px-4 text-base"
-                        onClick={() => onSelect('Shift 3')}
-                    >
-                        <span className="font-bold">Shift 3</span>
-                    </Button>
-                    <Button
-                        variant="outline"
-                        className="h-12 justify-center px-4 text-base"
-                        onClick={() => onSelect('Long Shift')}
-                    >
-                        <span className="font-bold">Long Shift</span>
-                    </Button>
+                <div className="grid grid-cols-1 gap-3 py-4">
+                    {!shifts || shifts.length === 0 ? (
+                        <div className="text-center py-8 text-slate-400">
+                           <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                           Memuat daftar shift...
+                        </div>
+                    ) : (
+                        shifts.map(s => (
+                            <Button
+                                key={s.id}
+                                variant="outline"
+                                className="h-16 justify-between px-6 text-base border-2 hover:border-primary hover:bg-primary/5 transition-all group"
+                                onClick={() => onSelect(s.id, s.name)}
+                            >
+                                <div className="flex flex-col items-start">
+                                    <span className="font-bold text-slate-900">{s.name}</span>
+                                    <span className="text-xs text-slate-500 font-mono">{s.checkInTime} - {s.checkOutTime}</span>
+                                </div>
+                                <div className="w-8 h-8 rounded-full bg-slate-100 group-hover:bg-primary/10 flex items-center justify-center">
+                                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-primary" />
+                                </div>
+                            </Button>
+                        ))
+                    )}
                 </div>
             </DialogContent>
         </Dialog>
@@ -94,7 +91,11 @@ export default function EmployeeDashboard() {
 
     // Shift Selection State
     const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
-    const [selectedShift, setSelectedShift] = useState<string | null>(null);
+    const [selectedShiftId, setSelectedShiftId] = useState<number | null>(null);
+
+    const { data: shiftList } = useQuery<any[]>({
+        queryKey: ["/api/shifts"],
+    });
 
     // Push Notifications State
     const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unavailable'>(
@@ -253,27 +254,25 @@ export default function EmployeeDashboard() {
         setIsCameraOpen(true);
     };
 
-    const handleShiftSelect = (shift: string) => {
-        setSelectedShift(shift);
+    const handleShiftSelect = (shiftId: number, shiftName: string) => {
+        setSelectedShiftId(shiftId);
         setIsShiftModalOpen(false);
+
+        const shiftData = shiftList?.find(s => s.id === shiftId);
+        if (!shiftData) return;
 
         const now = new Date();
         const hour = now.getHours();
         const minute = now.getMinutes();
         const timeInMinutes = hour * 60 + minute;
 
-        let isLate = false;
-        if (shift === 'Shift 2') {
-            isLate = timeInMinutes > 720; // 12:00
-        } else if (shift === 'Shift 3') {
-            isLate = timeInMinutes > 900; // 15:00
-        } else {
-            // Shift 1 or Long Shift
-            isLate = timeInMinutes > 420; // 07:00
-        }
+        const [sHour, sMinute] = shiftData.checkInTime.split(':').map(Number);
+        const thresholdMinutes = sHour * 60 + sMinute;
+
+        const isLate = timeInMinutes > thresholdMinutes;
 
         const wrappedClockIn = async (data: any) => {
-            return clockIn({ ...data, shift });
+            return clockIn({ ...data, shiftId, shift: shiftName });
         };
 
         if (activeAction) {
@@ -364,7 +363,7 @@ export default function EmployeeDashboard() {
             setIsCameraOpen(false);
             setActiveAction(null);
             // Clear shift selection after success
-            setSelectedShift(null);
+            setSelectedShiftId(null);
             setLateReasonData(null);
 
         } catch (err: any) {
@@ -393,49 +392,26 @@ export default function EmployeeDashboard() {
 
         const now = new Date();
         const hour = now.getHours();
+        const minute = now.getMinutes();
+        const timeInMinutes = hour * 60 + minute;
+        
         let isEarly = false;
+        const currentShiftId = (today as any)?.shiftId;
+        const currentShift = shiftList?.find((s: any) => s.id === currentShiftId) || (today as any);
 
-        // We need to know the shift of the current attendance.
-        // 'today' is type Attendance.
-        // We can check 'today.shift' (we need to cast or ensure type is updated).
-        // Let's assume 'today' has 'shift' property now.
-
-        const currentShift = (today as any)?.shift;
-
-        if (currentShift === 'Shift 1') {
-            if (hour < 15) isEarly = true; // Ends 15:00
-        } else if (currentShift === 'Shift 2') {
-            if (hour < 20) isEarly = true; // Ends 20:00 (assumed 8h from 12)
-            // Wait, shift 2 entry 12-14. Late >12. 
-            // Use prompt rules? Shift 1 late >7. Shift 2 late >12. Shift 3 late >15.
-            // Let's assume 8h work.
-            // Shift 1: 07-15? Shift 2: 12-20? Shift 3: 15-23? Long: 07-??
-        } else if (currentShift === 'Shift 3') {
-            // Ends 23:00?
-            if (hour < 23) {
-                // But 23 is late night. Check if hour is small (next day) ? 
-                // Complex. Let's just use 23 for today.
-                isEarly = true;
-            }
+        if (currentShift?.checkOutTime) {
+            const [eHour, eMinute] = currentShift.checkOutTime.split(':').map(Number);
+            const endMinutes = eHour * 60 + eMinute;
+            if (timeInMinutes < endMinutes) isEarly = true;
+        } else {
+            const sName = currentShift?.shift || '';
+            if (sName === 'Shift 1' && hour < 15) isEarly = true;
+            else if (sName === 'Shift 2' && hour < 20) isEarly = true;
+            else if (sName === 'Shift 3' && hour < 23) isEarly = true;
         }
-        // If no shift stored, maybe skip check or warn always.
 
         if (isEarly) {
-            // Show alert dialog (using a simple browser confirm or better a custom dialog)
-            // Since I can't easily add another complex Dialog in this huge file without risk, I'll use window.confirm? 
-            // No, User wants "pilihan IZIN yang akan membuat keterangan izin".
-
-            // I'll reuse the Permit Flow for "Early Leave" aka "Izin Pulang"?
-            // "jika karyawan pulang sebelum jam nya... beri pilihan IZIN yang akan membuat keterangan izin, dan foto pulang"
-
-            // Let's trigger a specialized dialog or reuse permit dialog with type "permission" and prefilled note "Pulang Cepat / Early Leave".
-
-            // I will use a simple window.confirm to ask "Belum waktunya pulang. Apakah anda ingin Izin Pulang Cepat?" 
-            // If yes -> Open Permit Dialog. 
-            // If no -> Cancel? Or proceed as normal clock out? 
-            // "beri peringatan ... dan beri pilihan" -> usually implies blocking normal flow unless they force it, or guiding them to Izin.
-
-            if (confirm("Belum waktunya pulang. Apakah Anda ingin mengajukan ISTIRAHAT/IZIN Pulang Cepat? \n\nKlik OK untuk Form Izin.\nKlik Cancel untuk membatalkan.")) {
+            if (confirm("Belum waktunya pulang. Apakah Anda ingin mengajukan IZIN Pulang Cepat? \n\nKlik OK untuk Form Izin.\nKlik Cancel untuk membatalkan.")) {
                 setPermitType('permission');
                 setPermitNote("Pulang Cepat (Early Leave)");
                 setPermitOpen(true);
@@ -657,6 +633,7 @@ export default function EmployeeDashboard() {
             {/* Shift Modal added back */}
             <ShiftModal
                 open={isShiftModalOpen}
+                shifts={shiftList || []}
                 onSelect={handleShiftSelect}
                 onClose={() => setIsShiftModalOpen(false)}
             />
@@ -701,7 +678,7 @@ export default function EmployeeDashboard() {
                             <p>Jabatan: <span className="font-semibold text-gray-700">{user?.position || '-'}</span></p>
                             <p>Shift: <span className="font-bold text-orange-600">
                                 {(() => {
-                                    const baseShift = (todaySessions && todaySessions.length > 0) ? (todaySessions[0] as any).shift : selectedShift;
+                                    const baseShift = (todaySessions && todaySessions.length > 0) ? (todaySessions[0] as any).shift : (shiftList?.find(s => s.id === selectedShiftId)?.name);
                                     if (!baseShift) return 'Belum Absen Masuk';
                                     return sessionCount > 1 ? `${baseShift} ( Sesi ${sessionCount} )` : baseShift;
                                 })()}

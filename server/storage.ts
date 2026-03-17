@@ -2,7 +2,8 @@ import {
   User, InsertUser, Attendance, InsertAttendance, Announcement, InsertAnnouncement,
   Complaint, InsertComplaint, ComplaintPhoto, InsertComplaintPhoto,
   LeaveRequest, InsertLeaveRequest, PushSubscription, InsertPushSubscription,
-  users, attendance, announcements, complaints, complaintPhotos, leaveRequests, pushSubscriptions
+  Shift, InsertShift,
+  users, attendance, announcements, complaints, complaintPhotos, leaveRequests, pushSubscriptions, shifts
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, gte, lte, sql, or, isNotNull } from "drizzle-orm";
@@ -66,6 +67,18 @@ export class DatabaseStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users);
+  }
+
+  async getUnverifiedEmployees(): Promise<User[]> {
+    return await db.select().from(users).where(
+      and(
+        eq(users.role, "employee"),
+        or(
+          eq(users.registrationStatus, "pending"),
+          eq(users.registrationStatus, "rejected")
+        )
+      )
+    );
   }
 
   // Attendance
@@ -256,6 +269,32 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(leaveRequests).orderBy(desc(leaveRequests.createdAt)).limit(limit);
   }
 
+  // Shifts
+  async createShift(data: InsertShift): Promise<Shift> {
+    const [result] = await db.insert(shifts).values(data);
+    const [record] = await db.select().from(shifts).where(eq(shifts.id, result.insertId));
+    return record!;
+  }
+
+  async getShift(id: number): Promise<Shift | undefined> {
+    const [record] = await db.select().from(shifts).where(eq(shifts.id, id));
+    return record;
+  }
+
+  async updateShift(id: number, updates: Partial<Shift>): Promise<Shift> {
+    await db.update(shifts).set(updates).where(eq(shifts.id, id));
+    const [record] = await db.select().from(shifts).where(eq(shifts.id, id));
+    return record!;
+  }
+
+  async deleteShift(id: number): Promise<void> {
+    await db.delete(shifts).where(eq(shifts.id, id));
+  }
+
+  async getAllShifts(): Promise<Shift[]> {
+    return await db.select().from(shifts);
+  }
+
   // Push Notifications
   async addPushSubscription(sub: InsertPushSubscription): Promise<void> {
     const existing = await db.select().from(pushSubscriptions).where(eq(pushSubscriptions.endpoint, sub.endpoint));
@@ -282,6 +321,14 @@ export interface IStorage {
   deleteUser(id: number): Promise<void>;
   updateUser(id: number, updates: Partial<User>): Promise<User>;
   getAllUsers(): Promise<User[]>;
+  getUnverifiedEmployees(): Promise<User[]>;
+
+  // Shift methods
+  createShift(shift: InsertShift): Promise<Shift>;
+  getShift(id: number): Promise<Shift | undefined>;
+  updateShift(id: number, updates: Partial<Shift>): Promise<Shift>;
+  deleteShift(id: number): Promise<void>;
+  getAllShifts(): Promise<Shift[]>;
 
   // Attendance methods
   createAttendance(attendance: InsertAttendance): Promise<Attendance>;

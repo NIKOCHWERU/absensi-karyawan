@@ -17,6 +17,27 @@ export const users = mysqlTable("users", {
   photoUrl: varchar("photo_url", { length: 512 }),
   isAdmin: boolean("is_admin").default(false),
   phoneNumber: varchar("phone_number", { length: 20 }),
+  // Registration data
+  birthPlace: varchar("birth_place", { length: 100 }),
+  birthDate: date("birth_date"),
+  gender: mysqlEnum("gender", ["Laki-laki", "Perempuan"]),
+  religion: varchar("religion", { length: 50 }),
+  address: text("address"),
+  npwp: varchar("npwp", { length: 50 }),
+  bpjs: varchar("bpjs", { length: 50 }),
+  bankAccount: varchar("bank_account", { length: 100 }),
+  ktpPhotoUrl: varchar("ktp_photo_url", { length: 512 }),
+  registrationStatus: mysqlEnum("registration_status", ["unregistered", "pending", "approved", "rejected"]).notNull().default("unregistered"),
+  joinDate: date("join_date"),
+  employmentStatus: varchar("employment_status", { length: 50 }), // e.g., Kontrak, Tetap
+});
+
+export const shifts = mysqlTable("shifts", {
+  id: int("id").primaryKey().autoincrement(),
+  name: varchar("name", { length: 50 }).notNull(),
+  checkInTime: varchar("check_in_time", { length: 10 }).notNull(), // HH:mm
+  checkOutTime: varchar("check_out_time", { length: 10 }).notNull(), // HH:mm
+  description: text("description"),
 });
 
 export const attendance = mysqlTable("attendance", {
@@ -39,8 +60,9 @@ export const attendance = mysqlTable("attendance", {
   checkOut: timestamp("check_out"),
   checkOutPhoto: varchar("check_out_photo", { length: 255 }),
   checkOutLocation: text("check_out_location"),
-
-  shift: varchar("shift", { length: 50 }), // 'Shift 1', 'Shift 2', 'Shift 3', 'Long Shift'
+  
+  shiftId: int("shift_id"), // Linked to shifts table
+  shift: varchar("shift", { length: 50 }), // Keep for legacy/description
   sessionNumber: int("session_number").default(1), // Track multiple sessions per day
   status: mysqlEnum("status", ["present", "late", "sick", "permission", "cuti", "absent", "off"]).default("absent"),
   notes: text("notes"), // For permission/sick details
@@ -125,10 +147,18 @@ export const usersRelations = relations(users, ({ many }) => ({
   pushSubscriptions: many(pushSubscriptions),
 }));
 
+export const shiftsRelations = relations(shifts, ({ many }) => ({
+  attendanceRecords: many(attendance),
+}));
+
 export const attendanceRelations = relations(attendance, ({ one }) => ({
   user: one(users, {
     fields: [attendance.userId],
     references: [users.id],
+  }),
+  shiftData: one(shifts, {
+    fields: [attendance.shiftId],
+    references: [shifts.id],
   }),
 }));
 
@@ -156,6 +186,7 @@ export const complaintPhotosRelations = relations(complaintPhotos, ({ one }) => 
 
 // Schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
+export const insertShiftSchema = createInsertSchema(shifts).omit({ id: true });
 export const insertAttendanceSchema = createInsertSchema(attendance).omit({ id: true });
 export const insertAnnouncementSchema = createInsertSchema(announcements).omit({ id: true, createdAt: true });
 export const insertComplaintSchema = createInsertSchema(complaints).omit({ id: true, createdAt: true });
@@ -166,6 +197,8 @@ export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type Shift = typeof shifts.$inferSelect;
+export type InsertShift = z.infer<typeof insertShiftSchema>;
 export type Attendance = typeof attendance.$inferSelect;
 export type InsertAttendance = z.infer<typeof insertAttendanceSchema>;
 export type Announcement = typeof announcements.$inferSelect;

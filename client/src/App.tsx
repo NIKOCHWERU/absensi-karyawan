@@ -24,6 +24,10 @@ import AdminAttendanceHistory from "@/pages/admin/AttendanceHistoryPage";
 import EmployeeComplaint from "@/pages/employee/ComplaintPage";
 import AdminLayout from "@/components/layout/AdminLayout";
 import EmployeeLeave from "@/pages/employee/LeavePage";
+import RegistrationPage from "@/pages/employee/RegistrationPage";
+import AdminVerificationPage from "@/pages/admin/AdminVerificationPage";
+import AdminShiftPage from "@/pages/admin/AdminShiftPage";
+import StatusPendingPage from "@/pages/employee/StatusPendingPage";
 import NotFound from "@/pages/not-found";
 import InstallAppBanner from "@/components/InstallAppBanner";
 
@@ -34,8 +38,25 @@ function ProtectedRoute({ component: Component, adminOnly }: { component: React.
   useEffect(() => {
     if (!isLoading && !user) {
       setLocation("/login");
-    } else if (!isLoading && user && adminOnly && user.role !== 'admin') {
-      setLocation("/");
+    } else if (!isLoading && user) {
+      const isRegistrationPage = window.location.pathname === "/registration";
+      const isPendingPage = window.location.pathname === "/pending";
+
+      if (user.role === 'employee') {
+        if (user.registrationStatus === 'unregistered' && !isRegistrationPage) {
+          setLocation("/registration");
+        } else if (user.registrationStatus === 'pending' && !isPendingPage) {
+          setLocation("/pending");
+        } else if (user.registrationStatus === 'rejected' && !isRegistrationPage) {
+          setLocation("/registration");
+        } else if (user.registrationStatus === 'approved' && isRegistrationPage) {
+          setLocation("/");
+        }
+      }
+
+      if (adminOnly && user.role !== 'admin') {
+        setLocation("/");
+      }
     }
   }, [user, isLoading, setLocation, adminOnly]);
 
@@ -65,6 +86,12 @@ function Router() {
   return (
     <Switch>
       <Route path="/login" component={LoginPage} />
+      <Route path="/karyawan/login">
+        <LoginPage defaultRole="employee" />
+      </Route>
+      <Route path="/admin/login">
+        <LoginPage defaultRole="admin" />
+      </Route>
 
       {/* Admin Routes */}
       <Route path="/admin">
@@ -110,6 +137,19 @@ function Router() {
       </Route>
       <Route path="/leave">
         <ProtectedRoute component={EmployeeLeave} />
+      </Route>
+      <Route path="/registration">
+        <ProtectedRoute component={RegistrationPage} />
+      </Route>
+      <Route path="/pending">
+        <ProtectedRoute component={StatusPendingPage} />
+      </Route>
+
+      <Route path="/admin/verification">
+        <ProtectedRoute component={() => <AdminLayout><AdminVerificationPage /></AdminLayout>} adminOnly />
+      </Route>
+      <Route path="/admin/shifts">
+        <ProtectedRoute component={() => <AdminLayout><AdminShiftPage /></AdminLayout>} adminOnly />
       </Route>
 
       <Route component={NotFound} />

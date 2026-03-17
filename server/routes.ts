@@ -162,12 +162,12 @@ export async function registerRoutes(
 
       const photoFileId = await handlePhotoUpload(req, 'clockIn');
       const location = req.body.location;
-      const shift = req.body.shift || 'Karyawan'; // Default to Karyawan if missing
+      const shiftId = req.body.shiftId ? parseInt(req.body.shiftId) : undefined;
+      let shiftName = req.body.shift || 'Karyawan';
       const lateReason = req.body.lateReason;
 
       let lateReasonPhotoId = undefined;
       if (req.body.lateReasonPhoto) {
-        // Handle late reason photo (base64)
         lateReasonPhotoId = await handlePhotoUpload({
           ...req,
           body: { ...req.body, checkInPhoto: req.body.lateReasonPhoto }
@@ -176,7 +176,6 @@ export async function registerRoutes(
 
       // Determine status based on Shift Rules
       const now = new Date();
-      // Reliable way to get Jakarta hours and minutes
       const jakartaFormatter = new Intl.DateTimeFormat('en-GB', {
         timeZone: 'Asia/Jakarta',
         hour: 'numeric',
@@ -189,22 +188,23 @@ export async function registerRoutes(
       const timeInMinutes = hour * 60 + minute;
 
       let status = "present";
+      let thresholdMinutes = 420; // Default 07:00
 
-      /*
-        Rules:
-        Shift 1: Late if > 07:00 (420 minutes)
-        Shift 2: Late if > 12:00 (720 minutes)
-        Shift 3: Late if > 15:00 (900 minutes)
-        Long Shift / Tim Karyawan: Late if > 07:00 (420 minutes)
-      */
-
-      if (shift === 'Shift 2') {
-        if (timeInMinutes > 720) status = "late";
-      } else if (shift === 'Shift 3') {
-        if (timeInMinutes > 900) status = "late";
+      if (shiftId) {
+        const shiftData = await storage.getShift(shiftId);
+        if (shiftData) {
+          shiftName = shiftData.name;
+          const [sHour, sMinute] = shiftData.checkInTime.split(':').map(Number);
+          thresholdMinutes = sHour * 60 + sMinute;
+        }
       } else {
-        // Default to 07:00 for Shift 1, Tim Karyawan, Long Shift, or unspecified
-        if (timeInMinutes > 420) status = "late";
+        // Legacy/Hardcoded rules for backward compatibility
+        if (shiftName === 'Shift 2') thresholdMinutes = 720;
+        else if (shiftName === 'Shift 3') thresholdMinutes = 900;
+      }
+
+      if (timeInMinutes > thresholdMinutes) {
+        status = "late";
       }
 
       const attendance = await storage.createAttendance({
@@ -214,7 +214,8 @@ export async function registerRoutes(
         status: status as any,
         checkInPhoto: photoFileId,
         checkInLocation: location,
-        shift: shift,
+        shiftId: shiftId,
+        shift: shiftName,
         sessionNumber: nextSessionNumber,
         lateReason: lateReason,
         lateReasonPhoto: lateReasonPhotoId
@@ -487,6 +488,105 @@ export async function registerRoutes(
 
     // Return all sessions for today as array
     res.json(sessions);
+  });
+
+  // --- Registration & Shift Routes ---
+
+  app.post("/api/register-data", upload.fields([{ name: 'ktpPhoto', maxCount: 1 }, { name: 'profilePhoto', maxCount: 1 }]), async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const userId = req.user!.id;
+      const updates: any = { ...req.body };
+      
+      // Remove sensitive/locked fields if they try to send them after approval
+      if (req.user!.registrationStatus === 'approved') {
+        // Only allow editing limited fields if already approved
+        // For now, let's keep it simple and block all if approved
+        return res.status(400).json({ message: "Data sudah terverifikasi dan terkunci." });
+      }
+
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      
+      if (files?.ktpPhoto?.[0]) {
+        const ktpFilename = `ktp-${userId}-${Date.now()}-${files.ktpPhoto[0].originalname}`;
+        const ktpPath = path.join(uploadsDir, ktpFilename);
+        fs.writeFileSync(ktpPath, files.ktpPhoto[0].buffer);
+        updates.ktpPhotoUrl = `/uploads/${ktpFilename}`;
+      }
+
+      if (files?.profilePhoto?.[0]) {
+        const profFilename = `prof-${userId}-${Date.now()}-${files.profilePhoto[0].originalname}`;
+        const profPath = path.join(uploadsDir, profFilename);
+        fs.writeFileSync(profPath, files.profilePhoto[0].buffer);
+        updates.photoUrl = `/uploads/${profFilename}`;
+      }
+
+      updates.registrationStatus = 'pending';
+      const updatedUser = await storage.updateUser(userId, updates);
+      res.json(updatedUser);
+    } catch (err: any) {
+      console.error("Registration Error:", err);
+      res.status(500).json({ message: "Gagal menyimpan data pendaftaran" });
+    }
+  });
+
+  app.get("/api/shifts", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const shifts = await storage.getAllShifts();
+    res.json(shifts);
+  });
+
+  app.get("/api/admin/unverified-employees", async (req, res) => {
+    if (!req.isAuthenticated() || req.user!.role !== 'admin') return res.sendStatus(401);
+    const employees = await storage.getUnverifiedEmployees();
+    res.json(employees);
+  });
+
+  app.post("/api/admin/verify-employee", async (req, res) => {
+    if (!req.isAuthenticated() || req.user!.role !== 'admin') return res.sendStatus(401);
+    
+    const { userId, status } = req.body; // status: 'approved' or 'rejected'
+    if (!userId || !['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ message: "Invalid verification data" });
+    }
+
+    try {
+      const user = await storage.updateUser(userId, { registrationStatus: status });
+      res.json(user);
+    } catch (err: any) {
+      res.status(500).json({ message: "Gagal verifikasi karyawan" });
+    }
+  });
+
+  app.post("/api/admin/shifts", async (req, res) => {
+    if (!req.isAuthenticated() || req.user!.role !== 'admin') return res.sendStatus(401);
+    try {
+      const shift = await storage.createShift(req.body);
+      res.status(201).json(shift);
+    } catch (err: any) {
+      res.status(400).json({ message: "Gagal membuat shift" });
+    }
+  });
+
+  app.patch("/api/admin/shifts/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user!.role !== 'admin') return res.sendStatus(401);
+    try {
+      const updated = await storage.updateShift(parseInt(req.params.id), req.body);
+      res.json(updated);
+    } catch (err: any) {
+      res.status(400).json({ message: "Gagal update shift" });
+    }
+  });
+
+  app.delete("/api/admin/shifts/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user!.role !== 'admin') return res.sendStatus(401);
+    try {
+      await storage.deleteShift(parseInt(req.params.id));
+      res.sendStatus(204);
+    } catch (err: any) {
+      res.status(400).json({ message: "Gagal menghapus shift" });
+    }
   });
 
   // --- Admin Routes ---
