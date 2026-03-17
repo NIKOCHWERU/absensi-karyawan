@@ -47,7 +47,6 @@ export default function RegistrationPage() {
       employmentStatus: user?.employmentStatus || "Kontrak",
       npwp: user?.npwp || "",
       bpjs: user?.bpjs || "",
-      bankAccount: user?.bankAccount || "",
     }
   });
 
@@ -73,6 +72,28 @@ export default function RegistrationPage() {
       return;
     }
 
+    // Validation Check
+    const requiredFields = [
+      { key: 'fullName', name: 'Nama Lengkap' },
+      { key: 'nik', name: 'NIK' },
+      { key: 'birthPlace', name: 'Tempat Lahir' },
+      { key: 'birthDate', name: 'Tanggal Lahir' },
+      { key: 'phoneNumber', name: 'No. HP' },
+      { key: 'address', name: 'Alamat' }
+    ];
+
+    const emptyFields = requiredFields.filter(f => !values[f.key]);
+    
+    if (emptyFields.length > 0) {
+      const fieldNames = emptyFields.map(f => f.name).join(', ');
+      toast({
+        title: "Peringatan",
+        description: `Mohon lengkapi data wajib berikut: ${fieldNames}`,
+        variant: "destructive"
+      });
+      return; 
+    }
+
     setIsSubmitting(true);
     try {
       const formData = new FormData();
@@ -82,6 +103,17 @@ export default function RegistrationPage() {
 
       const ktpInput = document.getElementById('ktp-upload') as HTMLInputElement;
       const profInput = document.getElementById('prof-upload') as HTMLInputElement;
+
+      if (!ktpInput?.files?.[0]) {
+        toast({ title: "Peringatan", description: "Foto KTP wajib diunggah.", variant: "destructive" });
+        setIsSubmitting(false);
+        return;
+      }
+      if (!profInput?.files?.[0]) {
+        toast({ title: "Peringatan", description: "Foto Profil wajib diunggah.", variant: "destructive" });
+        setIsSubmitting(false);
+        return;
+      }
 
       if (ktpInput?.files?.[0]) formData.append('ktpPhoto', ktpInput.files[0]);
       if (profInput?.files?.[0]) formData.append('profilePhoto', profInput.files[0]);
@@ -345,17 +377,6 @@ export default function RegistrationPage() {
                               <FormItem>
                                 <FormLabel>Nomor BPJS Kesehatan / Ketenagakerjaan</FormLabel>
                                 <FormControl><Input {...field} /></FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="bankAccount"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Rekening Bank (Nama Bank & No Rek)</FormLabel>
-                                <FormControl><Input placeholder="BCA - 12345678" {...field} /></FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}
