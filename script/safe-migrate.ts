@@ -78,6 +78,18 @@ async function runSafeMigration() {
       }
     }
 
+    // 4. Update enum status di tabel attendance agar mendukung nilai 'off'
+    console.log("➜ Memperbarui ENUM pada kolom 'status' di tabel 'attendance'...");
+    try {
+      await connection.query(`
+        ALTER TABLE \`attendance\` 
+        MODIFY COLUMN \`status\` ENUM('present', 'late', 'sick', 'permission', 'cuti', 'absent', 'off', 'libur') DEFAULT 'absent';
+      `);
+      console.log(`  ✅ Tipe data ENUM kolom 'status' berhasil diperbarui.`);
+    } catch (err: any) {
+      console.log(`  ❌ Gagal memperbarui ENUM status:`, err.message);
+    }
+
     console.log("\n🎉 MIGRASI SELESAI DENGAN AMAN! (Data lama tidak terhapus)");
   } catch (error) {
     console.error("❌ Terjadi kesalahan saat migrasi:", error);
