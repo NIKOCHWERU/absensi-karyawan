@@ -134,9 +134,7 @@ function Router() {
       <Route path="/leave">
         <ProtectedRoute component={EmployeeLeave} />
       </Route>
-      <Route path="/registration">
-        <ProtectedRoute component={RegistrationPage} />
-      </Route>
+      <Route path="/registration" component={RegistrationPage} />
       <Route path="/pending">
         <ProtectedRoute component={StatusPendingPage} />
       </Route>
