@@ -85,13 +85,9 @@ function DashboardSwitcher() {
 function Router() {
   return (
     <Switch>
-      <Route path="/login" component={LoginPage} />
-      <Route path="/karyawan/login">
-        <LoginPage defaultRole="employee" />
-      </Route>
-      <Route path="/admin/login">
-        <LoginPage defaultRole="admin" />
-      </Route>
+      <Route path="/login" component={() => <LoginPage defaultRole="employee" />} />
+      <Route path="/karyawan/login" component={() => <LoginPage defaultRole="employee" />} />
+      <Route path="/admin/login" component={() => <LoginPage defaultRole="admin" />} />
 
       {/* Admin Routes */}
       <Route path="/admin">

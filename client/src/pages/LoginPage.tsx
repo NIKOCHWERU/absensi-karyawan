@@ -70,39 +70,34 @@ export default function LoginPage({ defaultRole }: { defaultRole?: "employee" | 
           <p className="text-muted-foreground font-medium uppercase tracking-wider">PT ELOK JAYA ABADHI</p>
         </div>
 
-        <Tabs
-          defaultValue={activeTab}
-          value={activeTab}
-          onValueChange={(val) => {
-            setActiveTab(val as any);
-            form.reset({ username: "", password: "" }); // reset form when swap
-          }}
-          className="w-full"
-        >
-          {!defaultRole && (
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="employee">Karyawan</TabsTrigger>
-              <TabsTrigger value="admin">Admin</TabsTrigger>
-            </TabsList>
-          )}
-
-          <TabsContent value="employee">
-            <LoginCard
-              title="Login Karyawan"
-              description="Masukkan NIK Anda untuk masuk"
-              onSubmit={(v: any) => onSubmit(v)}
-              isLoading={isLoggingIn}
-              form={form}
-              icon={<User className="w-4 h-4" />}
-              placeholder="Masukkan NIK"
-              requirePassword={false}
-            />
-          </TabsContent>
-
-          <TabsContent value="admin">
+        <div className="w-full">
+          {activeTab === "employee" ? (
+            <div className="space-y-4">
+              <LoginCard
+                title="Login Karyawan"
+                description="Masukkan NIK Anda untuk masuk"
+                onSubmit={(v: any) => onSubmit(v)}
+                isLoading={isLoggingIn}
+                form={form}
+                icon={<User className="w-4 h-4" />}
+                placeholder="Masukkan NIK"
+                requirePassword={false}
+              />
+              <div className="text-center mt-6 p-4 rounded-xl bg-white/50 backdrop-blur border border-white/20">
+                <p className="text-sm text-gray-600 mb-3 font-medium">Belum terdaftar sebagai karyawan?</p>
+                <Button 
+                  variant="outline" 
+                  className="w-full bg-white text-orange-600 border-orange-200 hover:bg-orange-50 font-bold shadow-sm"
+                  onClick={() => window.location.href = '/registration'}
+                >
+                  Daftar Karyawan Baru
+                </Button>
+              </div>
+            </div>
+          ) : (
             <LoginCard
               title="Login Admin"
-              description="Silakan masuk ke dasbor manajemen"
+              description="Silakan masuk ke dasbor manajemen HR"
               onSubmit={(v: any) => onSubmit(v)}
               isLoading={isLoggingIn}
               form={form}
@@ -112,8 +107,8 @@ export default function LoginPage({ defaultRole }: { defaultRole?: "employee" | 
               showPassword={showPassword}
               setShowPassword={setShowPassword}
             />
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
 
         <p className="text-center text-xs text-muted-foreground mt-8 opacity-60">
           &copy; {new Date().getFullYear()} PT ELOK JAYA ABADHI. Seluruh hak cipta dilindungi.
