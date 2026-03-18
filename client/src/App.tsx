@@ -50,7 +50,7 @@ function ProtectedRoute({ component: Component, adminOnly }: { component: React.
           setLocation("/pending");
         } else if (user.registrationStatus === 'rejected' && !isRegistrationPage) {
           setLocation("/registration");
-        } else if (user.registrationStatus === 'approved' && isRegistrationPage) {
+        } else if (user.registrationStatus === 'approved' && (isRegistrationPage || isPendingPage)) {
           setLocation("/");
         }
       }
