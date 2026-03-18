@@ -87,11 +87,11 @@ export function BottomNav() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-border/50 pb-safe shadow-[0_-4px_16px_rgba(0,0,0,0.05)]">
-      <div className="flex items-center justify-around h-14 max-w-lg mx-auto px-1">
+      <div className="flex items-center w-full h-16 max-w-lg mx-auto px-2">
         {tabs.map((tab) => {
           const isActive = location === tab.href;
           return (
-            <Link key={tab.href} href={tab.href}>
+            <Link key={tab.href} href={tab.href} className="flex-1 h-full flex items-center justify-center">
               <div className="relative flex flex-col items-center justify-center w-full h-full cursor-pointer group">
                 {isActive && (
                   <motion.div
@@ -111,7 +111,7 @@ export function BottomNav() {
                     </div>
                   ) : null}
                 </div>
-                <span className={`text-[9px] font-medium transition-colors duration-200 leading-none ${isActive ? "text-primary" : "text-muted-foreground"
+                <span className={`text-[10px] font-medium transition-colors duration-200 leading-tight ${isActive ? "text-primary" : "text-muted-foreground"
                   }`}>
                   {tab.label}
                 </span>

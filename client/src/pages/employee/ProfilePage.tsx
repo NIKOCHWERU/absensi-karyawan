@@ -119,7 +119,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 -mt-12 space-y-4">
+      <div className="max-w-lg mx-auto px-4 -mt-12 relative z-10 space-y-4">
         {/* Avatar Card */}
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
           className="bg-white rounded-3xl shadow-xl shadow-black/5 p-6 flex items-center gap-5">
