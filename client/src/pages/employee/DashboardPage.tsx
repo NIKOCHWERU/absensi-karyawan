@@ -92,6 +92,7 @@ export default function EmployeeDashboard() {
 
     // Shift Selection State
     const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
+    const [isOffDayOpen, setIsOffDayOpen] = useState(false);
     const [selectedShiftId, setSelectedShiftId] = useState<number | null>(null);
 
     const shiftList = [
@@ -782,25 +783,7 @@ export default function EmployeeDashboard() {
                             <Button
                                 variant="outline"
                                 disabled={!!today?.checkOut || today?.status === 'sick' || today?.status === 'permission' || today?.status === 'off' || hasCheckedIn}
-                                onClick={() => {
-                                    if (confirm("Apakah Anda yakin ingin menyatakan Off Day/Libur Bekerja hari ini? Anda tidak akan perlu absen kamera hari ini.")) {
-                                        const offAction = async () => {
-                                            const { address } = await getCoordinates(false);
-                                            await permit({
-                                                type: 'off',
-                                                notes: "Libur Bekerja / Off Day",
-                                                checkInPhoto: null,
-                                                location: address
-                                            });
-                                        };
-                                        toast({ title: "Memproses...", description: "Mencatat absensi libur anda." });
-                                        offAction().then(() => {
-                                            toast({ title: "Off Day Tercatat", description: "Selamat beristirahat!", className: "bg-green-500 text-white" });
-                                        }).catch(err => {
-                                            handleError(err);
-                                        });
-                                    }
-                                }}
+                                onClick={() => setIsOffDayOpen(true)}
                                 className="h-14 rounded-xl border-gray-200 hover:bg-gray-100 text-gray-700 bg-white"
                             >
                                 <div className="flex flex-col items-center gap-0.5">
@@ -1022,6 +1005,58 @@ export default function EmployeeDashboard() {
                             variant="ghost"
                             onClick={() => setPermitOpen(false)}
                             className="w-full text-gray-400 text-sm"
+                        >
+                            Batalkan
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Off Day Confirmation Modal */}
+            <Dialog open={isOffDayOpen} onOpenChange={setIsOffDayOpen}>
+                <DialogContent className="rounded-3xl max-w-xs md:max-w-md p-6">
+                    <DialogHeader>
+                        <div className="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
+                            <Coffee className="w-8 h-8 text-orange-600" />
+                        </div>
+                        <DialogTitle className="text-center text-xl font-bold">Libur Bekerja</DialogTitle>
+                        <DialogDescription className="text-center text-sm pt-2">
+                            Apakah Anda yakin ingin menyatakan <strong>Off Day / Libur</strong> hari ini?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="bg-orange-50 p-4 rounded-2xl border border-orange-100 mt-4">
+                        <ul className="text-[11px] text-orange-700 space-y-2">
+                            <li className="flex gap-2"><span>•</span><span>Anda tidak perlu melakukan absen kamera.</span></li>
+                            <li className="flex gap-2"><span>•</span><span>Status absen hari ini akan dicatat sebagai <strong>Libur</strong>.</span></li>
+                            <li className="flex gap-2"><span>•</span><span>Tindakan ini tidak dapat dibatalkan untuk hari ini.</span></li>
+                        </ul>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 mt-6">
+                        <Button
+                            onClick={async () => {
+                                setIsOffDayOpen(false);
+                                toast({ title: "Memproses...", description: "Mencatat absensi libur anda." });
+                                try {
+                                    const { address } = await getCoordinates(false);
+                                    await permit({
+                                        type: 'off',
+                                        notes: "Libur Bekerja / Off Day",
+                                        checkInPhoto: null,
+                                        location: address
+                                    });
+                                    toast({ title: "Off Day Tercatat", description: "Selamat beristirahat!", className: "bg-green-500 text-white" });
+                                } catch (err) {
+                                    handleError(err);
+                                }
+                            }}
+                            className="w-full h-12 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-bold"
+                        >
+                            Ya, Saya Libur
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            onClick={() => setIsOffDayOpen(false)}
+                            className="w-full h-12 text-gray-400"
                         >
                             Batalkan
                         </Button>
