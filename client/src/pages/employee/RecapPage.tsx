@@ -13,7 +13,7 @@ import { calculateDailyTotal, formatDuration } from "@/lib/attendance";
 
 export default function RecapPage() {
   const { user } = useAuth();
-  const [reportType, setReportType] = useState<'daily' | 'monthly'>('daily');
+  const [reportType, setReportType] = useState<'daily' | 'monthly'>('monthly');
   const [targetDate, setTargetDate] = useState(new Date()); // For daily view
   const [currentDate, setCurrentDate] = useState(new Date()); // Tracks the "display month"
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');

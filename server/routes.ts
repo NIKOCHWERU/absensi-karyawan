@@ -245,6 +245,25 @@ export async function registerRoutes(
         status = "late";
       }
 
+      // Special case: if there's an 'off' session, update it to present/late instead of creating a new session
+      const offSession = existingSessions.find(s => s.status === 'off');
+      if (offSession) {
+        console.log(`[ClockIn] Converting 'off' session ${offSession.id} to '${status}' work session for user ${userId}`);
+        const attendance = await storage.updateAttendance(offSession.id, {
+          checkIn: now,
+          checkOut: null,
+          status: status as any,
+          checkInPhoto: photoFileId,
+          checkInLocation: location,
+          shiftId: shiftId,
+          shift: shiftName,
+          lateReason: lateReason,
+          lateReasonPhoto: lateReasonPhotoId
+        });
+        await storage.updateUser(userId, { shift: shiftName });
+        return res.json(attendance);
+      }
+
       const attendance = await storage.createAttendance({
         userId,
         date: new Date(today),
