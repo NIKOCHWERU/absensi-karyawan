@@ -7,7 +7,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, User, Camera, MapPin, Coffee, LogOut, X, Check, RefreshCw, SwitchCamera, Zap, ChevronRight } from "lucide-react";
+import { Loader2, User, Camera, MapPin, Coffee, LogOut, X, Check, RefreshCw, SwitchCamera, Zap, ChevronRight, Stethoscope, Umbrella, FileText, Timer, Bell, Info } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -470,8 +470,8 @@ export default function EmployeeDashboard() {
                 <div className="flex flex-col gap-3 w-full">
                     {/* Info card */}
                     <div className={`rounded-2xl p-4 bg-${permitColor}-50 border border-${permitColor}-200 flex items-start gap-3`}>
-                        <span className={`text-${permitColor}-500 text-2xl leading-none mt-0.5`}>
-                            {emoji}
+                        <span className={`text-${permitColor}-500 mt-0.5`}>
+                            {today.status === 'sick' ? <Stethoscope className="w-6 h-6" /> : today.status === 'off' ? <Umbrella className="w-6 h-6" /> : <FileText className="w-6 h-6" />}
                         </span>
                         <div>
                             <p className={`text-xs font-bold text-${permitColor}-700 uppercase tracking-wide`}>
@@ -731,8 +731,9 @@ export default function EmployeeDashboard() {
                     {/* Work Timer / Break Timer - Show if checked in and not checked out */}
                     {hasCheckedIn && !hasCheckedOut && (
                         <div className="mt-4 flex flex-col items-center">
-                            <p className="text-[10px] text-orange-500 font-bold uppercase tracking-wider mb-1">
-                                {isBreak ? "⏳ Durasi Istirahat" : "💼 Durasi Kerja"}
+                            <p className="text-[10px] text-orange-500 font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
+                                {isBreak ? <Timer className="w-3 h-3" /> : <Zap className="w-3 h-3" />}
+                                {isBreak ? "Durasi Istirahat" : "Durasi Kerja"}
                             </p>
                             <WorkTimer
                                 startTime={new Date(isBreak ? today!.breakStart! : today!.checkIn!)}
@@ -806,7 +807,7 @@ export default function EmployeeDashboard() {
                     {/* ⚠️ Warning: Sedang istirahat belum selesai */}
                     {isBreak && !hasBreakEnded && (
                         <div className="flex items-start gap-3 bg-orange-50 border border-orange-200 rounded-xl p-3">
-                            <span className="text-orange-500 text-lg leading-none mt-0.5">⏳</span>
+                            <Timer className="text-orange-500 w-5 h-5 mt-0.5" />
                             <div>
                                 <p className="text-xs font-bold text-orange-700 uppercase tracking-wide">Sedang Istirahat</p>
                                 <p className="text-sm text-orange-600 font-medium mt-0.5">Jangan lupa tekan <strong>Selesai Istirahat</strong> saat kembali bekerja!</p>
@@ -817,7 +818,7 @@ export default function EmployeeDashboard() {
                     {/* ⚠️ Warning: Sudah check-in & selesai istirahat, belum absen pulang */}
                     {hasCheckedIn && hasBreakEnded && !hasCheckedOut && (
                         <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-3">
-                            <span className="text-red-500 text-lg leading-none mt-0.5">🔔</span>
+                            <Bell className="text-red-500 w-5 h-5 mt-0.5" />
                             <div>
                                 <p className="text-xs font-bold text-red-700 uppercase tracking-wide">Jangan Lupa Absen Pulang!</p>
                                 <p className="text-sm text-red-600 font-medium mt-0.5">Tekan <strong>Absen Pulang</strong> sebelum meninggalkan tempat kerja agar jam kerja tercatat.</p>
@@ -828,7 +829,7 @@ export default function EmployeeDashboard() {
                     {/* ⚠️ Warning: Sudah check-in, belum mulai istirahat, belum pulang */}
                     {hasCheckedIn && !isBreak && !hasBreakEnded && !hasCheckedOut && (
                         <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl p-3">
-                            <span className="text-blue-500 text-lg leading-none mt-0.5">💡</span>
+                            <Info className="text-blue-500 w-5 h-5 mt-0.5" />
                             <div>
                                 <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">Sedang Bekerja</p>
                                 <p className="text-sm text-blue-600 font-medium mt-0.5">Jika ingin istirahat tekan <strong>Mulai Istirahat</strong>. Jangan lupa <strong>Absen Pulang</strong> saat selesai bekerja.</p>
@@ -948,8 +949,9 @@ export default function EmployeeDashboard() {
             <Dialog open={permitOpen} onOpenChange={setPermitOpen}>
                 <DialogContent className="rounded-3xl max-w-xs md:max-w-md p-6">
                     <DialogHeader>
-                        <DialogTitle className="text-center text-xl font-bold">
-                            {permitType === 'sick' ? '🤒 Form Sakit' : '📋 Form Izin'}
+                        <DialogTitle className="text-center text-xl font-bold flex items-center justify-center gap-2">
+                            {permitType === 'sick' ? <Stethoscope className="w-6 h-6 text-blue-600" /> : <FileText className="w-6 h-6 text-purple-600" />}
+                            {permitType === 'sick' ? 'Form Sakit' : 'Form Izin'}
                         </DialogTitle>
                         <DialogDescription className="text-center text-sm text-muted-foreground">
                             Silakan isi form di bawah ini untuk mengajukan {permitType === 'sick' ? 'sakit' : 'izin'}.
@@ -1017,7 +1019,7 @@ export default function EmployeeDashboard() {
                 <DialogContent className="rounded-3xl max-w-xs md:max-w-md p-6">
                     <DialogHeader>
                         <div className="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
-                            <Coffee className="w-8 h-8 text-orange-600" />
+                            <Umbrella className="w-8 h-8 text-orange-600" />
                         </div>
                         <DialogTitle className="text-center text-xl font-bold">Libur Bekerja</DialogTitle>
                         <DialogDescription className="text-center text-sm pt-2">
