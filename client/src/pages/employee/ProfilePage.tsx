@@ -106,7 +106,7 @@ export default function ProfilePage() {
   const currentPhoto = photoPreview || user?.photoUrl;
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-36">
+    <div className="min-h-screen bg-slate-50 pb-48">
       {/* Header */}
       <div className="bg-gradient-to-br from-primary to-primary/80 pt-10 pb-20 px-4 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
