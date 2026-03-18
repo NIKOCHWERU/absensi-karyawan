@@ -70,7 +70,7 @@ export async function registerRoutes(
     if (!req.isAuthenticated()) return res.sendStatus(401);
     try {
       const userId = req.user!.id;
-      const allowed = ['fullName', 'phoneNumber', 'address', 'email', 'religion', 'birthPlace', 'birthDate', 'gender'];
+      const allowed = ['phoneNumber', 'email', 'branch', 'shift', 'npwp', 'bpjs'];
       const updates: any = {};
       allowed.forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k]; });
 

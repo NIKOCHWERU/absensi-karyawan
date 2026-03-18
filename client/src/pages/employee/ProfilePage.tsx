@@ -6,31 +6,38 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 import { BottomNav } from "@/components/BottomNav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Loader2, User, Camera, Pencil, Check } from "lucide-react";
+import { Loader2, Camera, Pencil, Check, Lock, MessageSquare } from "lucide-react";
 import { motion } from "framer-motion";
 
 const profileSchema = z.object({
-  fullName: z.string().min(2, "Nama minimal 2 karakter"),
   phoneNumber: z.string().optional(),
   email: z.string().email("Email tidak valid").optional().or(z.literal("")),
-  address: z.string().optional(),
-  birthPlace: z.string().optional(),
-  birthDate: z.string().optional(),
-  gender: z.string().optional(),
-  religion: z.string().optional(),
+  branch: z.string().optional(),
+  shift: z.string().optional(),
+  npwp: z.string().optional(),
+  bpjs: z.string().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
+function ReadOnlyField({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <div className="py-2 border-b border-slate-50 last:border-0">
+      <span className="text-[11px] text-slate-400 font-medium uppercase tracking-wide">{label}</span>
+      <p className="text-gray-800 font-medium mt-0.5">{value || <span className="text-slate-300 italic text-sm">Belum diisi</span>}</p>
+    </div>
+  );
+}
+
 export default function ProfilePage() {
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -39,30 +46,21 @@ export default function ProfilePage() {
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      fullName: user?.fullName || "",
       phoneNumber: user?.phoneNumber || "",
       email: user?.email || "",
-      address: user?.address || "",
-      birthPlace: user?.birthPlace || "",
-      birthDate: user?.birthDate || "",
-      gender: user?.gender || "",
-      religion: user?.religion || "",
+      branch: user?.branch || "",
+      shift: (user as any)?.shift || "",
+      npwp: user?.npwp || "",
+      bpjs: user?.bpjs || "",
     },
   });
 
   const mutation = useMutation({
     mutationFn: async (values: ProfileFormValues) => {
       const formData = new FormData();
-      Object.entries(values).forEach(([k, v]) => {
-        if (v) formData.append(k, v);
-      });
+      Object.entries(values).forEach(([k, v]) => { if (v !== undefined && v !== null) formData.append(k, v); });
       if (photoFile) formData.append("profilePhoto", photoFile);
-
-      const res = await fetch("/api/profile", {
-        method: "PATCH",
-        body: formData,
-        credentials: "include",
-      });
+      const res = await fetch("/api/profile", { method: "PATCH", body: formData, credentials: "include" });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ message: "Terjadi kesalahan" }));
         throw new Error(err.message || "Gagal memperbarui profil");
@@ -71,7 +69,7 @@ export default function ProfilePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-      toast({ title: "Profil Diperbarui", description: "Data diri Anda berhasil disimpan." });
+      toast({ title: "Profil Diperbarui", description: "Data berhasil disimpan." });
       setIsEditing(false);
       setPhotoFile(null);
       setPhotoPreview(null);
@@ -91,10 +89,24 @@ export default function ProfilePage() {
     }
   };
 
+  const cancelEdit = () => {
+    form.reset({
+      phoneNumber: user?.phoneNumber || "",
+      email: user?.email || "",
+      branch: user?.branch || "",
+      shift: (user as any)?.shift || "",
+      npwp: user?.npwp || "",
+      bpjs: user?.bpjs || "",
+    });
+    setPhotoPreview(null);
+    setPhotoFile(null);
+    setIsEditing(false);
+  };
+
   const currentPhoto = photoPreview || user?.photoUrl;
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
+    <div className="min-h-screen bg-slate-50 pb-28">
       {/* Header */}
       <div className="bg-gradient-to-br from-primary to-primary/80 pt-10 pb-20 px-4 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
@@ -109,11 +121,8 @@ export default function ProfilePage() {
 
       <div className="max-w-lg mx-auto px-4 -mt-12 space-y-4">
         {/* Avatar Card */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="bg-white rounded-3xl shadow-xl shadow-black/5 p-6 flex items-center gap-5"
-        >
+        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+          className="bg-white rounded-3xl shadow-xl shadow-black/5 p-6 flex items-center gap-5">
           <div className="relative">
             <div className="w-20 h-20 rounded-2xl bg-primary/10 overflow-hidden border-2 border-white shadow-lg">
               {currentPhoto ? (
@@ -131,201 +140,143 @@ export default function ProfilePage() {
               </label>
             )}
           </div>
-          <div className="flex-1">
-            <h2 className="font-bold text-gray-900 text-lg leading-tight">{user?.fullName}</h2>
+          <div className="flex-1 min-w-0">
+            <h2 className="font-bold text-gray-900 text-lg leading-tight truncate">{user?.fullName}</h2>
             <p className="text-sm text-gray-500">{user?.position || "Karyawan"} • {user?.branch || "-"}</p>
             <p className="text-xs text-gray-400 font-mono mt-0.5">NIK: {user?.nik || "-"}</p>
           </div>
           <Button
-            variant={isEditing ? "default" : "outline"}
+            variant={isEditing ? "outline" : "outline"}
             size="sm"
-            onClick={() => {
-              if (isEditing) {
-                // Reset
-                form.reset({
-                  fullName: user?.fullName || "",
-                  phoneNumber: user?.phoneNumber || "",
-                  email: user?.email || "",
-                  address: user?.address || "",
-                  birthPlace: user?.birthPlace || "",
-                  birthDate: user?.birthDate || "",
-                  gender: user?.gender || "",
-                  religion: user?.religion || "",
-                });
-                setPhotoPreview(null);
-                setPhotoFile(null);
-              }
-              setIsEditing((v) => !v);
-            }}
+            onClick={isEditing ? cancelEdit : () => setIsEditing(true)}
             className="shrink-0"
           >
             {isEditing ? "Batal" : <><Pencil className="w-3.5 h-3.5 mr-1" />Edit</>}
           </Button>
         </motion.div>
 
-        {/* Info / Form Card */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1 }}
-        >
+        {/* Editable Fields */}
+        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.05 }}>
           <Card className="border-none shadow-lg shadow-black/5">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base text-gray-700 flex items-center gap-2">
-                <User className="w-4 h-4 text-primary" /> Data Diri
-              </CardTitle>
+              <CardTitle className="text-base text-gray-700">Data yang Dapat Diubah</CardTitle>
             </CardHeader>
             <CardContent>
               {isEditing ? (
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
-                    <FormField control={form.control} name="fullName" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nama Lengkap</FormLabel>
-                        <FormControl><Input {...field} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-
                     <div className="grid grid-cols-2 gap-4">
-                      <FormField control={form.control} name="birthPlace" render={({ field }) => (
+                      <FormField control={form.control} name="phoneNumber" render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Tempat Lahir</FormLabel>
+                          <FormLabel>No. HP</FormLabel>
+                          <FormControl><Input type="tel" placeholder="08..." {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="email" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl><Input type="email" placeholder="email@..." {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField control={form.control} name="branch" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Cabang</FormLabel>
+                          <FormControl><Input placeholder="contoh: Pusat" {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="shift" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Shift</FormLabel>
+                          <FormControl><Input placeholder="contoh: Shift 1" {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField control={form.control} name="npwp" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>NPWP</FormLabel>
+                          <FormControl><Input placeholder="00.000.000.0-000.000" {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="bpjs" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>BPJS</FormLabel>
                           <FormControl><Input {...field} /></FormControl>
                           <FormMessage />
                         </FormItem>
                       )} />
-                      <FormField control={form.control} name="birthDate" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Tanggal Lahir</FormLabel>
-                          <FormControl><Input type="date" {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
                     </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField control={form.control} name="gender" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Jenis Kelamin</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger><SelectValue placeholder="Pilih" /></SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="Laki-laki">Laki-laki</SelectItem>
-                              <SelectItem value="Perempuan">Perempuan</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={form.control} name="religion" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Agama</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger><SelectValue placeholder="Pilih" /></SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {["Islam","Kristen","Katolik","Hindu","Buddha","Konghucu"].map(r => (
-                                <SelectItem key={r} value={r}>{r}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                    </div>
-
-                    <FormField control={form.control} name="phoneNumber" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>No. HP</FormLabel>
-                        <FormControl><Input type="tel" placeholder="08..." {...field} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-
-                    <FormField control={form.control} name="email" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl><Input type="email" placeholder="contoh@email.com" {...field} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-
-                    <FormField control={form.control} name="address" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Alamat (KTP)</FormLabel>
-                        <FormControl><Textarea className="resize-none" rows={3} {...field} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
-
-                    <Button
-                      type="submit"
-                      className="w-full h-11 font-bold shadow-md shadow-primary/20"
-                      disabled={mutation.isPending}
-                    >
-                      {mutation.isPending ? (
-                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Menyimpan...</>
-                      ) : (
-                        <><Check className="w-4 h-4 mr-2" />Simpan Perubahan</>
-                      )}
+                    <Button type="submit" className="w-full h-11 font-bold shadow-md shadow-primary/20" disabled={mutation.isPending}>
+                      {mutation.isPending
+                        ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Menyimpan...</>
+                        : <><Check className="w-4 h-4 mr-2" />Simpan Perubahan</>}
                     </Button>
                   </form>
                 </Form>
               ) : (
-                <div className="space-y-3 text-sm">
-                  {[
-                    { label: "No. HP", value: user?.phoneNumber },
-                    { label: "Email", value: user?.email },
-                    { label: "Tempat, Tgl Lahir", value: [user?.birthPlace, user?.birthDate].filter(Boolean).join(", ") },
-                    { label: "Jenis Kelamin", value: user?.gender },
-                    { label: "Agama", value: user?.religion },
-                    { label: "Alamat", value: user?.address },
-                  ].map(({ label, value }) => (
-                    <div key={label} className="flex flex-col gap-0.5 py-2 border-b border-slate-50 last:border-0">
-                      <span className="text-[11px] text-slate-400 font-medium uppercase tracking-wide">{label}</span>
-                      <span className="text-gray-800 font-medium">{value || <span className="text-slate-300 italic">Belum diisi</span>}</span>
-                    </div>
-                  ))}
+                <div className="space-y-0 text-sm">
+                  <ReadOnlyField label="No. HP" value={user?.phoneNumber} />
+                  <ReadOnlyField label="Email" value={user?.email} />
+                  <ReadOnlyField label="Cabang" value={user?.branch} />
+                  <ReadOnlyField label="Shift" value={(user as any)?.shift} />
+                  <ReadOnlyField label="NPWP" value={user?.npwp} />
+                  <ReadOnlyField label="BPJS" value={user?.bpjs} />
                 </div>
               )}
             </CardContent>
           </Card>
         </motion.div>
 
-        {/* Read-only Work Info */}
-        {!isEditing && (
-          <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
-            <Card className="border-none shadow-lg shadow-black/5">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base text-gray-700">Informasi Pekerjaan</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-sm">
-                  {[
-                    { label: "Jabatan", value: user?.position },
-                    { label: "Cabang", value: user?.branch },
-                    { label: "Status Karyawan", value: (user as any)?.employmentStatus },
-                    { label: "Tanggal Masuk", value: (user as any)?.joinDate },
-                    { label: "NPWP", value: user?.npwp },
-                    { label: "BPJS", value: user?.bpjs },
-                  ].map(({ label, value }) => (
-                    <div key={label} className="flex flex-col gap-0.5 py-2 border-b border-slate-50 last:border-0">
-                      <span className="text-[11px] text-slate-400 font-medium uppercase tracking-wide">{label}</span>
-                      <span className="text-gray-800 font-medium">{value || <span className="text-slate-300 italic">Belum diisi</span>}</span>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-[11px] text-slate-400 mt-4 text-center">
-                  Data pekerjaan hanya dapat diubah oleh Admin/HR.
+        {/* Admin-only fields — read-only with notice */}
+        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
+          <Card className="border-none shadow-lg shadow-black/5">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base text-gray-700">Data Pribadi & Pekerjaan</CardTitle>
+                <span className="flex items-center gap-1 text-[11px] text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-medium border border-amber-100">
+                  <Lock className="w-3 h-3" /> Hanya Admin
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-0 text-sm">
+                <ReadOnlyField label="Nama Lengkap" value={user?.fullName} />
+                <ReadOnlyField label="NIK" value={user?.nik} />
+                <ReadOnlyField label="Tempat, Tgl Lahir" value={[user?.birthPlace, user?.birthDate].filter(Boolean).join(", ")} />
+                <ReadOnlyField label="Jenis Kelamin" value={user?.gender} />
+                <ReadOnlyField label="Agama" value={user?.religion} />
+                <ReadOnlyField label="Alamat" value={user?.address} />
+                <ReadOnlyField label="Jabatan" value={user?.position} />
+                <ReadOnlyField label="Status Karyawan" value={(user as any)?.employmentStatus} />
+                <ReadOnlyField label="Tanggal Masuk" value={(user as any)?.joinDate} />
+              </div>
+
+              {/* Notice + Report Link */}
+              <div className="mt-4 bg-amber-50 border border-amber-100 rounded-xl p-4">
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  <span className="font-bold">Data di atas hanya dapat diubah oleh Admin/HR.</span><br />
+                  Jika ada kesalahan data, silakan laporkan melalui fitur Pengaduan.
                 </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3 w-full border-amber-300 text-amber-700 hover:bg-amber-100 text-xs h-9"
+                  onClick={() => setLocation("/complaint")}
+                >
+                  <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
+                  Laporkan Kesalahan Data ke Pengaduan
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
 
       <BottomNav />
