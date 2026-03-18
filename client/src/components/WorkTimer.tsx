@@ -27,11 +27,16 @@ export function WorkTimer({ startTime }: { startTime: Date }) {
     }, [startTime]);
 
     return (
-        <div className="flex items-center gap-2 mt-2 bg-orange-50 px-4 py-1.5 rounded-full border border-orange-100 shadow-sm animate-pulse">
-            <Clock className="w-3.5 h-3.5 text-orange-500" />
-            <span className="font-mono text-sm font-bold text-orange-600">
-                {elapsed || "00:00:00"}
-            </span>
+        <div className="flex flex-col items-center gap-1">
+            <div className="bg-white/80 backdrop-blur-md px-6 py-3 rounded-2xl border-2 border-orange-200/50 shadow-xl shadow-orange-500/10 flex items-center gap-3 transition-all hover:scale-105 active:scale-95 border-b-4 border-b-orange-400">
+                <div className="bg-orange-100 p-2 rounded-xl">
+                    <Clock className="w-5 h-5 text-orange-600 animate-pulse" />
+                </div>
+                <span className="font-mono text-4xl font-black text-slate-800 tracking-tighter tabular-nums drop-shadow-sm">
+                    {elapsed || "00:00:00"}
+                </span>
+            </div>
+            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1 animate-pulse">Running live</p>
         </div>
     );
 }

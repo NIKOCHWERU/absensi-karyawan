@@ -731,8 +731,8 @@ export default function EmployeeDashboard() {
                     {/* Work Timer / Break Timer - Show if checked in and not checked out */}
                     {hasCheckedIn && !hasCheckedOut && (
                         <div className="mt-4 flex flex-col items-center">
-                            <p className="text-[10px] text-orange-500 font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
-                                {isBreak ? <Timer className="w-3 h-3" /> : <Zap className="w-3 h-3" />}
+                            <p className="text-[11px] text-slate-500 font-black uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
+                                {isBreak ? <Timer className="w-4 h-4 text-orange-500" /> : <Zap className="w-4 h-4 text-orange-500" />}
                                 {isBreak ? "Durasi Istirahat" : "Durasi Kerja"}
                             </p>
                             <WorkTimer
