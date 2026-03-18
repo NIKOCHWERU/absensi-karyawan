@@ -65,6 +65,35 @@ export async function registerRoutes(
     res.status(401).json({ message: "Unauthorized" });
   };
 
+  // --- Employee: Edit own profile ---
+  app.patch("/api/profile", upload.single('profilePhoto'), async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    try {
+      const userId = req.user!.id;
+      const allowed = ['fullName', 'phoneNumber', 'address', 'email', 'religion', 'birthPlace', 'birthDate', 'gender'];
+      const updates: any = {};
+      allowed.forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k]; });
+
+      if (req.file) {
+        const filename = `prof-${userId}-${Date.now()}-${req.file.originalname}`;
+        const profPath = path.join(uploadsDir, filename);
+        fs.writeFileSync(profPath, req.file.buffer);
+        updates.photoUrl = `/uploads/${filename}`;
+      }
+
+      const updatedUser = await storage.updateUser(userId, updates);
+      req.login(updatedUser, (err) => {
+        if (err) return res.json(updatedUser); // still return the data
+        res.json(updatedUser);
+      });
+    } catch (err: any) {
+      console.error("Profile Update Error:", err);
+      res.status(500).json({ message: "Gagal memperbarui profil" });
+    }
+  });
+
+
+
   // Helper to handle photo upload
   async function handlePhotoUpload(
     req: Request,

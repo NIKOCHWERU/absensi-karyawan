@@ -25,6 +25,7 @@ import EmployeeComplaint from "@/pages/employee/ComplaintPage";
 import AdminLayout from "@/components/layout/AdminLayout";
 import EmployeeLeave from "@/pages/employee/LeavePage";
 import RegistrationPage from "@/pages/employee/RegistrationPage";
+import ProfilePage from "@/pages/employee/ProfilePage";
 import AdminVerificationPage from "@/pages/admin/AdminVerificationPage";
 import AdminShiftPage from "@/pages/admin/AdminShiftPage";
 import AdminManageAdminsPage from "@/pages/admin/AdminManageAdminsPage";
@@ -136,6 +137,9 @@ function Router() {
         <ProtectedRoute component={EmployeeLeave} />
       </Route>
       <Route path="/registration" component={RegistrationPage} />
+      <Route path="/profile">
+        <ProtectedRoute component={ProfilePage} />
+      </Route>
       <Route path="/pending">
         <ProtectedRoute component={StatusPendingPage} />
       </Route>

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, CalendarDays, Info, MessageSquare } from "lucide-react";
+import { LayoutDashboard, CalendarDays, Info, MessageSquare, UserCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -82,6 +82,7 @@ export function BottomNav() {
     { href: "/leave", label: "Cuti", icon: CalendarDays },
     { href: "/info", label: "Info", icon: Info, badge: infoBadgeCount },
     { href: "/complaint", label: "Pengaduan", icon: MessageSquare, badge: complaintBadgeCount },
+    { href: "/profile", label: "Profil", icon: UserCircle },
   ];
 
   return (
