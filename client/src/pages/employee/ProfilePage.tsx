@@ -19,7 +19,6 @@ const profileSchema = z.object({
   phoneNumber: z.string().optional(),
   email: z.string().email("Email tidak valid").optional().or(z.literal("")),
   branch: z.string().optional(),
-  shift: z.string().optional(),
   npwp: z.string().optional(),
   bpjs: z.string().optional(),
 });
@@ -49,7 +48,6 @@ export default function ProfilePage() {
       phoneNumber: user?.phoneNumber || "",
       email: user?.email || "",
       branch: user?.branch || "",
-      shift: (user as any)?.shift || "",
       npwp: user?.npwp || "",
       bpjs: user?.bpjs || "",
     },
@@ -94,7 +92,6 @@ export default function ProfilePage() {
       phoneNumber: user?.phoneNumber || "",
       email: user?.email || "",
       branch: user?.branch || "",
-      shift: (user as any)?.shift || "",
       npwp: user?.npwp || "",
       bpjs: user?.bpjs || "",
     });
@@ -181,18 +178,11 @@ export default function ProfilePage() {
                         </FormItem>
                       )} />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                       <FormField control={form.control} name="branch" render={({ field }) => (
                         <FormItem>
                           <FormLabel>Cabang</FormLabel>
                           <FormControl><Input placeholder="contoh: Pusat" {...field} /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <FormField control={form.control} name="shift" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Shift</FormLabel>
-                          <FormControl><Input placeholder="contoh: Shift 1" {...field} /></FormControl>
                           <FormMessage />
                         </FormItem>
                       )} />

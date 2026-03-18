@@ -70,7 +70,7 @@ export async function registerRoutes(
     if (!req.isAuthenticated()) return res.sendStatus(401);
     try {
       const userId = req.user!.id;
-      const allowed = ['phoneNumber', 'email', 'branch', 'shift', 'npwp', 'bpjs'];
+      const allowed = ['phoneNumber', 'email', 'branch', 'npwp', 'bpjs'];
       const updates: any = {};
       allowed.forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k]; });
 
@@ -258,6 +258,9 @@ export async function registerRoutes(
         lateReason: lateReason,
         lateReasonPhoto: lateReasonPhotoId
       });
+
+      // Update the user's shift in their profile automatically
+      await storage.updateUser(userId, { shift: shiftName });
 
       console.log(`[ClockIn] Success: Created session ${nextSessionNumber} for user ${userId}`);
       res.json(attendance);

@@ -7,7 +7,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, User, Camera, MapPin, Coffee, LogOut, X, Check, RefreshCw, SwitchCamera, Zap } from "lucide-react";
+import { Loader2, User, Camera, MapPin, Coffee, LogOut, X, Check, RefreshCw, SwitchCamera, Zap, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -94,9 +94,12 @@ export default function EmployeeDashboard() {
     const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
     const [selectedShiftId, setSelectedShiftId] = useState<number | null>(null);
 
-    const { data: shiftList } = useQuery<any[]>({
-        queryKey: ["/api/shifts"],
-    });
+    const shiftList = [
+        { id: 1, name: 'Shift 1', checkInTime: '08:00', checkOutTime: '17:00' },
+        { id: 2, name: 'Shift 2', checkInTime: '15:00', checkOutTime: '00:00' },
+        { id: 3, name: 'Shift 3', checkInTime: '23:00', checkOutTime: '08:00' },
+        { id: 4, name: 'longshift', checkInTime: '08:00', checkOutTime: '20:00' }
+    ];
 
     // Push Notifications State
     const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unavailable'>(
