@@ -27,6 +27,7 @@ import EmployeeLeave from "@/pages/employee/LeavePage";
 import RegistrationPage from "@/pages/employee/RegistrationPage";
 import AdminVerificationPage from "@/pages/admin/AdminVerificationPage";
 import AdminShiftPage from "@/pages/admin/AdminShiftPage";
+import AdminManageAdminsPage from "@/pages/admin/AdminManageAdminsPage";
 import StatusPendingPage from "@/pages/employee/StatusPendingPage";
 import NotFound from "@/pages/not-found";
 import InstallAppBanner from "@/components/InstallAppBanner";
@@ -144,6 +145,9 @@ function Router() {
       </Route>
       <Route path="/admin/shifts">
         <ProtectedRoute component={() => <AdminLayout><AdminShiftPage /></AdminLayout>} adminOnly />
+      </Route>
+      <Route path="/admin/manage-admins">
+        <ProtectedRoute component={() => <AdminLayout><AdminManageAdminsPage /></AdminLayout>} adminOnly />
       </Route>
 
       <Route component={NotFound} />

@@ -533,7 +533,14 @@ export async function registerRoutes(
 
       updates.registrationStatus = 'pending';
       const updatedUser = await storage.updateUser(userId, updates);
-      res.json(updatedUser);
+      // Re-login to update the session with the new registrationStatus
+      req.login(updatedUser, (err) => {
+        if (err) {
+          console.error("Re-login after registration failed:", err);
+          return res.status(500).json({ message: "Data tersimpan namun gagal memperbarui sesi. Silakan login ulang." });
+        }
+        res.json(updatedUser);
+      });
     } catch (err: any) {
       console.error("Registration Error:", err);
       res.status(500).json({ message: "Gagal menyimpan data pendaftaran" });

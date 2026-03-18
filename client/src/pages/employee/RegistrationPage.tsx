@@ -118,7 +118,15 @@ export default function RegistrationPage() {
       if (ktpInput?.files?.[0]) formData.append('ktpPhoto', ktpInput.files[0]);
       if (profInput?.files?.[0]) formData.append('profilePhoto', profInput.files[0]);
 
-      await apiRequest("POST", "/api/register-data", formData);
+      const res = await fetch("/api/register-data", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({ message: "Terjadi kesalahan" }));
+        throw new Error(errData.message || "Gagal mendaftar");
+      }
       
       toast({
         title: "Pendaftaran Berhasil",

@@ -22,7 +22,9 @@ import {
     FileText,
     MessageSquare,
     LogOut,
-    Image as ImageIcon
+    Image as ImageIcon,
+    ShieldCheck,
+    UserCog
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -43,8 +45,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         refetchInterval: 5000,
     });
 
+    const { data: unverifiedEmployees } = useQuery<any[]>({
+        queryKey: ["/api/admin/unverified-employees"],
+        refetchInterval: 10000,
+    });
+
     const pendingLeaveCount = leaveRequests?.filter((r) => r.status === 'pending').length || 0;
     const pendingComplaintsCount = complaintsStats?.pendingCount || 0;
+    const pendingVerificationCount = unverifiedEmployees?.filter((e) => e.registrationStatus === 'pending').length || 0;
 
     return (
         <SidebarProvider>
@@ -177,6 +185,35 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 >
                                     <FileText className="h-4 w-4" />
                                     <span className="truncate">Ringkasan Absensi</span>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+
+                            <SidebarMenuItem>
+                                <SidebarMenuButton
+                                    tooltip="Verifikasi Karyawan"
+                                    isActive={location === "/admin/verification"}
+                                    onClick={() => setLocation("/admin/verification")}
+                                    className={location === "/admin/verification" ? "bg-amber-50 text-amber-700 font-medium" : "text-gray-600"}
+                                >
+                                    <ShieldCheck className="h-4 w-4" />
+                                    <span className="flex-1">Verifikasi Karyawan</span>
+                                    {pendingVerificationCount > 0 && (
+                                        <span className="bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded-full group-data-[collapsible=icon]:hidden">
+                                            {pendingVerificationCount}
+                                        </span>
+                                    )}
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+
+                            <SidebarMenuItem>
+                                <SidebarMenuButton
+                                    tooltip="Kelola Admin"
+                                    isActive={location === "/admin/manage-admins"}
+                                    onClick={() => setLocation("/admin/manage-admins")}
+                                    className={location === "/admin/manage-admins" ? "bg-blue-50 text-blue-700 font-medium" : "text-gray-600"}
+                                >
+                                    <UserCog className="h-4 w-4" />
+                                    <span>Kelola Admin</span>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                         </SidebarMenu>
