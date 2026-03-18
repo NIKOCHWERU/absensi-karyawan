@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useAttendance } from "@/hooks/use-attendance";
 import { CompanyHeader } from "@/components/CompanyHeader";

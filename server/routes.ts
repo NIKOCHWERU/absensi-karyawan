@@ -56,61 +56,6 @@ export async function registerRoutes(
   }
   app.use('/uploads', express.static(uploadsDir));
 
-  // Registration route (Publicly accessible for initial data entry)
-  app.post("/api/register-data", upload.fields([
-    { name: 'ktpPhoto', maxCount: 1 },
-    { name: 'profilePhoto', maxCount: 1 }
-  ]), async (req: Request, res) => {
-    try {
-      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-      const data = JSON.parse(req.body.data);
-
-      const ktpPhotoUrl = files['ktpPhoto']?.[0]?.path ? `/uploads/${files['ktpPhoto'][0].filename}` : null;
-      const photoUrl = files['profilePhoto']?.[0]?.path ? `/uploads/${files['profilePhoto'][0].filename}` : null;
-
-      // Check if NIK exists, otherwise create new user
-      const existingUser = await storage.getUserByUsername(data.nik);
-      
-      const employeeData = {
-        fullName: data.fullName,
-        nik: data.nik,
-        username: data.nik, // Default login is NIK
-        password: await hashPassword(data.nik), // Default password is NIK
-        birthPlace: data.birthPlace,
-        birthDate: data.birthDate,
-        gender: data.gender,
-        religion: data.religion,
-        address: data.address,
-        phoneNumber: data.phoneNumber,
-        email: data.email,
-        branch: data.branch,
-        position: data.position,
-        employmentStatus: data.employmentStatus,
-        joinDate: data.joinDate,
-        npwp: data.npwp,
-        bpjs: data.bpjs,
-        bankAccount: data.bankAccount,
-        ktpPhotoUrl: ktpPhotoUrl || (existingUser?.ktpPhotoUrl),
-        photoUrl: photoUrl || (existingUser?.photoUrl),
-        role: "employee" as const,
-        registrationStatus: "pending" as const,
-        isAdmin: false
-      };
-
-      if (existingUser) {
-        // Update existing pre-registered user
-        const updatedUser = await storage.updateUser(existingUser.id, employeeData);
-        
-        // Return without session login here, let them login normally or handle via client
-        res.json({ message: "Pendaftaran berhasil, menunggu verifikasi HR.", user: updatedUser });
-      } else {
-        res.status(404).json({ message: "NIK tidak terdaftar/diizinkan. Hubungi HRD." });
-      }
-    } catch (error: any) {
-      console.error("Registration error:", error);
-      res.status(500).json({ message: "Gagal memproses pendaftaran", error: error.message });
-    }
-  });
 
   // Middleware untuk mengecek apakah user sudah login atau belum
   const isAuthenticated = (req: Request, res: any, next: any) => {
