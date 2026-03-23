@@ -270,7 +270,7 @@ export default function ProfilePage() {
                 <ReadOnlyField label="Alamat" value={user?.address} />
                 <ReadOnlyField label="Jabatan" value={user?.position} />
                 <ReadOnlyField label="Status Karyawan" value={(user as any)?.employmentStatus} />
-                <ReadOnlyField label="Tanggal Masuk" value={(user as any)?.joinDate} />
+                <ReadOnlyField label="Tahun bergabung ke elok" value={(user as any)?.joinDate} />
               </div>
 
               {/* Notice + Report Link */}

@@ -29,9 +29,12 @@ async function apply() {
             "bank_account VARCHAR(100)",
             "ktp_photo_url VARCHAR(512)",
             "registration_status ENUM('unregistered', 'pending', 'approved', 'rejected') NOT NULL DEFAULT 'unregistered'",
-            "join_date DATE",
+            "join_date VARCHAR(50)",
             "employment_status VARCHAR(50)"
         ];
+
+        console.log("Ensuring join_date is VARCHAR(50)...");
+        await connection.query("ALTER TABLE users MODIFY COLUMN join_date VARCHAR(50)");
 
         // Check columns first because IF NOT EXISTS for ADD COLUMN is not always supported in MySQL 8.0 < 8.0.29
         const [rows]: any = await connection.query("SHOW COLUMNS FROM users");

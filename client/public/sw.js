@@ -38,14 +38,15 @@ self.addEventListener('notificationclick', function (event) {
     // This looks to see if the current is already open and focuses if it is
     event.waitUntil(
         clients.matchAll({ type: 'window' }).then(windowClients => {
+            const urlToOpen = event.notification.data?.url || '/';
             for (let i = 0; i < windowClients.length; i++) {
                 const client = windowClients[i];
-                if (client.url === data.url && 'focus' in client) {
+                if (client.url === urlToOpen && 'focus' in client) {
                     return client.focus();
                 }
             }
             if (clients.openWindow) {
-                return clients.openWindow(event.notification.data.url);
+                return clients.openWindow(urlToOpen);
             }
         })
     );

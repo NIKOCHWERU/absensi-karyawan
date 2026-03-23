@@ -104,7 +104,7 @@ export default function InstallAppBanner() {
         } else {
             toast({
                 title: "Gunakan Menu Browser",
-                description: "Silakan buka menu browser (titik tiga atau share) dan pilih 'Instal Aplikasi' atau 'Tambahkan ke Layar Utama'.",
+                description: "Browser belum mengaktifkan fitur instal otomatis (Status: Menunggu). Silakan klik titik tiga di pojok kanan atas Chrome, lalu pilih 'Instal aplikasi'.",
             });
         }
     };
@@ -129,20 +129,11 @@ export default function InstallAppBanner() {
                     }}
                 >
                     <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
-                        {/* Header */}
-                        <div
-                            className="h-32 flex flex-col items-center justify-center"
-                            style={{
-                                background: "linear-gradient(135deg, #166534 0%, #15803d 100%)",
-                            }}
-                        >
-                            <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center">
-                                <Smartphone className="w-8 h-8 text-white" />
-                            </div>
-                        </div>
-
                         {/* Body */}
-                        <div className="px-6 py-5 text-center">
+                        <div className="px-6 py-8 text-center">
+                            <div className="mx-auto w-16 h-16 mb-4 rounded-2xl bg-green-100 flex items-center justify-center">
+                                <Smartphone className="w-8 h-8 text-green-700" />
+                            </div>
                             <h2 className="text-lg font-bold text-gray-900 mb-1">
                                 Install Aplikasi Absensi
                             </h2>

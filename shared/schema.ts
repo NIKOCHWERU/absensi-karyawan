@@ -28,7 +28,7 @@ export const users = mysqlTable("users", {
   bankAccount: varchar("bank_account", { length: 100 }),
   ktpPhotoUrl: varchar("ktp_photo_url", { length: 512 }),
   registrationStatus: mysqlEnum("registration_status", ["unregistered", "pending", "approved", "rejected"]).notNull().default("unregistered"),
-  joinDate: date("join_date"),
+  joinDate: varchar("join_date", { length: 50 }),
   employmentStatus: varchar("employment_status", { length: 50 }), // e.g., Kontrak, Tetap
 });
 

@@ -139,7 +139,7 @@ export default function AdminVerificationPage() {
                   <Section title="Pekerjaan" icon={<Briefcase className="w-4 h-4" />}>
                     <DataRow label="Jabatan" value={(selectedUser as any).position} />
                     <DataRow label="Cabang" value={(selectedUser as any).branch} />
-                    <DataRow label="Tgl Masuk" value={(selectedUser as any).joinDate} />
+                    <DataRow label="Tahun bergabung ke elok" value={(selectedUser as any).joinDate} />
                     <DataRow label="Status" value={(selectedUser as any).employmentStatus} />
                   </Section>
                 </div>
