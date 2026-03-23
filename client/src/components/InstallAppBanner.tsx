@@ -194,6 +194,3 @@ export default function InstallAppBanner() {
         </>
     );
 }
-        </>
-    );
-}
