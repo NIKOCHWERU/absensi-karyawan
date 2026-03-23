@@ -13,6 +13,14 @@
     <meta name="apple-mobile-web-app-title" content="Absensi EJA" />
     <link rel="apple-touch-icon" href="/logo_elok_buah.jpg" />
     <link rel="manifest" href="/manifest.json" />
+    <script>
+      window.deferredPrompt = null;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        window.deferredPrompt = e;
+        console.log('✅ PWA: beforeinstallprompt event captured early');
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>

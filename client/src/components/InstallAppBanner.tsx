@@ -13,7 +13,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export default function InstallAppBanner() {
-    const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+    const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>((window as any).deferredPrompt);
     const [isIOS, setIsIOS] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const [isInstalled, setIsInstalled] = useState(false);
@@ -46,18 +46,33 @@ export default function InstallAppBanner() {
             setShowFab(true);
         }
 
+
+        // Check if pre-captured
+        if ((window as any).deferredPrompt) {
+            setDeferredPrompt((window as any).deferredPrompt);
+        }
+
         const handleBeforeInstallPrompt = (e: Event) => {
             console.log("✅ PWA: beforeinstallprompt event caught!");
             e.preventDefault();
-            setDeferredPrompt(e as BeforeInstallPromptEvent);
+            const promptEvent = e as BeforeInstallPromptEvent;
+            setDeferredPrompt(promptEvent);
+            (window as any).deferredPrompt = promptEvent;
         };
 
         const handleAppInstalled = () => {
+            console.log("✅ PWA: App installed!");
             setIsInstalled(true);
             setShowModal(false);
             setShowFab(false);
             setDeferredPrompt(null);
+            (window as any).deferredPrompt = null;
         };
+
+        // Check HTTPS
+        if (window.location.protocol !== "https:" && window.location.hostname !== "localhost") {
+            console.warn("⚠️ PWA: Install prompt will NOT fire because connection is not secure (HTTPS).");
+        }
 
         window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
         window.addEventListener("appinstalled", handleAppInstalled);
