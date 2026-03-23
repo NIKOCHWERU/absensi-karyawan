@@ -47,6 +47,7 @@ export default function InstallAppBanner() {
         }
 
         const handleBeforeInstallPrompt = (e: Event) => {
+            console.log("✅ PWA: beforeinstallprompt event caught!");
             e.preventDefault();
             setDeferredPrompt(e as BeforeInstallPromptEvent);
         };
@@ -127,13 +128,13 @@ export default function InstallAppBanner() {
 
                             <Button
                                 onClick={triggerInstall}
-                                className="w-full h-11 font-bold rounded-xl mb-4 text-white border-none shadow-md active:scale-95 transition-transform"
+                                className="w-full h-11 font-bold rounded-xl mb-4 text-white border-none shadow-md active:scale-95 transition-all hover:brightness-110"
                                 style={{
                                     background: "linear-gradient(to right, #166534, #15803d)",
                                 }}
                             >
                                 <Download className="w-4 h-4 mr-2" />
-                                {deferredPrompt ? "Pasang Sekarang" : "Buka Menu Pasang"}
+                                {deferredPrompt ? "INSTAL SEKARANG" : "PASANG APLIKASI"}
                             </Button>
 
                             {/* Automated Prompt NOT ready - Show Instructions */}

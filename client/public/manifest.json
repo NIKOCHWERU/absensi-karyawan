@@ -1,7 +1,24 @@
 {
     "name": "Absensi PT EJA",
     "short_name": "Absensi EJA",
-    "description": "Aplikasi Absensi Karyawan PT Elok Jaya Abadhi",
+    "description": "Aplikasi Absensi Karyawan PT Elok Jaya Abadhi. Solusi absensi modern, cepat, dan akurat dengan fitur GPS dan pengenalan wajah.",
+    "categories": ["productivity", "business"],
+    "screenshots": [
+        {
+            "src": "/screenshot1.png",
+            "sizes": "1080x1920",
+            "type": "image/png",
+            "form_factor": "narrow",
+            "label": "Absen Masuk & Pulang"
+        },
+        {
+            "src": "/screenshot2.png",
+            "sizes": "1920x1080",
+            "type": "image/png",
+            "form_factor": "wide",
+            "label": "Dashboard Admin"
+        }
+    ],
     "start_url": "/",
     "display": "standalone",
     "background_color": "#ffffff",
