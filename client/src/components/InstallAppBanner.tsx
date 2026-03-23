@@ -39,12 +39,13 @@ export default function InstallAppBanner() {
             return;
         }
 
+        // Persistent visibility: Always show FAB if not installed
+        // We only hide the MODAL if dismissed, but the FAB stays
         const dismissed = localStorage.getItem("installModalDismissed");
         if (!dismissed) {
             setShowModal(true);
-        } else {
-            setShowFab(true);
         }
+        setShowFab(true); // Always show FAB if not standalone and not installed
 
 
         // Check if pre-captured

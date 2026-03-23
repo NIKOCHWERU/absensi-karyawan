@@ -78,6 +78,7 @@ export default function RegistrationPage() {
       { key: 'nik', name: 'NIK' },
       { key: 'birthPlace', name: 'Tempat Lahir' },
       { key: 'birthDate', name: 'Tanggal Lahir' },
+      { key: 'religion', name: 'Agama' },
       { key: 'phoneNumber', name: 'No. HP' },
       { key: 'address', name: 'Alamat' }
     ];
