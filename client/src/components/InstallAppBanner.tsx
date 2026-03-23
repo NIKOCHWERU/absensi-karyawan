@@ -83,15 +83,23 @@ export default function InstallAppBanner() {
     }, []);
 
     const triggerInstall = async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === "accepted") {
-                setIsInstalled(true);
-                setShowModal(false);
-                setShowFab(false);
+        const promptToUse = deferredPrompt || (window as any).deferredPrompt;
+
+        if (promptToUse) {
+            try {
+                promptToUse.prompt();
+                const { outcome } = await promptToUse.userChoice;
+                console.log(`PWA: User choice outcome: ${outcome}`);
+                if (outcome === "accepted") {
+                    setIsInstalled(true);
+                    setShowModal(false);
+                    setShowFab(false);
+                    setDeferredPrompt(null);
+                    (window as any).deferredPrompt = null;
+                }
+            } catch (err) {
+                console.error("PWA: Install error:", err);
             }
-            setDeferredPrompt(null);
         } else {
             toast({
                 title: "Gunakan Menu Browser",
