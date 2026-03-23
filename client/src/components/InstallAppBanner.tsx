@@ -37,14 +37,11 @@ export default function InstallAppBanner() {
             return;
         }
 
-        if (mobile) {
-            const dismissed = localStorage.getItem("installModalDismissed");
-            if (!dismissed) {
-                // Show modal after 1.5s delay
-                setTimeout(() => setShowModal(true), 1500);
-            } else {
-                setShowFab(true);
-            }
+        const dismissed = localStorage.getItem("installModalDismissed");
+        if (!dismissed) {
+            setShowModal(true);
+        } else {
+            setShowFab(true);
         }
 
         const handleBeforeInstallPrompt = (e: Event) => {
@@ -90,7 +87,7 @@ export default function InstallAppBanner() {
         setShowFab(true);
     };
 
-    if (!isMobile || isInstalled) return null;
+    if (isInstalled) return null;
 
     return (
         <>
