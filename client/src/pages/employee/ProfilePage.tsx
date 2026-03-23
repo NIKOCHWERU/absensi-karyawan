@@ -21,6 +21,7 @@ const profileSchema = z.object({
   branch: z.string().optional(),
   npwp: z.string().optional(),
   bpjs: z.string().optional(),
+  religion: z.string().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -50,6 +51,7 @@ export default function ProfilePage() {
       branch: user?.branch || "",
       npwp: user?.npwp || "",
       bpjs: user?.bpjs || "",
+      religion: user?.religion || "",
     },
   });
 
@@ -94,6 +96,7 @@ export default function ProfilePage() {
       branch: user?.branch || "",
       npwp: user?.npwp || "",
       bpjs: user?.bpjs || "",
+      religion: user?.religion || "",
     });
     setPhotoPreview(null);
     setPhotoFile(null);
@@ -199,6 +202,28 @@ export default function ProfilePage() {
                         <FormItem>
                           <FormLabel>BPJS</FormLabel>
                           <FormControl><Input {...field} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={form.control} name="religion" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Agama</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pilih Agama" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Islam">Islam</SelectItem>
+                              <SelectItem value="Kristen Protestan">Kristen Protestan</SelectItem>
+                              <SelectItem value="Katolik">Katolik</SelectItem>
+                              <SelectItem value="Hindu">Hindu</SelectItem>
+                              <SelectItem value="Buddha">Buddha</SelectItem>
+                              <SelectItem value="Khonghucu">Khonghucu</SelectItem>
+                              <SelectItem value="Lainnya">Lainnya</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )} />

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Download, Smartphone, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 interface BeforeInstallPromptEvent extends Event {
     readonly platforms: string[];
@@ -18,6 +19,7 @@ export default function InstallAppBanner() {
     const [isInstalled, setIsInstalled] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [showFab, setShowFab] = useState(false);
+    const { toast } = useToast();
 
     useEffect(() => {
         const ua = window.navigator.userAgent.toLowerCase();
@@ -73,11 +75,12 @@ export default function InstallAppBanner() {
                 setShowModal(false);
                 setShowFab(false);
             }
+            setDeferredPrompt(null);
         } else {
-            // If no deferred prompt (e.g., iOS or delayed), 
-            // the instructions are already visible in the modal.
-            // We could add a scroll-to-instructions or just let the user see them.
-            // For better UX, we can just say "Please follow the instructions below" via alert or similar if needed.
+            toast({
+                title: "Gunakan Menu Browser",
+                description: "Silakan buka menu browser (titik tiga atau share) dan pilih 'Instal Aplikasi' atau 'Tambahkan ke Layar Utama'.",
+            });
         }
     };
 

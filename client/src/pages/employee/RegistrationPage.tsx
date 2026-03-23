@@ -238,6 +238,32 @@ export default function RegistrationPage() {
                           />
                           <FormField
                             control={form.control}
+                            name="religion"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Agama</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Pilih Agama" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="Islam">Islam</SelectItem>
+                                    <SelectItem value="Kristen Protestan">Kristen Protestan</SelectItem>
+                                    <SelectItem value="Katolik">Katolik</SelectItem>
+                                    <SelectItem value="Hindu">Hindu</SelectItem>
+                                    <SelectItem value="Buddha">Buddha</SelectItem>
+                                    <SelectItem value="Khonghucu">Khonghucu</SelectItem>
+                                    <SelectItem value="Lainnya">Lainnya</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
                             name="birthPlace"
                             render={({ field }) => (
                               <FormItem>
