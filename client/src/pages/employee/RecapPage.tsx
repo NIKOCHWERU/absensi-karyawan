@@ -60,13 +60,36 @@ export default function RecapPage() {
     return isWithinInterval(date, { start: wStart, end: wEnd });
   }) || [];
 
-  // Stats calculation based on filtered data
+  // Group records by date to calculate per-day stats
+  const dayStatuses = new Map<string, string>();
+  filteredData.forEach(record => {
+    const dateKey = format(new Date(record.date), 'yyyy-MM-dd');
+    const currentStatus = dayStatuses.get(dateKey);
+    
+    // Status priority: sick > permission > late > present > off > absent
+    const statusPriority: Record<string, number> = {
+      sick: 6,
+      permission: 5,
+      late: 4,
+      present: 3,
+      off: 2,
+      absent: 1
+    };
+
+    if (!currentStatus || statusPriority[record.status] > statusPriority[currentStatus]) {
+      dayStatuses.set(dateKey, record.status);
+    }
+  });
+
+  const dailyValues = Array.from(dayStatuses.values());
+
+  // Stats calculation based on unique days
   const stats = {
-    present: filteredData.filter(a => a.status === 'present').length,
-    late: filteredData.filter(a => a.status === 'late').length,
-    sick: filteredData.filter(a => a.status === 'sick').length,
-    permission: filteredData.filter(a => a.status === 'permission').length,
-    absent: filteredData.filter(a => a.status === 'absent').length,
+    present: dailyValues.filter(status => status === 'present').length,
+    late: dailyValues.filter(status => status === 'late').length,
+    sick: dailyValues.filter(status => status === 'sick').length,
+    permission: dailyValues.filter(status => status === 'permission').length,
+    absent: dailyValues.filter(status => status === 'absent').length,
   };
 
   // Pre-calculate daily totals

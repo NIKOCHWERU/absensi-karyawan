@@ -226,26 +226,33 @@ export async function registerRoutes(
       const timeInMinutes = hour * 60 + minute;
 
       let status = "present";
-      let thresholdMinutes = 420; // Default 07:00
+      let thresholdMinutes = 420; // Default 07:00 (Shift 1)
 
-      if (shiftId) {
-        const shiftData = await storage.getShift(shiftId);
-        if (shiftData) {
-          shiftName = shiftData.name;
-          const [sHour, sMinute] = shiftData.checkInTime.split(':').map(Number);
-          thresholdMinutes = sHour * 60 + sMinute;
+      // Only evaluate status (present/late) for the FIRST SESSION of the day
+      if (nextSessionNumber === 1) {
+        if (shiftId) {
+          const shiftData = await storage.getShift(shiftId);
+          if (shiftData) {
+            shiftName = shiftData.name;
+            const [sHour, sMinute] = shiftData.checkInTime.split(':').map(Number);
+            thresholdMinutes = sHour * 60 + sMinute;
+          }
+        } else {
+          // Legacy/Hardcoded rules for backward compatibility
+          if (shiftName === 'Shift 2') thresholdMinutes = 720;
+          else if (shiftName === 'Shift 3') thresholdMinutes = 900;
+        }
+
+        if (timeInMinutes > thresholdMinutes) {
+          status = "late";
         }
       } else {
-        // Legacy/Hardcoded rules for backward compatibility
-        if (shiftName === 'Shift 2') thresholdMinutes = 720;
-        else if (shiftName === 'Shift 3') thresholdMinutes = 900;
+        // Session 2-5 are always present regardless of time
+        status = "present";
       }
 
-      if (timeInMinutes > thresholdMinutes) {
-        status = "late";
-      }
-
-      // Special case: if there's an 'off' session, update it to present/late instead of creating a new session
+      // Special case: if there's an 'off' session (which is always session 1), 
+      // update it to present/late instead of creating a new session.
       const offSession = existingSessions.find(s => s.status === 'off');
       if (offSession) {
         console.log(`[ClockIn] Converting 'off' session ${offSession.id} to '${status}' work session for user ${userId}`);

@@ -122,12 +122,32 @@ export default function InstallAppBanner() {
                                 disabled={!deferredPrompt}
                                 className="w-full h-11 font-bold rounded-xl mb-3 text-white border-none"
                                 style={{
-                                    background: "linear-gradient(to right, #166534, #15803d)",
+                                    background: deferredPrompt 
+                                        ? "linear-gradient(to right, #166534, #15803d)" 
+                                        : "#9ca3af",
                                 }}
                             >
                                 <Download className="w-4 h-4 mr-2" />
-                                {deferredPrompt ? "Install Sekarang" : "Menunggu browser..."}
+                                {deferredPrompt ? "Install Sekarang" : "Menyiapkan tombol..."}
                             </Button>
+
+                            {!deferredPrompt && (
+                                <div className="mb-4 p-3 bg-green-50 rounded-xl border border-green-100 text-left">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-green-700 mb-2">
+                                        Cara Manual (Jika tombol belum muncul):
+                                    </p>
+                                    <div className="space-y-2">
+                                        <div className="flex items-start gap-2 text-[11px] text-green-800 leading-tight">
+                                            <span className="font-bold">1.</span>
+                                            <span>Klik menu titik tiga <b>(⋮)</b> di pojok kanan atas Chrome.</span>
+                                        </div>
+                                        <div className="flex items-start gap-2 text-[11px] text-green-800 leading-tight">
+                                            <span className="font-bold">2.</span>
+                                            <span>Pilih <b>"Instal Aplikasi"</b> atau <b>"Tambahkan ke Layar Utama"</b>.</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             <button
                                 onClick={handleLater}
