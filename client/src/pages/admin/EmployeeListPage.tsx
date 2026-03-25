@@ -6,12 +6,14 @@ import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { ArrowLeft, UserPlus, Search, Calendar, Phone, Image as ImageIcon, ImageOff, MapPin, Trash2, MessageSquare, Upload } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema } from "@shared/schema";
+import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -74,6 +76,7 @@ export default function AdminEmployeeList() {
     });
 
     const employees = users?.filter(u => u.role === 'employee') || [];
+    const { user } = useAuth();
 
     // Create a more flexible schema for the form
     const formSchema = z.object({
@@ -198,6 +201,21 @@ export default function AdminEmployeeList() {
         }
     });
 
+    const bulkDeleteMutation = useMutation({
+        mutationFn: async (userIds: number[]) => {
+            const res = await apiRequest("POST", "/api/admin/users/bulk-delete", { userIds });
+            return await res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+            toast({ title: "Berhasil", description: "Karyawan terpilih telah dihapus." });
+            setSelectedEmployeeIds([]);
+        },
+        onError: (err: any) => {
+            toast({ title: "Gagal Menghapus", description: err.message, variant: "destructive" });
+        }
+    });
+
     const handleNext = () => {
         if (viewMode === 'month') setAttendanceViewDate(d => addMonths(d, 1));
         else setWeekDate(d => addWeeks(d, 1));
@@ -227,6 +245,21 @@ export default function AdminEmployeeList() {
                     </Button>
                 </div>
                 <div className="flex items-center gap-2">
+                    {user?.role === 'superadmin' && selectedEmployeeIds.length > 0 && (
+                        <Button 
+                            variant="destructive" 
+                            className="bg-red-600 hover:bg-red-700 shadow-sm"
+                            onClick={() => {
+                                if (confirm(`Yakin ingin menghapus ${selectedEmployeeIds.length} karyawan? Data akan hilang permanen.`)) {
+                                    bulkDeleteMutation.mutate(selectedEmployeeIds);
+                                }
+                            }}
+                            disabled={bulkDeleteMutation.isPending}
+                        >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Hapus Terpilih ({selectedEmployeeIds.length})
+                        </Button>
+                    )}
                     <Dialog open={csvOpen} onOpenChange={setCsvOpen}>
                         <DialogTrigger asChild>
                             <Button variant="outline" className="border-orange-200 text-orange-700 hover:bg-orange-50 bg-white">
@@ -456,6 +489,20 @@ export default function AdminEmployeeList() {
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                {user?.role === 'superadmin' && (
+                                    <TableHead className="w-[40px] text-center">
+                                        <Checkbox 
+                                            checked={selectedEmployeeIds.length === employees.length && employees.length > 0}
+                                            onCheckedChange={(checked) => {
+                                                if (checked) {
+                                                    setSelectedEmployeeIds(employees.map(e => e.id));
+                                                } else {
+                                                    setSelectedEmployeeIds([]);
+                                                }
+                                            }}
+                                        />
+                                    </TableHead>
+                                )}
                                 <TableHead className="w-[50px]">No</TableHead>
                                 <TableHead>Nama</TableHead>
                                 <TableHead>NIK</TableHead>
@@ -468,6 +515,20 @@ export default function AdminEmployeeList() {
                         <TableBody>
                             {employees.map((emp, index) => (
                                 <TableRow key={emp.id}>
+                                    {user?.role === 'superadmin' && (
+                                        <TableCell className="text-center">
+                                            <Checkbox 
+                                                checked={selectedEmployeeIds.includes(emp.id)}
+                                                onCheckedChange={(checked) => {
+                                                    if (checked) {
+                                                        setSelectedEmployeeIds(prev => [...prev, emp.id]);
+                                                    } else {
+                                                        setSelectedEmployeeIds(prev => prev.filter(id => id !== emp.id));
+                                                    }
+                                                }}
+                                            />
+                                        </TableCell>
+                                    )}
                                     <TableCell className="font-medium">{index + 1}</TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-3">
