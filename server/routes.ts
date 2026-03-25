@@ -560,16 +560,23 @@ export async function registerRoutes(
   // --- Registration & Shift Routes ---
 
   app.post("/api/register-data", upload.fields([{ name: 'ktpPhoto', maxCount: 1 }, { name: 'profilePhoto', maxCount: 1 }]), async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Sesi telah berakhir. Silakan login kembali." });
+    }
     
     try {
       const userId = req.user!.id;
+      
+      // Safety check for empty body or strange data
+      if (!req.body || Object.keys(req.body).length === 0) {
+        console.error("Registration Error: Empty request body");
+        return res.status(400).json({ message: "Data pendaftaran tidak lengkap." });
+      }
+
       const updates: any = { ...req.body };
       
       // Remove sensitive/locked fields if they try to send them after approval
       if (req.user!.registrationStatus === 'approved') {
-        // Only allow editing limited fields if already approved
-        // For now, let's keep it simple and block all if approved
         return res.status(400).json({ message: "Data sudah terverifikasi dan terkunci." });
       }
 
@@ -600,8 +607,8 @@ export async function registerRoutes(
         res.json(updatedUser);
       });
     } catch (err: any) {
-      console.error("Registration Error:", err);
-      res.status(500).json({ message: "Gagal menyimpan data pendaftaran" });
+      console.error("Registration Error Full:", err);
+      res.status(500).json({ message: "Gagal menyimpan data pendaftaran: " + (err.message || "Unknown error") });
     }
   });
 
