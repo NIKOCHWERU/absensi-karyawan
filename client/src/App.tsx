@@ -39,7 +39,11 @@ function ProtectedRoute({ component: Component, adminOnly, superadminOnly }: { c
 
   useEffect(() => {
     if (!isLoading && !user) {
-      setLocation("/login");
+      if (window.location.pathname.startsWith("/admin")) {
+        setLocation("/admin/login");
+      } else {
+        setLocation("/login");
+      }
     } else if (!isLoading && user) {
       const isRegistrationPage = window.location.pathname === "/registration";
       const isPendingPage = window.location.pathname === "/pending";
