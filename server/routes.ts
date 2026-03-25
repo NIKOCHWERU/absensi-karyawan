@@ -82,10 +82,7 @@ export async function registerRoutes(
       }
 
       const updatedUser = await storage.updateUser(userId, updates);
-      req.login(updatedUser, (err) => {
-        if (err) return res.json(updatedUser); // still return the data
-        res.json(updatedUser);
-      });
+      res.json(updatedUser);
     } catch (err: any) {
       console.error("Profile Update Error:", err);
       res.status(500).json({ message: "Gagal memperbarui profil" });
@@ -958,7 +955,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/admin/users/:id", upload.single('photo'), async (req, res) => {
+  app.patch("/api/admin/users/:id", upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'bpjsPhoto', maxCount: 1 }, { name: 'npwpPhoto', maxCount: 1 }]), async (req, res) => {
     if (!req.isAuthenticated() || req.user!.role !== 'admin') return res.sendStatus(401);
 
     try {
@@ -973,16 +970,29 @@ export async function registerRoutes(
       if (updates.username === "") updates.username = null;
       if (updates.phoneNumber === "") updates.phoneNumber = null;
 
-      // If photo is uploaded, save it locally
-      const multerReq = req as any;
-      if (multerReq.file) {
-        const filename = `emp-${id}-${Date.now()}-${multerReq.file.originalname}`;
-        const empUploadsDir = path.join(uploadsDir, 'employees');
-        if (!fs.existsSync(empUploadsDir)) fs.mkdirSync(empUploadsDir);
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      const empUploadsDir = path.join(uploadsDir, 'employees');
+      if (!fs.existsSync(empUploadsDir)) fs.mkdirSync(empUploadsDir);
 
+      if (files?.photo?.[0]) {
+        const filename = `emp-${id}-photo-${Date.now()}-${files.photo[0].originalname}`;
         const filepath = path.join(empUploadsDir, filename);
-        fs.writeFileSync(filepath, multerReq.file.buffer);
+        fs.writeFileSync(filepath, files.photo[0].buffer);
         updates.photoUrl = `/uploads/employees/${filename}`;
+      }
+
+      if (files?.bpjsPhoto?.[0]) {
+        const filename = `emp-${id}-bpjs-${Date.now()}-${files.bpjsPhoto[0].originalname}`;
+        const filepath = path.join(empUploadsDir, filename);
+        fs.writeFileSync(filepath, files.bpjsPhoto[0].buffer);
+        updates.bpjsPhotoUrl = `/uploads/employees/${filename}`;
+      }
+
+      if (files?.npwpPhoto?.[0]) {
+        const filename = `emp-${id}-npwp-${Date.now()}-${files.npwpPhoto[0].originalname}`;
+        const filepath = path.join(empUploadsDir, filename);
+        fs.writeFileSync(filepath, files.npwpPhoto[0].buffer);
+        updates.npwpPhotoUrl = `/uploads/employees/${filename}`;
       }
 
       // If password provided, hash it

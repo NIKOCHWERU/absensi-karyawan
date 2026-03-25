@@ -72,6 +72,10 @@ import { initAutoBackup } from "./backup";
     await connection.query("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS late_reason TEXT");
     await connection.query("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS late_reason_photo VARCHAR(255)");
 
+    log("Running auto-migration for user profile photos...");
+    await connection.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS npwp_photo_url VARCHAR(512)");
+    await connection.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS bpjs_photo_url VARCHAR(512)");
+
     log("Running auto-migration for leave_requests table...");
     await connection.query(`
       CREATE TABLE IF NOT EXISTS leave_requests (

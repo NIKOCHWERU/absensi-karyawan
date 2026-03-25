@@ -8,6 +8,7 @@ import { ArrowLeft, UserPlus, Search, Calendar, Phone, Image as ImageIcon, Image
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertUserSchema } from "@shared/schema";
@@ -85,6 +86,9 @@ export default function AdminEmployeeList() {
         email: z.string().optional(),
         username: z.string().optional(),
         phoneNumber: z.string().optional(),
+        religion: z.string().optional(),
+        npwp: z.string().optional(),
+        bpjs: z.string().optional(),
     });
 
     const form = useForm({
@@ -98,11 +102,16 @@ export default function AdminEmployeeList() {
             position: "Staff",
             email: "",
             username: "",
-            phoneNumber: ""
+            phoneNumber: "",
+            religion: "",
+            npwp: "",
+            bpjs: ""
         }
     });
 
     const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
+    const [selectedBpjsPhoto, setSelectedBpjsPhoto] = useState<File | null>(null);
+    const [selectedNpwpPhoto, setSelectedNpwpPhoto] = useState<File | null>(null);
     const [csvFile, setCsvFile] = useState<File | null>(null);
     const [csvOpen, setCsvOpen] = useState(false);
 
@@ -143,6 +152,8 @@ export default function AdminEmployeeList() {
             if (selectedPhoto) {
                 formData.append('photo', selectedPhoto);
             }
+            if (selectedBpjsPhoto) formData.append('bpjsPhoto', selectedBpjsPhoto);
+            if (selectedNpwpPhoto) formData.append('npwpPhoto', selectedNpwpPhoto);
 
             const url = selectedEmployee ? `/api/admin/users/${selectedEmployee.id}` : "/api/admin/users";
             const method = selectedEmployee ? "PATCH" : "POST";
@@ -165,6 +176,8 @@ export default function AdminEmployeeList() {
             form.reset();
             setSelectedEmployee(null);
             setSelectedPhoto(null);
+            setSelectedBpjsPhoto(null);
+            setSelectedNpwpPhoto(null);
         },
         onError: (err: any) => {
             toast({ title: "Gagal", description: err.message, variant: "destructive" });
@@ -260,8 +273,13 @@ export default function AdminEmployeeList() {
                                         position: "Staff",
                                         email: "",
                                         username: "",
-                                        phoneNumber: ""
+                                        phoneNumber: "",
+                                        religion: "",
+                                        npwp: "",
+                                        bpjs: ""
                                     });
+                                    setSelectedBpjsPhoto(null);
+                                    setSelectedNpwpPhoto(null);
                                 }}
                             >
                                 <UserPlus className="mr-2 h-4 w-4" />
@@ -365,6 +383,56 @@ export default function AdminEmployeeList() {
                                             </FormItem>
                                         )}
                                     />
+                                    <FormField control={form.control} name="religion" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Agama</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value || undefined}>
+                                                <FormControl><SelectTrigger><SelectValue placeholder="Pilih Agama" /></SelectTrigger></FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="Islam">Islam</SelectItem>
+                                                    <SelectItem value="Kristen Protestan">Kristen Protestan</SelectItem>
+                                                    <SelectItem value="Katolik">Katolik</SelectItem>
+                                                    <SelectItem value="Hindu">Hindu</SelectItem>
+                                                    <SelectItem value="Buddha">Buddha</SelectItem>
+                                                    <SelectItem value="Khonghucu">Khonghucu</SelectItem>
+                                                    <SelectItem value="Lainnya">Lainnya</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                    <FormField control={form.control} name="npwp" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>NPWP</FormLabel>
+                                            <FormControl><Input {...field} value={field.value || ''} placeholder="00.000.000.0-000.000" /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                    <div className="space-y-2">
+                                        <FormLabel className="text-sm font-medium leading-none">Foto NPWP</FormLabel>
+                                        <div className="flex items-center gap-3">
+                                            <Input type="file" accept="image/*" onChange={(e) => setSelectedNpwpPhoto(e.target.files?.[0] || null)} />
+                                            {(selectedEmployee as any)?.npwpPhotoUrl && (
+                                                <a href={(selectedEmployee as any).npwpPhotoUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline shrink-0">Lihat Foto</a>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <FormField control={form.control} name="bpjs" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>BPJS</FormLabel>
+                                            <FormControl><Input {...field} value={field.value || ''} placeholder="Nomor BPJS" /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                    <div className="space-y-2 pb-4">
+                                        <FormLabel className="text-sm font-medium leading-none">Foto BPJS</FormLabel>
+                                        <div className="flex items-center gap-3">
+                                            <Input type="file" accept="image/*" onChange={(e) => setSelectedBpjsPhoto(e.target.files?.[0] || null)} />
+                                            {(selectedEmployee as any)?.bpjsPhotoUrl && (
+                                                <a href={(selectedEmployee as any).bpjsPhotoUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline shrink-0">Lihat Foto</a>
+                                            )}
+                                        </div>
+                                    </div>
                                     <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white" disabled={upsertMutation.isPending}>
                                         {upsertMutation.isPending ? "Menyimpan..." : "Simpan Data"}
                                     </Button>
@@ -447,6 +515,9 @@ export default function AdminEmployeeList() {
                                                         position: emp.position || "",
                                                         phoneNumber: emp.phoneNumber || "",
                                                         username: emp.username || "",
+                                                        religion: (emp as any).religion || "",
+                                                        npwp: (emp as any).npwp || "",
+                                                        bpjs: (emp as any).bpjs || "",
                                                         password: "" // Keep empty to not change
                                                     });
                                                     setOpen(true);

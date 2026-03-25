@@ -15,6 +15,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Camera, Pencil, Check, Lock, MessageSquare } from "lucide-react";
 import { motion } from "framer-motion";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 
 const profileSchema = z.object({
   phoneNumber: z.string().optional(),
@@ -265,7 +267,10 @@ export default function ProfilePage() {
               <div className="space-y-0 text-sm">
                 <ReadOnlyField label="Nama Lengkap" value={user?.fullName} />
                 <ReadOnlyField label="NIK" value={user?.nik} />
-                <ReadOnlyField label="Tempat, Tgl Lahir" value={[user?.birthPlace, user?.birthDate].filter(Boolean).join(", ")} />
+                <ReadOnlyField label="Tempat, Tgl Lahir" value={[
+                  user?.birthPlace, 
+                  user?.birthDate ? format(new Date(user.birthDate), "d MMMM yyyy", { locale: id }) : null
+                ].filter(Boolean).join(", ")} />
                 <ReadOnlyField label="Jenis Kelamin" value={user?.gender} />
                 <ReadOnlyField label="Agama" value={user?.religion} />
                 <ReadOnlyField label="Alamat" value={user?.address} />
