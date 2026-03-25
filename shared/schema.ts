@@ -9,7 +9,7 @@ export const users = mysqlTable("users", {
   username: varchar("username", { length: 255 }).unique(), // Can be NIK for employees
   password: varchar("password", { length: 255 }).notNull(),
   fullName: varchar("full_name", { length: 255 }).notNull(),
-  role: mysqlEnum("role", ["admin", "employee"]).notNull().default("employee"),
+  role: mysqlEnum("role", ["admin", "employee", "superadmin"]).notNull().default("employee"),
   nik: varchar("nik", { length: 50 }).unique(), // Specific for employees
   branch: varchar("branch", { length: 100 }),
   position: varchar("position", { length: 100 }),

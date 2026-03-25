@@ -76,6 +76,22 @@ import { initAutoBackup } from "./backup";
     await connection.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS npwp_photo_url VARCHAR(512)");
     await connection.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS bpjs_photo_url VARCHAR(512)");
 
+    log("Running auto-migration for superadmin role...");
+    try {
+      await connection.query("ALTER TABLE users MODIFY COLUMN role ENUM('admin', 'employee', 'superadmin') NOT NULL DEFAULT 'employee'");
+      // Promote the first admin to superadmin if no superadmins exist yet. (Using a sub-select to avoid MySQL update target table restriction)
+      await connection.query(`
+        UPDATE users 
+        SET role = 'superadmin' 
+        WHERE role = 'admin' AND NOT EXISTS (
+          SELECT 1 FROM (SELECT role FROM users WHERE role = 'superadmin') AS tmp
+        ) 
+        ORDER BY id ASC LIMIT 1
+      `);
+    } catch (e) {
+      log(`Role auto-migration issue (non-critical): ${e}`, "db");
+    }
+
     log("Running auto-migration for leave_requests table...");
     await connection.query(`
       CREATE TABLE IF NOT EXISTS leave_requests (

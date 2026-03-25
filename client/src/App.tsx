@@ -33,7 +33,7 @@ import StatusPendingPage from "@/pages/employee/StatusPendingPage";
 import NotFound from "@/pages/not-found";
 import InstallAppBanner from "@/components/InstallAppBanner";
 
-function ProtectedRoute({ component: Component, adminOnly }: { component: React.ComponentType, adminOnly?: boolean }) {
+function ProtectedRoute({ component: Component, adminOnly, superadminOnly }: { component: React.ComponentType, adminOnly?: boolean, superadminOnly?: boolean }) {
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
 
@@ -56,11 +56,13 @@ function ProtectedRoute({ component: Component, adminOnly }: { component: React.
         }
       }
 
-      if (adminOnly && user.role !== 'admin') {
+      if (superadminOnly && user.role !== 'superadmin') {
+        setLocation("/admin");
+      } else if (adminOnly && user.role !== 'admin' && user.role !== 'superadmin') {
         setLocation("/");
       }
     }
-  }, [user, isLoading, setLocation, adminOnly]);
+  }, [user, isLoading, setLocation, adminOnly, superadminOnly]);
 
   if (isLoading) {
     return (
@@ -71,14 +73,15 @@ function ProtectedRoute({ component: Component, adminOnly }: { component: React.
   }
 
   if (!user) return null;
-  if (adminOnly && user.role !== 'admin') return null;
+  if (superadminOnly && user.role !== 'superadmin') return null;
+  if (adminOnly && !['admin', 'superadmin'].includes(user.role)) return null;
 
   return <Component />;
 }
 
 function DashboardSwitcher() {
   const { user } = useAuth();
-  if (user?.role === 'admin') {
+  if (user?.role === 'admin' || user?.role === 'superadmin') {
     return <AdminLayout><AdminDashboard /></AdminLayout>;
   }
   return <EmployeeDashboard />;
@@ -111,7 +114,7 @@ function Router() {
         <ProtectedRoute component={() => <AdminLayout><InfoBoardPage /></AdminLayout>} adminOnly />
       </Route>
       <Route path="/admin/complaints">
-        <ProtectedRoute component={() => <AdminLayout><AdminComplaints /></AdminLayout>} adminOnly />
+        <ProtectedRoute component={() => <AdminLayout><AdminComplaints /></AdminLayout>} superadminOnly />
       </Route>
       <Route path="/admin/leave">
         <ProtectedRoute component={() => <AdminLayout><AdminLeave /></AdminLayout>} adminOnly />
@@ -151,7 +154,7 @@ function Router() {
         <ProtectedRoute component={() => <AdminLayout><AdminShiftPage /></AdminLayout>} adminOnly />
       </Route>
       <Route path="/admin/manage-admins">
-        <ProtectedRoute component={() => <AdminLayout><AdminManageAdminsPage /></AdminLayout>} adminOnly />
+        <ProtectedRoute component={() => <AdminLayout><AdminManageAdminsPage /></AdminLayout>} superadminOnly />
       </Route>
 
       <Route component={NotFound} />

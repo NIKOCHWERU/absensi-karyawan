@@ -114,6 +114,7 @@ export default function AdminEmployeeList() {
     const [selectedNpwpPhoto, setSelectedNpwpPhoto] = useState<File | null>(null);
     const [csvFile, setCsvFile] = useState<File | null>(null);
     const [csvOpen, setCsvOpen] = useState(false);
+    const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<number[]>([]);
 
     const csvMutation = useMutation({
         mutationFn: async (file: File) => {

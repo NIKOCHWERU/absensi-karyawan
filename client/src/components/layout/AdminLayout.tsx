@@ -32,7 +32,7 @@ import { id } from "date-fns/locale";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const [location, setLocation] = useLocation();
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
 
     // Polling counts for notifications in sidebar
     const { data: complaintsStats } = useQuery<{ pendingCount: number }>({
@@ -159,22 +159,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
 
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    tooltip="Pengaduan Karyawan"
-                                    isActive={location === "/admin/complaints"}
-                                    onClick={() => setLocation("/admin/complaints")}
-                                    className={location === "/admin/complaints" ? "bg-green-50 text-green-700 font-medium" : "text-gray-600"}
-                                >
-                                    <MessageSquare className="h-4 w-4" />
-                                    <span className="flex-1">Pengaduan</span>
-                                    {pendingComplaintsCount > 0 && (
-                                        <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full group-data-[collapsible=icon]:hidden">
-                                            {pendingComplaintsCount}
-                                        </span>
-                                    )}
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
+                            {user?.role === 'superadmin' && (
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton
+                                        tooltip="Pengaduan Karyawan"
+                                        isActive={location === "/admin/complaints"}
+                                        onClick={() => setLocation("/admin/complaints")}
+                                        className={location === "/admin/complaints" ? "bg-green-50 text-green-700 font-medium" : "text-gray-600"}
+                                    >
+                                        <MessageSquare className="h-4 w-4" />
+                                        <span className="flex-1">Pengaduan</span>
+                                        {pendingComplaintsCount > 0 && (
+                                            <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full group-data-[collapsible=icon]:hidden">
+                                                {pendingComplaintsCount}
+                                            </span>
+                                        )}
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            )}
 
                             <SidebarMenuItem>
                                 <SidebarMenuButton
@@ -205,17 +207,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
 
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    tooltip="Kelola Admin"
-                                    isActive={location === "/admin/manage-admins"}
-                                    onClick={() => setLocation("/admin/manage-admins")}
-                                    className={location === "/admin/manage-admins" ? "bg-blue-50 text-blue-700 font-medium" : "text-gray-600"}
-                                >
-                                    <UserCog className="h-4 w-4" />
-                                    <span>Kelola Admin</span>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
+                            {user?.role === 'superadmin' && (
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton
+                                        tooltip="Kelola Admin"
+                                        isActive={location === "/admin/manage-admins"}
+                                        onClick={() => setLocation("/admin/manage-admins")}
+                                        className={location === "/admin/manage-admins" ? "bg-blue-50 text-blue-700 font-medium" : "text-gray-600"}
+                                    >
+                                        <UserCog className="h-4 w-4" />
+                                        <span>Kelola Admin</span>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                            )}
                         </SidebarMenu>
                     </SidebarContent>
 

@@ -26,6 +26,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -35,6 +36,7 @@ const adminFormSchema = z.object({
   fullName: z.string().min(2, "Nama minimal 2 karakter"),
   username: z.string().min(3, "Username minimal 3 karakter"),
   password: z.string().optional(),
+  role: z.enum(["admin", "superadmin"]),
 });
 
 type AdminFormValues = z.infer<typeof adminFormSchema>;
@@ -50,22 +52,22 @@ export default function AdminManageAdminsPage() {
     refetchInterval: 10000,
   });
 
-  const admins = allUsers.filter((u) => u.role === "admin");
+  const admins = allUsers.filter((u) => u.role === "admin" || u.role === "superadmin");
 
   const form = useForm<AdminFormValues>({
     resolver: zodResolver(adminFormSchema),
-    defaultValues: { fullName: "", username: "", password: "" },
+    defaultValues: { fullName: "", username: "", password: "", role: "admin" },
   });
 
   const openAdd = () => {
     setSelectedAdmin(null);
-    form.reset({ fullName: "", username: "", password: "" });
+    form.reset({ fullName: "", username: "", password: "", role: "admin" });
     setOpen(true);
   };
 
   const openEdit = (admin: User) => {
     setSelectedAdmin(admin);
-    form.reset({ fullName: admin.fullName, username: admin.username || "", password: "" });
+    form.reset({ fullName: admin.fullName, username: admin.username || "", password: "", role: (admin.role as any) || "admin" });
     setOpen(true);
   };
 
@@ -74,7 +76,7 @@ export default function AdminManageAdminsPage() {
       const payload: any = {
         fullName: values.fullName,
         username: values.username,
-        role: "admin",
+        role: values.role,
         isAdmin: true,
       };
       if (values.password && values.password.length > 0) {
@@ -190,8 +192,8 @@ export default function AdminManageAdminsPage() {
                   </td>
                   <td className="px-5 py-3 font-mono text-gray-600">{admin.username}</td>
                   <td className="px-5 py-3">
-                    <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-0.5 rounded-full">
-                      <ShieldCheck className="w-3 h-3" /> Admin
+                    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${admin.role === 'superadmin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                      <ShieldCheck className="w-3 h-3" /> {admin.role === 'superadmin' ? 'Super Admin' : 'Admin'}
                     </span>
                   </td>
                   <td className="px-5 py-3 text-right">
@@ -278,6 +280,27 @@ export default function AdminManageAdminsPage() {
                     <FormControl>
                       <Input placeholder="contoh: budi.admin" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Peran / Jabatan</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Pilih Peran" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="admin">Admin Biasa</SelectItem>
+                        <SelectItem value="superadmin">Super Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
