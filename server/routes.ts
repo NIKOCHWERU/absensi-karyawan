@@ -560,13 +560,7 @@ export async function registerRoutes(
   // --- Registration & Shift Routes ---
 
   app.post("/api/register-data", upload.fields([{ name: 'ktpPhoto', maxCount: 1 }, { name: 'profilePhoto', maxCount: 1 }]), async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Sesi telah berakhir. Silakan login kembali." });
-    }
-    
     try {
-      const userId = req.user!.id;
-      
       // Safety check for empty body or strange data
       if (!req.body || Object.keys(req.body).length === 0) {
         console.error("Registration Error: Empty request body");
@@ -574,40 +568,88 @@ export async function registerRoutes(
       }
 
       const updates: any = { ...req.body };
-      
-      // Remove sensitive/locked fields if they try to send them after approval
-      if (req.user!.registrationStatus === 'approved') {
-        return res.status(400).json({ message: "Data sudah terverifikasi dan terkunci." });
-      }
-
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-      
-      if (files?.ktpPhoto?.[0]) {
-        const ktpFilename = `ktp-${userId}-${Date.now()}-${files.ktpPhoto[0].originalname}`;
-        const ktpPath = path.join(uploadsDir, ktpFilename);
-        fs.writeFileSync(ktpPath, files.ktpPhoto[0].buffer);
-        updates.ktpPhotoUrl = `/uploads/${ktpFilename}`;
-      }
+      let userToLogin;
 
-      if (files?.profilePhoto?.[0]) {
-        const profFilename = `prof-${userId}-${Date.now()}-${files.profilePhoto[0].originalname}`;
-        const profPath = path.join(uploadsDir, profFilename);
-        fs.writeFileSync(profPath, files.profilePhoto[0].buffer);
-        updates.photoUrl = `/uploads/${profFilename}`;
-      }
-
-      updates.registrationStatus = 'pending';
-      const updatedUser = await storage.updateUser(userId, updates);
-      // Re-login to update the session with the new registrationStatus
-      req.login(updatedUser, (err) => {
-        if (err) {
-          console.error("Re-login after registration failed:", err);
-          return res.status(500).json({ message: "Data tersimpan namun gagal memperbarui sesi. Silakan login ulang." });
+      if (req.isAuthenticated()) {
+        const userId = req.user!.id;
+        
+        // Remove sensitive/locked fields if they try to send them after approval
+        if (req.user!.registrationStatus === 'approved') {
+          return res.status(400).json({ message: "Data sudah terverifikasi dan terkunci." });
         }
-        res.json(updatedUser);
+
+        if (files?.ktpPhoto?.[0]) {
+          const ktpFilename = `ktp-${userId}-${Date.now()}-${files.ktpPhoto[0].originalname}`;
+          const ktpPath = path.join(uploadsDir, ktpFilename);
+          fs.writeFileSync(ktpPath, files.ktpPhoto[0].buffer);
+          updates.ktpPhotoUrl = `/uploads/${ktpFilename}`;
+        }
+
+        if (files?.profilePhoto?.[0]) {
+          const profFilename = `prof-${userId}-${Date.now()}-${files.profilePhoto[0].originalname}`;
+          const profPath = path.join(uploadsDir, profFilename);
+          fs.writeFileSync(profPath, files.profilePhoto[0].buffer);
+          updates.photoUrl = `/uploads/${profFilename}`;
+        }
+
+        updates.registrationStatus = 'pending';
+        userToLogin = await storage.updateUser(userId, updates);
+      } else {
+        // User is not authenticated -> CREATE new unregistered user
+        const nik = updates.nik;
+        if (!nik) {
+          return res.status(400).json({ message: "NIK wajib diisi untuk pendaftaran baru." });
+        }
+        
+        // Check if NIK already exists
+        const existing = await storage.getUserByNik(nik);
+        if (existing) {
+          return res.status(400).json({ message: "NIK sudah terdaftar. Silakan login menggunakan NIK Anda." });
+        }
+
+        const hashedPassword = await hashPassword(nik); // Default password same as NIK
+        
+        if (files?.ktpPhoto?.[0]) {
+          const ktpFilename = `ktp-${nik}-${Date.now()}-${files.ktpPhoto[0].originalname}`;
+          const ktpPath = path.join(uploadsDir, ktpFilename);
+          fs.writeFileSync(ktpPath, files.ktpPhoto[0].buffer);
+          updates.ktpPhotoUrl = `/uploads/${ktpFilename}`;
+        }
+
+        if (files?.profilePhoto?.[0]) {
+          const profFilename = `prof-${nik}-${Date.now()}-${files.profilePhoto[0].originalname}`;
+          const profPath = path.join(uploadsDir, profFilename);
+          fs.writeFileSync(profPath, files.profilePhoto[0].buffer);
+          updates.photoUrl = `/uploads/${profFilename}`;
+        }
+
+        updates.username = nik;
+        updates.password = hashedPassword;
+        updates.role = 'employee';
+        updates.registrationStatus = 'pending';
+        updates.isAdmin = false;
+        
+        // Clean up empty strings to null for unique constraints
+        if (updates.email === "") updates.email = null;
+        if (updates.phoneNumber === "") updates.phoneNumber = null;
+
+        userToLogin = await storage.createUser(updates);
+      }
+
+      // Re-login to create/update the session
+      req.login(userToLogin, (err) => {
+        if (err) {
+          console.error("Login after registration failed:", err);
+          return res.status(500).json({ message: "Data tersimpan namun gagal memulai sesi. Silakan login ulang." });
+        }
+        res.json(userToLogin);
       });
     } catch (err: any) {
       console.error("Registration Error Full:", err);
+      if (err.code === 'ER_DUP_ENTRY') {
+        return res.status(400).json({ message: "Data sudah digunakan (NIK/Email/No HP/Username)" });
+      }
       res.status(500).json({ message: "Gagal menyimpan data pendaftaran: " + (err.message || "Unknown error") });
     }
   });
