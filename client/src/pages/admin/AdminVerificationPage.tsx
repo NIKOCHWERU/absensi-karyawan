@@ -1,6 +1,8 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { User } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, Check, X, Eye, User as UserIcon, Calendar, MapPin, Phone, Mail, CreditCard, Building, Briefcase, ImageIcon } from "lucide-react";
@@ -130,7 +132,7 @@ export default function AdminVerificationPage() {
                   <Section title="Data Pribadi" icon={<UserIcon className="w-4 h-4" />}>
                     <DataRow label="Nama Lengkap" value={selectedUser.fullName} />
                     <DataRow label="NIK" value={selectedUser.nik} />
-                    <DataRow label="Tempat, Tgl Lahir" value={`${selectedUser.birthPlace || '-'}, ${selectedUser.birthDate || '-'}`} />
+                    <DataRow label="Tempat, Tgl Lahir" value={`${selectedUser.birthPlace || '-'}, ${selectedUser.birthDate ? format(new Date(selectedUser.birthDate), "d MMMM yyyy", { locale: id }) : '-'}`} />
                     <DataRow label="Jenis Kelamin" value={selectedUser.gender} />
                     <DataRow label="Agama" value={selectedUser.religion} />
                     <DataRow label="Alamat" value={selectedUser.address} />
@@ -148,7 +150,6 @@ export default function AdminVerificationPage() {
                   <Section title="Administrasi" icon={<CreditCard className="w-4 h-4" />}>
                     <DataRow label="NPWP" value={selectedUser.npwp} />
                     <DataRow label="BPJS" value={selectedUser.bpjs} />
-                    <DataRow label="Rekening" value={selectedUser.bankAccount} />
                     <DataRow label="No. HP" value={selectedUser.phoneNumber} />
                     <DataRow label="Email" value={selectedUser.email} />
                   </Section>
