@@ -662,13 +662,13 @@ export async function registerRoutes(
   });
 
   app.get("/api/admin/unverified-employees", async (req, res) => {
-    if (!!isAdminRole(req)) return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
     const employees = await storage.getUnverifiedEmployees();
     res.json(employees);
   });
 
   app.post("/api/admin/verify-employee", async (req, res) => {
-    if (!!isAdminRole(req)) return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
     
     const { userId, status } = req.body; // status: 'approved' or 'rejected'
     if (!userId || !['approved', 'rejected'].includes(status)) {
@@ -684,7 +684,7 @@ export async function registerRoutes(
   });
 
   app.post("/api/admin/shifts", async (req, res) => {
-    if (!!isAdminRole(req)) return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
     try {
       const shift = await storage.createShift(req.body);
       res.status(201).json(shift);
@@ -694,7 +694,7 @@ export async function registerRoutes(
   });
 
   app.patch("/api/admin/shifts/:id", async (req, res) => {
-    if (!!isAdminRole(req)) return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
     try {
       const updated = await storage.updateShift(parseInt(req.params.id), req.body);
       res.json(updated);
@@ -704,7 +704,7 @@ export async function registerRoutes(
   });
 
   app.delete("/api/admin/shifts/:id", async (req, res) => {
-    if (!!isAdminRole(req)) return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
     try {
       await storage.deleteShift(parseInt(req.params.id));
       res.sendStatus(204);
@@ -716,7 +716,7 @@ export async function registerRoutes(
   // --- Admin Routes ---
 
   app.get(api.admin.users.list.path, async (req, res) => {
-    if (!!isAdminRole(req)) return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
     let roleFilter: "all" | "admin" | "employee" = "all";
     if (req.query.role) {
       const rVal = Array.isArray(req.query.role) ? req.query.role[0] : req.query.role;
@@ -907,7 +907,7 @@ export async function registerRoutes(
   });
 
   app.delete("/api/admin/users/:id", async (req, res) => {
-    if (!!isAdminRole(req)) return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
 
     try {
       const id = parseInt(req.params.id);
@@ -922,7 +922,7 @@ export async function registerRoutes(
   });
 
   app.post(api.admin.attendance.manual.path, async (req, res) => {
-    if (!!isAdminRole(req)) return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
 
     try {
       const { userId, date, status, notes, shift } = req.body;
@@ -960,7 +960,7 @@ export async function registerRoutes(
   });
 
   app.patch("/api/admin/users/:id", upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'bpjsPhoto', maxCount: 1 }, { name: 'npwpPhoto', maxCount: 1 }]), async (req, res) => {
-    if (!!isAdminRole(req)) return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
 
     try {
       const id = parseInt(req.params.id as string);
@@ -1018,7 +1018,7 @@ export async function registerRoutes(
   });
 
   app.get(api.admin.dashboard.stats.path, async (req, res) => {
-    if (!!isAdminRole(req)) return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
 
     const users = await storage.getAllUsers();
     const totalEmployees = users.filter(u => u.role === 'employee').length;
@@ -1038,7 +1038,7 @@ export async function registerRoutes(
   });
 
   app.post("/api/admin/backup", async (req, res) => {
-    if (!!isAdminRole(req)) return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
 
     try {
       const fileName = await createBackup();
@@ -1050,7 +1050,7 @@ export async function registerRoutes(
   });
 
   app.get("/api/admin/backups/download/:fileName", async (req, res) => {
-    if (!!isAdminRole(req)) return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
 
     const fileName = req.params.fileName;
     // Validate filename to prevent path traversal
@@ -1074,7 +1074,7 @@ export async function registerRoutes(
   });
 
   app.post("/api/admin/backups/import", upload.single('file'), async (req, res) => {
-    if (!!isAdminRole(req)) return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
 
     try {
       const multerReq = req as any;
@@ -1158,7 +1158,7 @@ export async function registerRoutes(
   });
 
   app.post(api.announcements.create.path, upload.single('image'), async (req, res) => {
-    if (!!isAdminRole(req)) return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
 
     try {
       // Parse body (multipart/form-data means numbers come as strings)
@@ -1226,7 +1226,7 @@ export async function registerRoutes(
 
   // Admin: Get complaint stats
   app.get("/api/admin/complaints/stats", async (req, res) => {
-    if (!!isAdminRole(req)) return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
 
     try {
       const count = await storage.getPendingComplaintsCount();
@@ -1238,7 +1238,7 @@ export async function registerRoutes(
   });
 
   app.delete("/api/announcements/:id", async (req, res) => {
-    if (!!isAdminRole(req)) return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
 
     // We need to implement deleteAnnouncement in storage first, but for now let's do direct DB delete if possible 
     // or assume storage.deleteAnnouncement exists (it doesn't yet).
@@ -1313,7 +1313,7 @@ export async function registerRoutes(
 
   // Admin: get all complaints
   app.get("/api/admin/complaints", async (req, res) => {
-    if (!!isAdminRole(req)) return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
     const list = await storage.getAllComplaints();
     res.json(list);
   });
@@ -1327,7 +1327,7 @@ export async function registerRoutes(
 
   // Admin: update complaint status
   app.patch("/api/admin/complaints/:id/status", async (req, res) => {
-    if (!!isAdminRole(req)) return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
     try {
       const updated = await storage.updateComplaintStatus(
         parseInt(req.params.id),
@@ -1402,20 +1402,20 @@ export async function registerRoutes(
 
   // Admin Leave Routes
   app.get("/api/admin/leave-requests/recent", async (req, res) => {
-    if (!!isAdminRole(req)) return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
     const requests = await storage.getRecentLeaveRequests(5);
     res.json(requests);
   });
 
   app.get(api.admin.attendance.leave.list.path, async (req, res) => {
-    if (!!isAdminRole(req)) return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
     const requests = await storage.getAllLeaveRequests();
     res.json(requests);
   });
 
   app.patch(api.admin.attendance.leave.update.path, async (req, res) => {
     try {
-      if (!!isAdminRole(req)) return res.sendStatus(401);
+      if (!isAdminRole(req)) return res.sendStatus(401);
       const id = parseInt(String(req.params.id));
       const { status } = req.body;
 
@@ -1497,7 +1497,7 @@ export async function registerRoutes(
 
   // POST: Create manual attendance record
   app.post(api.admin.attendance.manual.path, async (req, res) => {
-    if (!!isAdminRole(req)) return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
 
     const { userId, date, status, notes, shift, checkIn, checkOut, breakStart, breakEnd } = req.body;
     if (!userId || !date) return res.status(400).json({ message: "userId dan date wajib diisi" });
@@ -1532,7 +1532,7 @@ export async function registerRoutes(
 
   // PUT: Edit existing attendance record (admin override)
   app.put('/api/admin/attendance/:id', async (req, res) => {
-    if (!!isAdminRole(req)) return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
 
     const id = parseInt(req.params.id);
     const { status, notes, checkIn, checkOut, breakStart, breakEnd, date } = req.body;
@@ -1559,7 +1559,7 @@ export async function registerRoutes(
 
   // DELETE: Remove an attendance record
   app.delete('/api/admin/attendance/:id', async (req, res) => {
-    if (!!isAdminRole(req)) return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
 
     const id = parseInt(req.params.id);
     try {
@@ -1572,4 +1572,5 @@ export async function registerRoutes(
 
   return httpServer;
 }
+
 
