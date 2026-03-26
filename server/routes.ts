@@ -969,10 +969,17 @@ export async function registerRoutes(
       const updates = { ...req.body };
 
       // Clean up empty strings to null for unique/optional fields
-      if (updates.email === "") updates.email = null;
-      if (updates.nik === "") updates.nik = null;
-      if (updates.username === "") updates.username = null;
-      if (updates.phoneNumber === "") updates.phoneNumber = null;
+      const nullableFields = ['email', 'nik', 'username', 'phoneNumber', 'birthDate',
+        'birthPlace', 'gender', 'address', 'npwp', 'bpjs', 'bankAccount',
+        'joinDate', 'employmentStatus', 'religion', 'shift', 'branch', 'position'];
+      nullableFields.forEach(field => {
+        if (updates[field] === '' || updates[field] === 'undefined') {
+          updates[field] = null;
+        }
+      });
+
+      // Remove fields that shouldn't be directly updated via this endpoint
+      delete updates.registrationStatus; // handled by separate endpoint
 
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
       const empUploadsDir = path.join(uploadsDir, 'employees');
