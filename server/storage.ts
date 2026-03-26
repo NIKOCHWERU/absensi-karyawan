@@ -240,7 +240,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateLeaveRequestStatus(id: number, status: string): Promise<LeaveRequest> {
-    await db.update(leaveRequests).set({ status }).where(eq(leaveRequests.id, id));
+    await db.update(leaveRequests).set({ status: status as any }).where(eq(leaveRequests.id, id));
     const [record] = await db.select().from(leaveRequests).where(eq(leaveRequests.id, id));
     return record!;
   }

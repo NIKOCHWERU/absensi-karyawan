@@ -76,8 +76,8 @@ export default function RecapPage() {
       absent: 1
     };
 
-    if (!currentStatus || statusPriority[record.status] > statusPriority[currentStatus]) {
-      dayStatuses.set(dateKey, record.status);
+    if (!currentStatus || statusPriority[record.status as string] > statusPriority[currentStatus]) {
+      dayStatuses.set(dateKey, record.status as string);
     }
   });
 

@@ -280,7 +280,7 @@ export default function RegistrationPage() {
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel>Tanggal Lahir</FormLabel>
-                                <FormControl><Input type="date" {...field} /></FormControl>
+                                <FormControl><Input type="date" {...field} value={field.value ? String(field.value) : ""} /></FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}

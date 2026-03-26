@@ -88,7 +88,7 @@ export default function AdminShiftPage() {
             </DialogHeader>
             <ShiftForm 
               initialData={editingShift} 
-              onSubmit={(data) => {
+              onSubmit={(data: Partial<InsertShift>) => {
                 if (editingShift) {
                   updateMutation.mutate({ id: editingShift.id, data });
                 } else {

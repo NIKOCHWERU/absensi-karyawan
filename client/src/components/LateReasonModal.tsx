@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Camera, RefreshCw, Check, X } from "lucide-react";
+import { Camera, RefreshCw, Check, X, SwitchCamera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface LateReasonModalProps {
@@ -15,16 +15,22 @@ export function LateReasonModal({ isOpen, onClose, onSubmit }: LateReasonModalPr
     const [reason, setReason] = useState("");
     const [isCameraActive, setIsCameraActive] = useState(false);
     const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+    const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const { toast } = useToast();
 
-    const startCamera = async () => {
+    const startCamera = async (overrideMode?: "environment" | "user") => {
+        const modeToUse = overrideMode || facingMode;
         try {
             setIsCameraActive(true);
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: "environment" }
+                video: { facingMode: modeToUse }
             });
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+            }
+            if (overrideMode) setFacingMode(overrideMode);
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
             }
@@ -46,6 +52,12 @@ export function LateReasonModal({ isOpen, onClose, onSubmit }: LateReasonModalPr
             videoRef.current.srcObject = null;
         }
         setIsCameraActive(false);
+    };
+
+    const toggleCamera = () => {
+        stopCamera();
+        const newMode = facingMode === "environment" ? "user" : "environment";
+        startCamera(newMode);
     };
 
     const capturePhoto = () => {
@@ -120,6 +132,24 @@ export function LateReasonModal({ isOpen, onClose, onSubmit }: LateReasonModalPr
                             ) : isCameraActive ? (
                                 <>
                                     <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                                    <div className="absolute top-3 right-3 flex gap-2">
+                                        <Button
+                                            size="icon"
+                                            variant="secondary"
+                                            className="rounded-full shadow-lg bg-white/50 backdrop-blur-md hover:bg-white/80"
+                                            onClick={toggleCamera}
+                                        >
+                                            <SwitchCamera className="h-4 w-4 text-black" />
+                                        </Button>
+                                        <Button
+                                            size="icon"
+                                            variant="destructive"
+                                            className="rounded-full shadow-lg"
+                                            onClick={stopCamera}
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                     <Button
                                         className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-red-600 hover:bg-red-700 shadow-xl px-8"
                                         size="lg"
@@ -139,7 +169,7 @@ export function LateReasonModal({ isOpen, onClose, onSubmit }: LateReasonModalPr
                                             variant="outline"
                                             size="sm"
                                             className="border-zinc-200 hover:bg-zinc-100 rounded-xl px-4 font-semibold gap-2 w-full"
-                                            onClick={startCamera}
+                                            onClick={() => startCamera()}
                                         >
                                             <Camera className="h-4 w-4" />
                                             Buka Kamera

@@ -959,7 +959,7 @@ export async function registerRoutes(
     if (!req.isAuthenticated() || req.user!.role !== 'admin') return res.sendStatus(401);
 
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(req.params.id as string);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid user ID" });
 
       const updates = { ...req.body };
