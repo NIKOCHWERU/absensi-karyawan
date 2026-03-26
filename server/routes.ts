@@ -736,7 +736,7 @@ export async function registerRoutes(
   });
 
   app.post(api.admin.users.create.path, upload.single('photo'), async (req, res) => {
-    if (!req.isAuthenticated() || (req.user as DbUser).role !== 'admin') return res.sendStatus(401);
+    if (!isAdminRole(req)) return res.sendStatus(401);
 
     try {
       const userData = { ...req.body };
@@ -746,6 +746,15 @@ export async function registerRoutes(
       if (userData.nik === "") userData.nik = null;
       if (userData.username === "") userData.username = null;
       if (userData.phoneNumber === "") userData.phoneNumber = null;
+
+      // Fix is_admin (string "true" from FormData -> boolean)
+      if (userData.isAdmin === 'true') userData.isAdmin = true;
+      if (userData.isAdmin === 'false') userData.isAdmin = false;
+
+      // Auto-set isAdmin based on role if it's admin or superadmin
+      if (userData.role === 'admin' || userData.role === 'superadmin') {
+        userData.isAdmin = true;
+      }
 
       // For employee, ensure username matches NIK if not provided
       if (userData.role === 'employee' && !userData.username && userData.nik) {
@@ -864,13 +873,15 @@ export async function registerRoutes(
   });
 
   app.post("/api/admin/users/:id", async (req, res) => {
+    if (!isAdminRole(req)) return res.sendStatus(401);
     try {
-      if (!req.user || req.user.role !== 'admin') {
-        return res.status(403).json({ message: "Akses ditolak" });
-      }
-
       const id = parseInt(req.params.id);
-      const updateData = req.body;
+      const updateData = { ...req.body };
+      if (updateData.isAdmin === 'true') updateData.isAdmin = true;
+      if (updateData.isAdmin === 'false') updateData.isAdmin = false;
+      if (updateData.role === 'admin' || updateData.role === 'superadmin') {
+        updateData.isAdmin = true;
+      }
       const updatedUser = await storage.updateUser(id, updateData);
       res.json(updatedUser);
     } catch (error: any) {
@@ -977,6 +988,15 @@ export async function registerRoutes(
           updates[field] = null;
         }
       });
+
+      // Fix is_admin (string "true" from FormData -> boolean)
+      if (updates.isAdmin === 'true') updates.isAdmin = true;
+      if (updates.isAdmin === 'false') updates.isAdmin = false;
+      
+      // Auto-set isAdmin based on role if it's admin or superadmin
+      if (updates.role === 'admin' || updates.role === 'superadmin') {
+        updates.isAdmin = true;
+      }
 
       // Remove fields that shouldn't be directly updated via this endpoint
       delete updates.registrationStatus; // handled by separate endpoint
