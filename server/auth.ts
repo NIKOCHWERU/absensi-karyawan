@@ -101,8 +101,8 @@ export function setupAuth(app: Express) {
 
       // Check role if needed, though simple separation by UI is usually enough
       if (req.body.role && user.role !== req.body.role) {
-        // Optionally enforce role check: if trying to login as admin but user is employee
-        if (req.body.role === 'admin' && user.role !== 'admin') {
+        // Allow superadmin to login from the admin login page
+        if (req.body.role === 'admin' && user.role !== 'admin' && user.role !== 'superadmin') {
           return res.status(403).json({ message: "Akses ditolak: Silakan gunakan login Karyawan" });
         }
         if (req.body.role === 'employee' && user.role !== 'employee') {
