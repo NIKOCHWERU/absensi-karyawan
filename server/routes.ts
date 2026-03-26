@@ -1,4 +1,4 @@
-﻿import express, { type Express, Request } from "express";
+import express, { type Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth, hashPassword } from "./auth";
 import { storage } from "./storage";
@@ -1009,11 +1009,11 @@ export async function registerRoutes(
       const user = await storage.updateUser(id, updates);
       res.json(user);
     } catch (err: any) {
-      console.error("Update User Error:", err);
+      console.error("Update User Error:", err.message || err);
       if (err.code === 'ER_DUP_ENTRY') {
         return res.status(400).json({ message: "NIK atau Username sudah digunakan" });
       }
-      res.status(400).json({ message: "Gagal memperbarui karyawan" });
+      res.status(400).json({ message: err.message || "Gagal memperbarui karyawan" });
     }
   });
 

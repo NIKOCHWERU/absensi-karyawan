@@ -83,7 +83,7 @@ export default function AdminEmployeeList() {
         fullName: z.string().min(1, "Nama lengkap wajib diisi"),
         password: z.string().optional(),
         role: z.string(),
-        nik: z.string().min(1, "NIK wajib diisi"),
+        nik: z.string().optional(),
         branch: z.string().optional(),
         position: z.string().optional(),
         email: z.string().optional(),
