@@ -508,17 +508,17 @@ export default function RecapPage() {
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
-            <header className="bg-white border-b border-gray-200 p-4 px-8 flex items-center justify-between sticky top-0 z-10">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => setLocation("/admin")}>
+            <header className="bg-white border-b border-gray-200 p-4 sm:px-8 flex flex-col sm:flex-row items-start sm:items-center justify-between sticky top-0 z-20 gap-4">
+                <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                    <Button variant="ghost" size="icon" onClick={() => setLocation("/admin")} className="shrink-0">
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
-                    <h1 className="text-xl font-bold text-gray-800">Rekap Absensi Karyawan PT ELOK JAYA ABADHI</h1>
+                    <h1 className="text-lg sm:text-xl font-bold text-gray-800 leading-tight">Rekap Absensi</h1>
                 </div>
-                <div className="flex items-center gap-2 bg-white border rounded-md p-1">
+                <div className="flex items-center gap-2 bg-white border rounded-lg p-1 w-full sm:w-auto justify-between sm:justify-start">
                     <Select value={reportType} onValueChange={(v: any) => setReportType(v)}>
-                        <SelectTrigger className="w-[120px] h-8 border-none bg-transparent">
-                            <SelectValue placeholder="Tipe Laporan" />
+                        <SelectTrigger className="w-[100px] sm:w-[120px] h-8 border-none bg-transparent text-xs sm:text-sm">
+                            <SelectValue placeholder="Tipe" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="daily">Harian</SelectItem>
@@ -527,17 +527,19 @@ export default function RecapPage() {
                         </SelectContent>
                     </Select>
                     <div className="h-4 w-[1px] bg-gray-200 mx-1"></div>
-                    <Button variant="ghost" size="icon" onClick={handlePrev} className="h-8 w-8">
-                        <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <span className="text-sm font-medium min-w-[120px] text-center">
-                        {reportType === 'daily' ? format(targetDate, "d MMM yyyy", { locale: id }) :
-                            reportType === 'weekly' ? `${format(startDate, "d MMM")} - ${format(endDate, "d MMM yyyy", { locale: id })}` :
-                                format(targetDate, "MMMM yyyy", { locale: id })}
-                    </span>
-                    <Button variant="ghost" size="icon" onClick={handleNext} className="h-8 w-8">
-                        <ChevronRight className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1 flex-1 sm:flex-none justify-center">
+                        <Button variant="ghost" size="icon" onClick={handlePrev} className="h-8 w-8">
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <span className="text-[10px] sm:text-sm font-bold text-gray-700 min-w-[90px] text-center whitespace-nowrap">
+                            {reportType === 'daily' ? format(targetDate, "d MMM yyyy", { locale: id }) :
+                                reportType === 'weekly' ? `${format(startDate, "d MMM")} - ${format(endDate, "d MMM yyyy", { locale: id })}` :
+                                    format(targetDate, "MMMM yyyy", { locale: id })}
+                        </span>
+                        <Button variant="ghost" size="icon" onClick={handleNext} className="h-8 w-8">
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
             </header>
 
@@ -568,9 +570,10 @@ export default function RecapPage() {
                             </Button>
                         </div>
                     </CardHeader>
-                    <CardContent>
-                        <div className="rounded-lg border overflow-hidden">
-                            <table className="w-full text-sm text-left">
+                    <CardContent className="p-4 sm:p-6">
+                        <div className="rounded-xl border border-gray-100 overflow-hidden shadow-sm">
+                            <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-200">
+                                <table className="w-full text-sm text-left">
                                 <thead className="bg-gray-50 text-gray-700 font-semibold uppercase text-xs">
                                     <tr>
                                         <th className="px-4 py-3 cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('date')}>
@@ -737,9 +740,10 @@ export default function RecapPage() {
                                 </tbody>
                             </table>
                         </div>
-                    </CardContent>
-                </Card>
-            </main>
+                    </div>
+                </CardContent>
+            </Card>
+        </main>
 
             <Dialog open={!!selectedPhotoRecord} onOpenChange={(open) => !open && setSelectedPhotoRecord(null)}>
                 <DialogContent className="sm:max-w-md bg-white border-zinc-200 text-zinc-900 rounded-3xl p-6 max-h-[90vh] overflow-y-auto">

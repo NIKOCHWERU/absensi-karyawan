@@ -132,14 +132,14 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-slate-50 pb-64">
       {/* Header */}
-      <div className="bg-gradient-to-br from-primary to-primary/80 pt-10 pb-20 px-4 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-primary to-primary/80 pt-8 sm:pt-10 pb-16 sm:pb-20 px-4 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-4 right-4 w-32 h-32 rounded-full border-4 border-white" />
-          <div className="absolute -bottom-8 -left-8 w-48 h-48 rounded-full border-4 border-white" />
+          <div className="absolute top-4 right-4 w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white" />
+          <div className="absolute -bottom-8 -left-8 w-32 h-32 sm:w-48 sm:h-48 rounded-full border-4 border-white" />
         </div>
-        <div className="max-w-lg mx-auto relative z-10">
-          <h1 className="text-white text-2xl font-bold mb-1">Profil Saya</h1>
-          <p className="text-white/70 text-sm">Data diri dan informasi pribadi</p>
+        <div className="max-w-lg mx-auto relative z-10 text-center sm:text-left">
+          <h1 className="text-white text-xl sm:text-2xl font-bold mb-1">Profil Saya</h1>
+          <p className="text-white/70 text-xs sm:text-sm">Data diri dan informasi pribadi</p>
         </div>
       </div>
 
@@ -189,7 +189,7 @@ export default function ProfilePage() {
               {isEditing ? (
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <FormField control={form.control} name="phoneNumber" render={({ field }) => (
                         <FormItem>
                           <FormLabel>No. HP</FormLabel>
@@ -214,7 +214,7 @@ export default function ProfilePage() {
                         </FormItem>
                       )} />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <FormField control={form.control} name="npwp" render={({ field }) => (
                         <FormItem>
                           <FormLabel>NPWP</FormLabel>
@@ -230,7 +230,7 @@ export default function ProfilePage() {
                         </FormItem>
                       )} />
                       <FormField control={form.control} name="religion" render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="sm:col-span-2">
                           <FormLabel>Agama</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
@@ -253,11 +253,11 @@ export default function ProfilePage() {
                       )} />
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <FormLabel className="text-xs">Foto NPWP (Opsional)</FormLabel>
+                        <FormLabel className="text-xs font-semibold">Foto NPWP (Opsional)</FormLabel>
                         <div className="flex flex-col gap-2">
-                          <div className="w-full h-24 bg-slate-50 border border-dashed border-slate-200 rounded-xl overflow-hidden flex items-center justify-center relative group">
+                          <div className="w-full h-28 bg-slate-50 border border-dashed border-slate-200 rounded-xl overflow-hidden flex items-center justify-center relative group">
                             {npwpPreview || user?.npwpPhotoUrl ? (
                               <img src={npwpPreview || user?.npwpPhotoUrl} className="w-full h-full object-cover" />
                             ) : (
@@ -272,9 +272,9 @@ export default function ProfilePage() {
                       </div>
 
                       <div className="space-y-2">
-                        <FormLabel className="text-xs">Foto BPJS (Opsional)</FormLabel>
+                        <FormLabel className="text-xs font-semibold">Foto BPJS (Opsional)</FormLabel>
                         <div className="flex flex-col gap-2">
-                          <div className="w-full h-24 bg-slate-50 border border-dashed border-slate-200 rounded-xl overflow-hidden flex items-center justify-center relative group">
+                          <div className="w-full h-28 bg-slate-50 border border-dashed border-slate-200 rounded-xl overflow-hidden flex items-center justify-center relative group">
                             {bpjsPreview || user?.bpjsPhotoUrl ? (
                               <img src={bpjsPreview || user?.bpjsPhotoUrl} className="w-full h-full object-cover" />
                             ) : (
@@ -303,17 +303,17 @@ export default function ProfilePage() {
                   <ReadOnlyField label="Shift" value={(user as any)?.shift} />
                   <ReadOnlyField label="NPWP" value={user?.npwp} />
                   {(user as any)?.npwpPhotoUrl && (
-                    <div className="mt-1 mb-3">
-                      <a href={(user as any).npwpPhotoUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-600 font-semibold bg-blue-50 px-2 py-1 rounded-lg border border-blue-100 inline-flex items-center gap-1.5">
-                        <ImageIcon className="w-3 h-3" /> Lihat Foto NPWP
+                    <div className="mt-1.5 mb-3.5">
+                      <a href={(user as any).npwpPhotoUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary font-bold bg-primary/5 px-2.5 py-1.5 rounded-lg border border-primary/10 inline-flex items-center gap-2 hover:bg-primary/10 transition-colors">
+                        <ImageIcon className="w-3.5 h-3.5" /> Lihat Foto NPWP
                       </a>
                     </div>
                   )}
                   <ReadOnlyField label="BPJS" value={user?.bpjs} />
                   {(user as any)?.bpjsPhotoUrl && (
-                    <div className="mt-1 mb-2">
-                      <a href={(user as any).bpjsPhotoUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-600 font-semibold bg-blue-50 px-2 py-1 rounded-lg border border-blue-100 inline-flex items-center gap-1.5">
-                        <ImageIcon className="w-3 h-3" /> Lihat Foto BPJS
+                    <div className="mt-1.5 mb-2.5">
+                      <a href={(user as any).bpjsPhotoUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary font-bold bg-primary/5 px-2.5 py-1.5 rounded-lg border border-primary/10 inline-flex items-center gap-2 hover:bg-primary/10 transition-colors">
+                        <ImageIcon className="w-3.5 h-3.5" /> Lihat Foto BPJS
                       </a>
                     </div>
                   )}

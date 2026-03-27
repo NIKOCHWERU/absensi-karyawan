@@ -228,27 +228,25 @@ export default function AdminEmployeeList() {
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
-            <header className="bg-white border-b border-gray-200 p-4 px-8 flex items-center justify-between sticky top-0 z-10">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => setLocation("/admin")}>
+            <header className="bg-white border-b border-gray-200 p-4 sm:px-8 flex flex-col sm:flex-row items-start sm:items-center justify-between sticky top-0 z-10 gap-4">
+                <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                    <Button variant="ghost" size="icon" onClick={() => setLocation("/admin")} className="shrink-0">
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
-                    <h1 className="text-xl font-bold text-gray-800">Daftar Karyawan</h1>
-                    <Button variant="ghost" className="w-full justify-start text-gray-600 hover:text-green-600 hover:bg-green-50" onClick={() => setLocation("/admin/complaints")}>
-                        <MessageSquare className="mr-2 h-4 w-4" />
-                        Pengaduan Karyawan
-                        {complaintsStats && complaintsStats.pendingCount > 0 && (
-                            <span className="ml-auto bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
-                                {complaintsStats.pendingCount}
-                            </span>
-                        )}
-                    </Button>
+                    <div className="flex flex-col">
+                        <h1 className="text-lg sm:text-xl font-bold text-gray-800 leading-tight">Daftar Karyawan</h1>
+                        <Button variant="link" className="p-0 h-auto text-[10px] sm:text-xs text-green-600 justify-start" onClick={() => setLocation("/admin/complaints")}>
+                            <MessageSquare className="mr-1 h-3 w-3" />
+                            {complaintsStats?.pendingCount || 0} Pengaduan Baru
+                        </Button>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
                     {user?.role === 'superadmin' && selectedEmployeeIds.length > 0 && (
                         <Button 
                             variant="destructive" 
-                            className="bg-red-600 hover:bg-red-700 shadow-sm"
+                            size="sm"
+                            className="bg-red-600 hover:bg-red-700 shadow-sm shrink-0 h-9"
                             onClick={() => {
                                 if (confirm(`Yakin ingin menghapus ${selectedEmployeeIds.length} karyawan? Data akan hilang permanen.`)) {
                                     bulkDeleteMutation.mutate(selectedEmployeeIds);
@@ -256,15 +254,15 @@ export default function AdminEmployeeList() {
                             }}
                             disabled={bulkDeleteMutation.isPending}
                         >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Hapus Terpilih ({selectedEmployeeIds.length})
+                            <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                            Hapus ({selectedEmployeeIds.length})
                         </Button>
                     )}
                     <Dialog open={csvOpen} onOpenChange={setCsvOpen}>
                         <DialogTrigger asChild>
-                            <Button variant="outline" className="border-orange-200 text-orange-700 hover:bg-orange-50 bg-white">
-                                <Upload className="mr-2 h-4 w-4" />
-                                Upload CSV
+                            <Button variant="outline" size="sm" className="border-orange-200 text-orange-700 hover:bg-orange-50 bg-white shrink-0 h-9">
+                                <Upload className="mr-1.5 h-3.5 w-3.5" />
+                                CSV
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-md">
@@ -295,7 +293,8 @@ export default function AdminEmployeeList() {
                     <Dialog open={open} onOpenChange={setOpen}>
                         <DialogTrigger asChild>
                             <Button
-                                className="bg-orange-600 hover:bg-orange-700 text-white"
+                                size="sm"
+                                className="bg-orange-600 hover:bg-orange-700 text-white shrink-0 h-9"
                                 onClick={() => {
                                     setSelectedEmployee(null);
                                     form.reset({
@@ -316,8 +315,8 @@ export default function AdminEmployeeList() {
                                     setSelectedNpwpPhoto(null);
                                 }}
                             >
-                                <UserPlus className="mr-2 h-4 w-4" />
-                                Tambah Karyawan
+                                <UserPlus className="mr-1.5 h-3.5 w-3.5" />
+                                Tambah
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
@@ -477,7 +476,7 @@ export default function AdminEmployeeList() {
                 </div>
             </header>
 
-            <main className="p-8 flex-1">
+            <main className="p-4 sm:p-8 flex-1">
                 <div className="flex items-center gap-4 mb-6">
                     <div className="relative flex-1 max-w-sm">
                         <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -485,8 +484,9 @@ export default function AdminEmployeeList() {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <Table>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-200">
+                        <Table>
                         <TableHeader>
                             <TableRow>
                                 {user?.role === 'superadmin' && (
@@ -875,6 +875,7 @@ export default function AdminEmployeeList() {
                             )}
                         </TableBody>
                     </Table>
+                    </div>
                 </div>
             </main>
         </div>
