@@ -51,9 +51,6 @@ export default function AdminEmployeeList() {
     const [attendanceViewDate, setAttendanceViewDate] = useState(new Date());
     const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
     const [weekDate, setWeekDate] = useState(new Date());
-    const [viewModalOpen, setViewModalOpen] = useState(false);
-    const [viewingEmployee, setViewingEmployee] = useState<User | null>(null);
-    const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
 
     const { data: complaintsStats } = useQuery<{ pendingCount: number }>({
         queryKey: ["/api/admin/complaints/stats"],
@@ -231,37 +228,43 @@ export default function AdminEmployeeList() {
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
-            <header className="bg-white border-b border-gray-200 p-4 sm:px-8 flex flex-col sm:flex-row items-start sm:items-center justify-between sticky top-0 z-10 gap-4">
-                <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
-                    <Button variant="ghost" size="icon" onClick={() => setLocation("/admin")} className="shrink-0">
+            <header className="bg-white border-b border-gray-200 p-4 px-8 flex items-center justify-between sticky top-0 z-10">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" onClick={() => setLocation("/admin")}>
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
-                    <div className="flex flex-col">
-                        <h1 className="text-lg sm:text-xl font-bold text-gray-800 leading-tight">Daftar Karyawan</h1>
-                        <Button variant="link" className="p-0 h-auto text-[10px] sm:text-xs text-green-600 justify-start" onClick={() => setLocation("/admin/complaints")}>
-                            <MessageSquare className="mr-1 h-3 w-3" />
-                            {complaintsStats?.pendingCount || 0} Pengaduan Baru
-                        </Button>
-                    </div>
+                    <h1 className="text-xl font-bold text-gray-800">Daftar Karyawan</h1>
+                    <Button variant="ghost" className="w-full justify-start text-gray-600 hover:text-green-600 hover:bg-green-50" onClick={() => setLocation("/admin/complaints")}>
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        Pengaduan Karyawan
+                        {complaintsStats && complaintsStats.pendingCount > 0 && (
+                            <span className="ml-auto bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                                {complaintsStats.pendingCount}
+                            </span>
+                        )}
+                    </Button>
                 </div>
-                <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
+                <div className="flex items-center gap-2">
                     {user?.role === 'superadmin' && selectedEmployeeIds.length > 0 && (
                         <Button 
                             variant="destructive" 
-                            size="sm"
-                            className="bg-red-600 hover:bg-red-700 shadow-sm shrink-0 h-9"
-                            onClick={() => setIsBulkDeleteConfirmOpen(true)}
+                            className="bg-red-600 hover:bg-red-700 shadow-sm"
+                            onClick={() => {
+                                if (confirm(`Yakin ingin menghapus ${selectedEmployeeIds.length} karyawan? Data akan hilang permanen.`)) {
+                                    bulkDeleteMutation.mutate(selectedEmployeeIds);
+                                }
+                            }}
                             disabled={bulkDeleteMutation.isPending}
                         >
-                            <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                            Hapus ({selectedEmployeeIds.length})
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Hapus Terpilih ({selectedEmployeeIds.length})
                         </Button>
                     )}
                     <Dialog open={csvOpen} onOpenChange={setCsvOpen}>
                         <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="border-orange-200 text-orange-700 hover:bg-orange-50 bg-white shrink-0 h-9">
-                                <Upload className="mr-1.5 h-3.5 w-3.5" />
-                                CSV
+                            <Button variant="outline" className="border-orange-200 text-orange-700 hover:bg-orange-50 bg-white">
+                                <Upload className="mr-2 h-4 w-4" />
+                                Upload CSV
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-md">
@@ -292,8 +295,7 @@ export default function AdminEmployeeList() {
                     <Dialog open={open} onOpenChange={setOpen}>
                         <DialogTrigger asChild>
                             <Button
-                                size="sm"
-                                className="bg-orange-600 hover:bg-orange-700 text-white shrink-0 h-9"
+                                className="bg-orange-600 hover:bg-orange-700 text-white"
                                 onClick={() => {
                                     setSelectedEmployee(null);
                                     form.reset({
@@ -314,8 +316,8 @@ export default function AdminEmployeeList() {
                                     setSelectedNpwpPhoto(null);
                                 }}
                             >
-                                <UserPlus className="mr-1.5 h-3.5 w-3.5" />
-                                Tambah
+                                <UserPlus className="mr-2 h-4 w-4" />
+                                Tambah Karyawan
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
@@ -475,7 +477,7 @@ export default function AdminEmployeeList() {
                 </div>
             </header>
 
-            <main className="p-4 sm:p-8 flex-1">
+            <main className="p-8 flex-1">
                 <div className="flex items-center gap-4 mb-6">
                     <div className="relative flex-1 max-w-sm">
                         <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -483,9 +485,8 @@ export default function AdminEmployeeList() {
                     </div>
                 </div>
 
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-200">
-                        <Table>
+                <div className="bg-white rounded-lg shadow overflow-hidden">
+                    <Table>
                         <TableHeader>
                             <TableRow>
                                 {user?.role === 'superadmin' && (
@@ -585,17 +586,6 @@ export default function AdminEmployeeList() {
                                                 }}
                                             >
                                                 Edit
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="text-slate-600 border-slate-200 hover:bg-slate-50"
-                                                onClick={() => {
-                                                    setViewingEmployee(emp);
-                                                    setViewModalOpen(true);
-                                                }}
-                                            >
-                                                Lihat
                                             </Button>
                                             <Dialog>
                                                 <DialogTrigger asChild>
@@ -885,145 +875,8 @@ export default function AdminEmployeeList() {
                             )}
                         </TableBody>
                     </Table>
-                    </div>
                 </div>
             </main>
-
-            {/* View Employee Detail Modal */}
-            <Dialog open={viewModalOpen} onOpenChange={setViewModalOpen}>
-                <DialogContent className="max-w-2xl bg-white rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden outline-none">
-                    {viewingEmployee && (
-                        <div className="flex flex-col">
-                            {/* Header Section */}
-                            <div className="bg-slate-900 p-10 text-white relative">
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/10 rounded-full -mr-32 -mt-32 blur-3xl" />
-                                <div className="relative flex items-center gap-8">
-                                    <div className="w-32 h-48 bg-slate-800 rounded-3xl overflow-hidden border-4 border-slate-700 shadow-2xl shrink-0">
-                                        {viewingEmployee.photoUrl ? (
-                                            <img src={viewingEmployee.photoUrl} className="w-full h-full object-cover" alt={viewingEmployee.fullName} />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-4xl font-black text-slate-600">
-                                                {viewingEmployee.fullName.charAt(0)}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex-1">
-                                        <Badge className="bg-green-500 hover:bg-green-600 text-[10px] font-black uppercase tracking-[0.2em] mb-3 px-3 py-1 rounded-lg">
-                                            {viewingEmployee.position || "Staff"}
-                                        </Badge>
-                                        <h2 className="text-4xl font-black tracking-tight leading-tight">{viewingEmployee.fullName}</h2>
-                                        <p className="text-slate-400 font-bold uppercase tracking-widest mt-1">NIK: {viewingEmployee.nik || "-"}</p>
-                                        
-                                        <div className="flex items-center gap-4 mt-8">
-                                            <div className="bg-slate-800/50 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-700/50">
-                                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Cabang</p>
-                                                <p className="text-sm font-bold text-slate-200">{viewingEmployee.branch || "Pusat"}</p>
-                                            </div>
-                                            <div className="bg-slate-800/50 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-700/50">
-                                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Status</p>
-                                                <p className="text-sm font-bold text-emerald-400 capitalize">{viewingEmployee.registrationStatus || "Aktif"}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Info Grid */}
-                            <div className="p-10 bg-slate-50 grid grid-cols-2 gap-8">
-                                <div className="space-y-6">
-                                    <div className="flex flex-col space-y-1">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Nomor Telepon</label>
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100"><Phone className="w-4 h-4 text-slate-400" /></div>
-                                            <p className="font-bold text-slate-700">{viewingEmployee.phoneNumber || "-"}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col space-y-1">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Agama</label>
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100"><Users className="w-4 h-4 text-slate-400" /></div>
-                                            <p className="font-bold text-slate-700">{(viewingEmployee as any).religion || "-"}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col space-y-1">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Username</label>
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100"><Search className="w-4 h-4 text-slate-400" /></div>
-                                            <p className="font-bold text-slate-700">{viewingEmployee.username}</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-6">
-                                    <div className="flex flex-col space-y-1">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Nomor BPJS</label>
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100"><Search className="w-4 h-4 text-slate-400" /></div>
-                                            <p className="font-bold text-slate-700">{(viewingEmployee as any).bpjs || "-"}</p>
-                                            {(viewingEmployee as any).bpjsPhotoUrl && (
-                                                <a href={(viewingEmployee as any).bpjsPhotoUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] font-black text-blue-600 hover:underline uppercase tracking-widest ml-auto">Lihat Kartu</a>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col space-y-1">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Nomor NPWP</label>
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100"><FileText className="w-4 h-4 text-slate-400" /></div>
-                                            <p className="font-bold text-slate-700">{(viewingEmployee as any).npwp || "-"}</p>
-                                            {(viewingEmployee as any).npwpPhotoUrl && (
-                                                <a href={(viewingEmployee as any).npwpPhotoUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] font-black text-blue-600 hover:underline uppercase tracking-widest ml-auto">Lihat Kartu</a>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col space-y-1">
-                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Role Akses</label>
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100"><Users className="w-4 h-4 text-slate-400" /></div>
-                                            <p className="font-bold text-slate-700 capitalize">{viewingEmployee.role}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="p-6 bg-white border-t border-slate-100 flex justify-end">
-                                <Button className="bg-slate-900 hover:bg-slate-800 text-white font-black text-xs uppercase tracking-widest px-8 h-12 rounded-2xl" onClick={() => setViewModalOpen(false)}>
-                                    Tutup Profil
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
-
-            <AlertDialog open={isBulkDeleteConfirmOpen} onOpenChange={setIsBulkDeleteConfirmOpen}>
-                <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl p-8">
-                    <AlertDialogHeader>
-                        <div className="mx-auto w-20 h-20 bg-rose-100 rounded-[2rem] flex items-center justify-center mb-6 shadow-inner">
-                            <Trash2 className="w-10 h-10 text-rose-600" />
-                        </div>
-                        <AlertDialogTitle className="text-center text-2xl font-black tracking-tight uppercase">Hapus Masal Karyawan?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-center text-sm font-medium text-slate-500 pt-3 leading-relaxed">
-                            Anda akan menghapus <span className="text-slate-900 font-bold underline">{selectedEmployeeIds.length} karyawan</span> sekaligus.
-                            <br/><br/>
-                            <span className="text-rose-600 font-black tracking-widest uppercase">Peringatan:</span> Tindakan ini akan menghapus seluruh data profil dan riwayat absensi secara permanen.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="mt-8 gap-3 sm:gap-0 sm:flex-row-reverse">
-                        <AlertDialogAction 
-                            onClick={() => {
-                                bulkDeleteMutation.mutate(selectedEmployeeIds);
-                                setIsBulkDeleteConfirmOpen(false);
-                            }}
-                            className="h-14 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-rose-200"
-                        >
-                            Ya, Hapus Semua
-                        </AlertDialogAction>
-                        <AlertDialogCancel className="h-14 rounded-2xl border-slate-200 text-slate-400 font-bold text-xs uppercase tracking-widest hover:bg-slate-50">
-                            Batalkan
-                        </AlertDialogCancel>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </div>
     );
 }

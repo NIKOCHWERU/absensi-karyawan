@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Camera, Pencil, Check, Lock, MessageSquare, Upload, ImageIcon } from "lucide-react";
+import { Loader2, Camera, Pencil, Check, Lock, MessageSquare } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -44,10 +44,6 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [bpjsPreview, setBpjsPreview] = useState<string | null>(null);
-  const [bpjsFile, setBpjsFile] = useState<File | null>(null);
-  const [npwpPreview, setNpwpPreview] = useState<string | null>(null);
-  const [npwpFile, setNpwFile] = useState<File | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
   const form = useForm<ProfileFormValues>({
@@ -67,8 +63,6 @@ export default function ProfilePage() {
       const formData = new FormData();
       Object.entries(values).forEach(([k, v]) => { if (v !== undefined && v !== null) formData.append(k, v); });
       if (photoFile) formData.append("profilePhoto", photoFile);
-      if (bpjsFile) formData.append("bpjsPhoto", bpjsFile);
-      if (npwpFile) formData.append("npwpPhoto", npwpFile);
       const res = await fetch("/api/profile", { method: "PATCH", body: formData, credentials: "include" });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ message: "Terjadi kesalahan" }));
@@ -82,29 +76,18 @@ export default function ProfilePage() {
       setIsEditing(false);
       setPhotoFile(null);
       setPhotoPreview(null);
-      setBpjsFile(null);
-      setBpjsPreview(null);
-      setNpwFile(null);
-      setNpwpPreview(null);
     },
     onError: (err: any) => {
       toast({ title: "Gagal", description: err.message, variant: "destructive" });
     },
   });
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'profile' | 'bpjs' | 'npwp') => {
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (type === 'profile') setPhotoFile(file);
-      else if (type === 'bpjs') setBpjsFile(file);
-      else if (type === 'npwp') setNpwFile(file);
-
+      setPhotoFile(file);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        if (type === 'profile') setPhotoPreview(reader.result as string);
-        else if (type === 'bpjs') setBpjsPreview(reader.result as string);
-        else if (type === 'npwp') setNpwpPreview(reader.result as string);
-      };
+      reader.onloadend = () => setPhotoPreview(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
@@ -120,10 +103,6 @@ export default function ProfilePage() {
     });
     setPhotoPreview(null);
     setPhotoFile(null);
-    setBpjsPreview(null);
-    setBpjsFile(null);
-    setNpwpPreview(null);
-    setNpwFile(null);
     setIsEditing(false);
   };
 
@@ -132,14 +111,14 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-slate-50 pb-64">
       {/* Header */}
-      <div className="bg-gradient-to-br from-primary to-primary/80 pt-8 sm:pt-10 pb-16 sm:pb-20 px-4 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-primary to-primary/80 pt-10 pb-20 px-4 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-4 right-4 w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white" />
-          <div className="absolute -bottom-8 -left-8 w-32 h-32 sm:w-48 sm:h-48 rounded-full border-4 border-white" />
+          <div className="absolute top-4 right-4 w-32 h-32 rounded-full border-4 border-white" />
+          <div className="absolute -bottom-8 -left-8 w-48 h-48 rounded-full border-4 border-white" />
         </div>
-        <div className="max-w-lg mx-auto relative z-10 text-center sm:text-left">
-          <h1 className="text-white text-xl sm:text-2xl font-bold mb-1">Profil Saya</h1>
-          <p className="text-white/70 text-xs sm:text-sm">Data diri dan informasi pribadi</p>
+        <div className="max-w-lg mx-auto relative z-10">
+          <h1 className="text-white text-2xl font-bold mb-1">Profil Saya</h1>
+          <p className="text-white/70 text-sm">Data diri dan informasi pribadi</p>
         </div>
       </div>
 
@@ -160,7 +139,7 @@ export default function ProfilePage() {
             {isEditing && (
               <label className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center cursor-pointer shadow-md hover:bg-primary/90 transition-colors">
                 <Camera className="w-3.5 h-3.5" />
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoChange(e, 'profile')} />
+                <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
               </label>
             )}
           </div>
@@ -189,7 +168,7 @@ export default function ProfilePage() {
               {isEditing ? (
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <FormField control={form.control} name="phoneNumber" render={({ field }) => (
                         <FormItem>
                           <FormLabel>No. HP</FormLabel>
@@ -214,7 +193,7 @@ export default function ProfilePage() {
                         </FormItem>
                       )} />
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <FormField control={form.control} name="npwp" render={({ field }) => (
                         <FormItem>
                           <FormLabel>NPWP</FormLabel>
@@ -230,7 +209,7 @@ export default function ProfilePage() {
                         </FormItem>
                       )} />
                       <FormField control={form.control} name="religion" render={({ field }) => (
-                        <FormItem className="sm:col-span-2">
+                        <FormItem>
                           <FormLabel>Agama</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
@@ -252,42 +231,6 @@ export default function ProfilePage() {
                         </FormItem>
                       )} />
                     </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <FormLabel className="text-xs font-semibold">Foto NPWP (Opsional)</FormLabel>
-                        <div className="flex flex-col gap-2">
-                          <div className="w-full h-28 bg-slate-50 border border-dashed border-slate-200 rounded-xl overflow-hidden flex items-center justify-center relative group">
-                            {npwpPreview || user?.npwpPhotoUrl ? (
-                              <img src={npwpPreview || user?.npwpPhotoUrl} className="w-full h-full object-cover" />
-                            ) : (
-                              <Upload className="w-6 h-6 text-slate-300" />
-                            )}
-                            <label className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                              <span className="text-[10px] text-white font-bold">Ganti Foto</span>
-                              <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoChange(e, 'npwp')} />
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <FormLabel className="text-xs font-semibold">Foto BPJS (Opsional)</FormLabel>
-                        <div className="flex flex-col gap-2">
-                          <div className="w-full h-28 bg-slate-50 border border-dashed border-slate-200 rounded-xl overflow-hidden flex items-center justify-center relative group">
-                            {bpjsPreview || user?.bpjsPhotoUrl ? (
-                              <img src={bpjsPreview || user?.bpjsPhotoUrl} className="w-full h-full object-cover" />
-                            ) : (
-                              <Upload className="w-6 h-6 text-slate-300" />
-                            )}
-                            <label className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                              <span className="text-[10px] text-white font-bold">Ganti Foto</span>
-                              <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoChange(e, 'bpjs')} />
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
                     <Button type="submit" className="w-full h-11 font-bold shadow-md shadow-primary/20" disabled={mutation.isPending}>
                       {mutation.isPending
                         ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Menyimpan...</>
@@ -302,21 +245,7 @@ export default function ProfilePage() {
                   <ReadOnlyField label="Cabang" value={user?.branch} />
                   <ReadOnlyField label="Shift" value={(user as any)?.shift} />
                   <ReadOnlyField label="NPWP" value={user?.npwp} />
-                  {(user as any)?.npwpPhotoUrl && (
-                    <div className="mt-1.5 mb-3.5">
-                      <a href={(user as any).npwpPhotoUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary font-bold bg-primary/5 px-2.5 py-1.5 rounded-lg border border-primary/10 inline-flex items-center gap-2 hover:bg-primary/10 transition-colors">
-                        <ImageIcon className="w-3.5 h-3.5" /> Lihat Foto NPWP
-                      </a>
-                    </div>
-                  )}
                   <ReadOnlyField label="BPJS" value={user?.bpjs} />
-                  {(user as any)?.bpjsPhotoUrl && (
-                    <div className="mt-1.5 mb-2.5">
-                      <a href={(user as any).bpjsPhotoUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary font-bold bg-primary/5 px-2.5 py-1.5 rounded-lg border border-primary/10 inline-flex items-center gap-2 hover:bg-primary/10 transition-colors">
-                        <ImageIcon className="w-3.5 h-3.5" /> Lihat Foto BPJS
-                      </a>
-                    </div>
-                  )}
                 </div>
               )}
             </CardContent>

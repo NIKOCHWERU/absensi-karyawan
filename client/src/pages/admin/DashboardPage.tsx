@@ -40,24 +40,12 @@ import {
     DialogDescription,
     DialogClose,
 } from "@/components/ui/dialog";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 export default function AdminDashboard() {
     const [, setLocation] = useLocation();
     const { logout } = useAuth();
     const { toast } = useToast();
     const [absenceDate, setAbsenceDate] = useState(new Date().toISOString().split('T')[0]);
-    const [isImportConfirmOpen, setIsImportConfirmOpen] = useState(false);
-    const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
 
     const backupMutation = useMutation({
         mutationFn: async () => {
@@ -113,18 +101,11 @@ export default function AdminDashboard() {
                 toast({ title: "Format Tidak Valid", description: "Pastikan file berformat .sql", variant: "destructive" });
                 return;
             }
-            setPendingImportFile(file);
-            setIsImportConfirmOpen(true);
+            if (confirm("Apakah Anda yakin ingin meng-import database ini? Data saat ini mungkin akan tertimpa.")) {
+                importMutation.mutate(file);
+            }
             if (fileInputRef.current) fileInputRef.current.value = "";
         }
-    };
-
-    const confirmImport = () => {
-        if (pendingImportFile) {
-            importMutation.mutate(pendingImportFile);
-        }
-        setIsImportConfirmOpen(false);
-        setPendingImportFile(null);
     };
 
     const { data: stats } = useQuery<{ totalEmployees: number; presentToday: number }>({
@@ -236,15 +217,11 @@ export default function AdminDashboard() {
             {/* Sidebar replaced */}
 
             {/* Main Content */}
-            <main className="flex-1 md:p-8 p-4 overflow-auto bg-slate-50/50">
-                <header className="flex flex-col md:flex-row md:justify-between md:items-center mb-10 gap-6">
-                    <div>
-                        <h2 className="text-3xl font-black text-slate-900 tracking-tight">Admin Dashboard</h2>
-                        <p className="text-sm text-slate-500 font-medium mt-1 uppercase tracking-wider">Ringkasan Sistem & Performa</p>
-                    </div>
-                    
+            <main className="flex-1 md:p-8 p-4 overflow-auto">
+                <header className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
+                    <h2 className="text-2xl font-bold text-gray-800">Dashboard</h2>
                     <div className="flex flex-wrap items-center gap-4">
-                        <div className="flex bg-white/80 backdrop-blur-md p-1.5 rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-200 items-center">
+                        <div className="flex gap-2">
                             <input
                                 type="file"
                                 ref={fileInputRef}
@@ -253,45 +230,39 @@ export default function AdminDashboard() {
                                 onChange={handleFileChange}
                             />
                             <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-amber-600 hover:bg-amber-50 rounded-xl font-black text-[10px] uppercase tracking-widest h-10 px-5"
+                                variant="outline"
+                                className="border-orange-200 text-orange-700 hover:bg-orange-50 shadow-sm"
                                 onClick={handleImportClick}
                                 disabled={importMutation.isPending}
                             >
-                                {importMutation.isPending ? <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> : <Upload className="w-3.5 h-3.5 mr-2" />}
-                                Import DB
+                                {importMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+                                Import Database
                             </Button>
-                            <div className="w-px h-6 bg-slate-200 mx-1" />
                             <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-indigo-600 hover:bg-indigo-50 rounded-xl font-black text-[10px] uppercase tracking-widest h-10 px-5"
+                                variant="outline"
+                                className="border-blue-200 text-blue-700 hover:bg-blue-50 shadow-sm"
                                 onClick={() => backupMutation.mutate()}
                                 disabled={backupMutation.isPending}
                             >
-                                {backupMutation.isPending ? <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> : <DatabaseBackup className="w-3.5 h-3.5 mr-2" />}
-                                Backup DB
+                                {backupMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <DatabaseBackup className="w-4 h-4 mr-2" />}
+                                Backup Database
                             </Button>
                         </div>
-
                         <Dialog>
                             <DialogTrigger asChild>
-                                <Button variant="outline" className="h-11 px-6 rounded-2xl border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50 shadow-xl shadow-emerald-100/50 font-black text-xs uppercase tracking-widest transition-all hover:scale-105 active:scale-95">
+                                <Button variant="outline" className="border-green-200 text-green-700 hover:bg-green-50 shadow-sm">
                                     <Info className="w-4 h-4 mr-2" />
-                                    Panduan
+                                    Tata Cara & Ketentuan Absensi
                                 </Button>
                             </DialogTrigger>
-                            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-[2rem] border-none shadow-2xl p-8">
+                            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                                 <DialogHeader>
-                                    <DialogTitle className="text-2xl font-black text-emerald-700 flex items-center gap-3 uppercase tracking-tight">
-                                        <div className="p-2 bg-emerald-100 rounded-xl">
-                                            <Info className="w-6 h-6" />
-                                        </div>
-                                        Tata Cara Absensi
+                                    <DialogTitle className="text-xl font-bold text-green-700 flex items-center gap-2">
+                                        <Info className="w-6 h-6" />
+                                        Tata Cara Absensi (Penting Dibaca!)
                                     </DialogTitle>
-                                    <DialogDescription className="text-slate-500 text-lg font-medium">
-                                        Panduan langkah-langkah absensi harian karyawan.
+                                    <DialogDescription className="text-gray-600 text-base">
+                                        Perhatikan gambar di bawah ini agar Bapak/Ibu tidak salah saat melakukan absensi setiap harinya.
                                     </DialogDescription>
                                 </DialogHeader>
                                 <div className="space-y-6 py-4 text-sm text-gray-700">
@@ -393,91 +364,88 @@ export default function AdminDashboard() {
                 </header>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <Card
-                        className="border-none shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-emerald-200/50 transition-all bg-white rounded-[2.5rem] overflow-hidden group cursor-pointer hover:translate-y-[-8px] duration-500"
+                        className="border-none shadow-sm hover:shadow-md transition-all bg-white rounded-xl overflow-hidden group cursor-pointer hover:translate-y-[-2px]"
                         onClick={() => setLocation("/admin/employees")}
                     >
-                        <CardContent className="p-10 relative">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-bl-[5rem] -mr-10 -mt-10 group-hover:bg-emerald-100 transition-colors duration-500" />
-                            <div className="relative flex flex-col items-center text-center">
-                                <div className="p-5 bg-emerald-600 text-white rounded-[2rem] shadow-lg shadow-emerald-200 mb-6 group-hover:scale-110 transition-transform duration-500">
-                                    <Users className="h-8 w-8" />
+                        <CardContent className="p-6">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500 mb-1">Total Karyawan</p>
+                                    <h3 className="text-4xl font-bold text-gray-800">{stats?.totalEmployees || 0}</h3>
                                 </div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Total Karyawan</p>
-                                <h3 className="text-6xl font-black text-slate-900 tracking-tighter mb-1">{stats?.totalEmployees || 0}</h3>
-                                <div className="flex items-center gap-1.5 mt-2">
-                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                    <p className="text-[10px] text-emerald-600 font-black uppercase tracking-widest">Aktif di Sistem</p>
+                                <div className="p-2 bg-gradient-to-br from-orange-100 to-orange-50 rounded-lg group-hover:scale-110 transition-transform">
+                                    <Users className="h-6 w-6 text-green-500" />
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card
-                        className="border-none shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-blue-200/50 transition-all bg-white rounded-[2.5rem] overflow-hidden group cursor-pointer hover:translate-y-[-8px] duration-500"
+                        className="border-none shadow-sm hover:shadow-md transition-all bg-white rounded-xl overflow-hidden group cursor-pointer hover:translate-y-[-2px]"
                         onClick={() => setLocation("/admin/recap")}
                     >
-                        <CardContent className="p-10 relative">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-[5rem] -mr-10 -mt-10 group-hover:bg-blue-100 transition-colors duration-500" />
-                            <div className="relative flex flex-col items-center text-center">
-                                <div className="p-5 bg-blue-600 text-white rounded-[2rem] shadow-lg shadow-blue-200 mb-6 group-hover:scale-110 transition-transform duration-500">
-                                    <Clock className="h-8 w-8" />
+                        <CardContent className="p-6">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500 mb-1">Hadir Hari Ini</p>
+                                    <h3 className="text-4xl font-bold text-gray-800">{stats?.presentToday || 0}</h3>
                                 </div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Hadir Hari Ini</p>
-                                <h3 className="text-6xl font-black text-slate-900 tracking-tighter mb-1">{stats?.presentToday || 0}</h3>
-                                <div className="flex items-center gap-1.5 mt-2">
-                                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                                    <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest">Update Terkini</p>
+                                <div className="p-2 bg-gradient-to-br from-green-100 to-green-50 rounded-lg group-hover:scale-110 transition-transform">
+                                    <Clock className="h-6 w-6 text-green-500" />
                                 </div>
+                            </div>
+                            <div className="flex items-center space-x-2 text-xs text-gray-400">
+                                <span>Lihat Rekap Absen</span>
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card
-                        className="border-none shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-amber-200/50 transition-all bg-white rounded-[2.5rem] overflow-hidden group cursor-pointer hover:translate-y-[-8px] duration-500"
+                        className="border-none shadow-sm hover:shadow-md transition-all bg-white rounded-xl overflow-hidden group cursor-pointer hover:translate-y-[-2px]"
                         onClick={() => setLocation("/admin/attendance-summary")}
                     >
-                        <CardContent className="p-10 relative">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-bl-[5rem] -mr-10 -mt-10 group-hover:bg-amber-100 transition-colors duration-500" />
-                            <div className="relative flex flex-col items-center text-center">
-                                <div className="p-5 bg-amber-500 text-white rounded-[2rem] shadow-lg shadow-amber-200 mb-6 group-hover:scale-110 transition-transform duration-500">
-                                    <CalendarDays className="h-8 w-8" />
+                        <CardContent className="p-6">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500 mb-1">Izin / Sakit</p>
+                                    <h3 className="text-4xl font-bold text-gray-800">
+                                        {(() => {
+                                            const now = new Date();
+                                            const isToday = (date: any) => new Date(date).toDateString() === now.toDateString();
+                                            return attendanceHistory?.filter(a => isToday(a.date) && ['sick', 'permission'].includes(a.status || '')).length || 0;
+                                        })()}
+                                    </h3>
                                 </div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Izin / Sakit</p>
-                                <h3 className="text-6xl font-black text-slate-900 tracking-tighter mb-1">
-                                    {(() => {
-                                        const now = new Date();
-                                        const isToday = (date: any) => new Date(date).toDateString() === now.toDateString();
-                                        return attendanceHistory?.filter(a => isToday(a.date) && ['sick', 'permission'].includes(a.status || '')).length || 0;
-                                    })()}
-                                </h3>
-                                <div className="flex items-center gap-1.5 mt-2">
-                                    <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                                    <p className="text-[10px] text-amber-600 font-black uppercase tracking-widest">Butuh Lampiran</p>
+                                <div className="p-2 bg-gradient-to-br from-blue-100 to-blue-50 rounded-lg group-hover:scale-110 transition-transform">
+                                    <CalendarDays className="h-6 w-6 text-blue-500" />
                                 </div>
+                            </div>
+                            <div className="flex items-center space-x-2 text-xs text-gray-400">
+                                <span>Lihat Ringkasan</span>
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card
-                        className="border-none shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-rose-200/50 transition-all bg-white rounded-[2.5rem] overflow-hidden group cursor-pointer hover:translate-y-[-8px] duration-500"
+                        className="border-none shadow-sm hover:shadow-md transition-all bg-white rounded-xl overflow-hidden group cursor-pointer hover:translate-y-[-2px]"
                         onClick={() => setLocation("/admin/leave")}
                     >
-                        <CardContent className="p-10 relative">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-rose-50 rounded-bl-[5rem] -mr-10 -mt-10 group-hover:bg-rose-100 transition-colors duration-500" />
-                            <div className="relative flex flex-col items-center text-center">
-                                <div className="p-5 bg-rose-600 text-white rounded-[2rem] shadow-lg shadow-rose-200 mb-6 group-hover:scale-110 transition-transform duration-500">
-                                    <CalendarDays className="h-8 w-8" />
+                        <CardContent className="p-6">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500 mb-1">Cuti Menunggu</p>
+                                    <h3 className="text-4xl font-bold text-blue-600">
+                                        {leaveRequests?.filter(r => r.status === 'pending').length || 0}
+                                    </h3>
                                 </div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Cuti Menunggu</p>
-                                <h3 className="text-6xl font-black text-rose-600 tracking-tighter mb-1">
-                                    {leaveRequests?.filter(r => r.status === 'pending').length || 0}
-                                </h3>
-                                <div className="flex items-center gap-1.5 mt-2">
-                                    <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-                                    <p className="text-[10px] text-rose-600 font-black uppercase tracking-widest">Perlu Approval</p>
+                                <div className="p-2 bg-gradient-to-br from-blue-100 to-blue-50 rounded-lg group-hover:scale-110 transition-transform">
+                                    <CalendarDays className="h-6 w-6 text-blue-500" />
                                 </div>
+                            </div>
+                            <div className="flex items-center space-x-2 text-xs text-gray-400">
+                                <span>Perlu Persetujuan</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -654,53 +622,52 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Live Feed and Absence List */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <Card className="border-none shadow-sm bg-white rounded-[2rem] lg:col-span-2 overflow-hidden shadow-slate-200/50">
-                        <CardHeader className="p-8 pb-4">
-                            <CardTitle className="text-xl font-black text-slate-800 uppercase tracking-tight">Live Absensi Terbaru</CardTitle>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <Card className="border-none shadow-md bg-white lg:col-span-2">
+                        <CardHeader>
+                            <CardTitle className="text-lg font-bold text-gray-800">Live Absensi Terbaru</CardTitle>
                         </CardHeader>
-                        <CardContent className="p-0">
+                        <CardContent>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm text-left">
-                                    <thead>
-                                        <tr className="bg-slate-800 text-white">
-                                            <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest border-r border-slate-700/50">Waktu</th>
-                                            <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest border-r border-slate-700/50">Karyawan</th>
-                                            <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-center border-r border-slate-700/50">Masuk</th>
-                                            <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-center border-r border-slate-700/50">Pulang</th>
-                                            <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-center">Status</th>
+                                    <thead className="text-xs text-gray-500 uppercase bg-gray-50/50">
+                                        <tr>
+                                            <th className="px-4 py-3">Hari / Tanggal</th>
+                                            <th className="px-4 py-3">NIK</th>
+                                            <th className="px-4 py-3">Masuk</th>
+                                            <th className="px-4 py-3">Istirahat</th>
+                                            <th className="px-4 py-3">Selesai</th>
+                                            <th className="px-4 py-3">Pulang</th>
+                                            <th className="px-4 py-3">Status</th>
+                                            <th className="px-4 py-3">Keterangan</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100">
+                                    <tbody>
                                         {recentActivities.map((record) => (
-                                            <tr key={record.id} className="hover:bg-slate-50/50 transition-colors">
-                                                <td className="px-6 py-5 border-r border-slate-50">
-                                                    <div className="text-[11px] font-black text-slate-900 uppercase">
-                                                        {format(new Date(record.date), 'EEEE', { locale: id })}
-                                                    </div>
-                                                    <div className="text-[10px] text-slate-400 font-bold">{format(new Date(record.date), 'd MMM yyyy')}</div>
+                                            <tr key={record.id} className="border-b border-gray-50 hover:bg-gray-50/50">
+                                                <td className="px-4 py-3 font-medium text-gray-900">
+                                                    {format(new Date(record.date), 'EEEE, d MMM yyyy', { locale: id })}
                                                 </td>
-                                                <td className="px-6 py-5 border-r border-slate-50">
-                                                    <div className="font-bold text-slate-800 text-sm leading-none">{users?.find(u => u.id === record.userId)?.fullName || '-'}</div>
-                                                    <div className="text-[10px] text-slate-400 font-bold mt-1.5 uppercase tracking-tighter">NIK: {getUserNik(record.userId)}</div>
+                                                <td className="px-4 py-3 font-mono text-gray-600">{getUserNik(record.userId)}</td>
+                                                <td className="px-4 py-3 text-green-600 font-mono">
+                                                    {record.checkIn ? format(new Date(record.checkIn), 'HH:mm') : '-'}
                                                 </td>
-                                                <td className="px-6 py-5 text-center border-r border-slate-50">
-                                                    <div className="text-[13px] font-black text-emerald-600 font-mono">
-                                                        {record.checkIn ? format(new Date(record.checkIn), 'HH:mm') : '-'}
-                                                    </div>
+                                                <td className="px-4 py-3 text-green-600 font-mono">
+                                                    {record.breakStart ? format(new Date(record.breakStart), 'HH:mm') : '-'}
                                                 </td>
-                                                <td className="px-6 py-5 text-center border-r border-slate-50">
-                                                    <div className="text-[13px] font-black text-rose-600 font-mono">
-                                                        {record.checkOut ? format(new Date(record.checkOut), 'HH:mm') : '-'}
-                                                    </div>
+                                                <td className="px-4 py-3 text-green-600 font-mono">
+                                                    {record.breakEnd ? format(new Date(record.breakEnd), 'HH:mm') : '-'}
                                                 </td>
-                                                <td className="px-6 py-5 text-center">
-                                                    <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider
-                                                ${record.status === 'present' ? 'bg-emerald-500 text-white' :
-                                                             record.status === 'late' ? 'bg-rose-500 text-white' :
-                                                                 record.status === 'sick' ? 'bg-blue-500 text-white' :
-                                                                     record.status === 'permission' ? 'bg-purple-500 text-white' :
-                                                                         'bg-slate-200 text-slate-600'}`}>
+                                                <td className="px-4 py-3 text-red-600 font-mono">
+                                                    {record.checkOut ? format(new Date(record.checkOut), 'HH:mm') : '-'}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase
+                                                ${record.status === 'present' ? 'bg-green-100 text-green-700' :
+                                                            record.status === 'late' ? 'bg-red-100 text-red-700' :
+                                                                record.status === 'sick' ? 'bg-blue-100 text-blue-700' :
+                                                                    record.status === 'permission' ? 'bg-purple-100 text-purple-700' :
+                                                                        'bg-gray-100 text-gray-700'}`}>
                                                         {record.status === 'present' ? 'Hadir' :
                                                             record.status === 'late' ? 'Telat' :
                                                                 record.status === 'sick' ? 'Sakit' :
@@ -708,12 +675,15 @@ export default function AdminDashboard() {
                                                                         record.status === 'absent' ? 'Alpha' : record.status}
                                                     </span>
                                                 </td>
+                                                <td className="px-4 py-3 text-xs text-gray-500 italic max-w-[150px] truncate" title={record.notes || (record as any).lateReason || "-"}>
+                                                    {record.notes ? record.notes : ((record as any).lateReason ? `Telat: ${(record as any).lateReason}` : "-")}
+                                                </td>
                                             </tr>
                                         ))}
                                         {recentActivities.length === 0 && (
                                             <tr>
-                                                <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-bold text-sm bg-white">
-                                                    Belum ada aktivitas absensi hari ini.
+                                                <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                                                    Belum ada data absensi untuk hari ini.
                                                 </td>
                                             </tr>
                                         )}
@@ -724,42 +694,37 @@ export default function AdminDashboard() {
                     </Card>
 
                     {/* Who Didn't Clock In */}
-                    <Card className="border-none shadow-sm bg-white rounded-[2rem] overflow-hidden shadow-slate-200/50">
-                        <CardHeader className="p-8 pb-4 flex flex-col space-y-4">
-                            <CardTitle className="text-xl font-black text-slate-800 uppercase tracking-tight">Belum Absen</CardTitle>
+                    <Card className="border-none shadow-md bg-white">
+                        <CardHeader className="flex flex-col space-y-2">
+                            <CardTitle className="text-lg font-bold text-gray-800">Daftar Belum Absen</CardTitle>
                             <Input
                                 type="date"
                                 value={absenceDate}
                                 onChange={(e) => setAbsenceDate(e.target.value)}
-                                className="h-10 text-xs rounded-xl bg-slate-50 border-none font-bold text-slate-600 focus:ring-2 focus:ring-blue-500"
+                                className="h-8 text-xs"
                             />
                         </CardHeader>
-                        <CardContent className="p-8 pt-2">
-                            <div className="space-y-3 max-h-[380px] overflow-auto pr-2 custom-scrollbar">
+                        <CardContent>
+                            <div className="space-y-3 max-h-[400px] overflow-auto pr-2">
                                 {(() => {
                                     const employees = users?.filter(u => u.role === 'employee') || [];
                                     const dateRecords = attendanceHistory?.filter(a => format(new Date(a.date), 'yyyy-MM-dd') === absenceDate) || [];
                                     const absentEmployees = employees.filter(emp => !dateRecords.some(att => att.userId === emp.id));
 
                                     if (absentEmployees.length === 0) {
-                                        return (
-                                            <div className="flex flex-col items-center justify-center py-10 text-center">
-                                                <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 mb-3 text-2xl font-black">✓</div>
-                                                <p className="text-slate-400 font-bold text-xs uppercase tracking-wider">Semua sudah absen</p>
-                                            </div>
-                                        );
+                                        return <p className="text-center py-8 text-gray-400 text-sm">Semua karyawan sudah absen.</p>;
                                     }
 
                                     return absentEmployees.map(emp => (
-                                        <div key={emp.id} className="flex items-center gap-4 p-4 rounded-3xl bg-slate-50 border border-slate-100 group hover:bg-rose-50 hover:border-rose-100 transition-all duration-300">
-                                            <div className="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center text-slate-400 font-black text-sm group-hover:bg-rose-500 group-hover:text-white transition-all">
+                                        <div key={emp.id} className="flex items-center gap-3 p-3 rounded-xl bg-red-50/50 border border-red-100/50">
+                                            <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-bold text-xs">
                                                 {emp.fullName.charAt(0)}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="font-black text-slate-800 text-sm truncate">{emp.fullName}</p>
-                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight group-hover:text-rose-400">NIK: {emp.nik || emp.username}</p>
+                                                <p className="font-bold text-sm text-gray-800 truncate">{emp.fullName}</p>
+                                                <p className="text-[10px] text-gray-500 font-mono capitalize">{emp.nik || emp.username}</p>
                                             </div>
-                                            <div className="text-[8px] font-black text-rose-500 bg-rose-100 px-2 py-1 rounded-lg uppercase tracking-widest hidden group-hover:block">Alpha</div>
+                                            <div className="text-[10px] font-bold text-red-400 uppercase">Alpha</div>
                                         </div>
                                     ));
                                 })()}
@@ -770,55 +735,52 @@ export default function AdminDashboard() {
 
                 {/* Recent Leave Requests Card */}
                 <div className="mt-8">
-                    <Card className="border-none shadow-sm bg-white rounded-[2rem] overflow-hidden shadow-slate-200/50">
-                        <CardHeader className="p-8 pb-4 flex flex-row items-center justify-between">
-                            <CardTitle className="text-xl font-black text-slate-800 uppercase tracking-tight">Pengajuan Cuti Terbaru</CardTitle>
-                            <Button variant="ghost" size="sm" className="text-blue-600 font-black text-xs uppercase tracking-widest hover:bg-blue-50 rounded-xl px-4" onClick={() => setLocation("/admin/leave")}>
+                    <Card className="border-none shadow-md bg-white">
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <CardTitle className="text-lg font-bold text-gray-800">Daftar Pengajuan Cuti Terbaru</CardTitle>
+                            <Button variant="ghost" size="sm" className="text-blue-600 font-bold" onClick={() => setLocation("/admin/leave")}>
                                 Lihat Semua
                             </Button>
                         </CardHeader>
-                        <CardContent className="p-8">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <CardContent>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {leaveRequests?.slice(0, 3).map((req) => (
-                                    <div key={req.id} className="p-5 rounded-[2rem] border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-xl hover:shadow-slate-200/30 transition-all duration-300 cursor-pointer group" onClick={() => setLocation("/admin/leave")}>
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 font-black text-sm group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                    <div key={req.id} className="p-4 rounded-2xl border border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => setLocation("/admin/leave")}>
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
                                                     {getUserNik(req.userId).toString().charAt(0)}
                                                 </div>
                                                 <div>
-                                                    <p className="text-sm font-black text-slate-800 truncate max-w-[120px]">{users?.find(u => u.id === req.userId)?.fullName || 'User'}</p>
-                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">NIK: {getUserNik(req.userId)}</p>
+                                                    <p className="text-sm font-bold text-gray-800 truncate max-w-[100px]">{users?.find(u => u.id === req.userId)?.fullName || 'User'}</p>
+                                                    <p className="text-[10px] text-gray-400 font-bold uppercase">{getUserNik(req.userId)}</p>
                                                 </div>
                                             </div>
-                                            <span className={`text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border 
-                                                ${req.status === 'approved' ? 'text-emerald-600 bg-emerald-50 border-emerald-100' :
-                                                    req.status === 'rejected' ? 'text-rose-600 bg-rose-50 border-rose-100' :
-                                                        req.status === 'cancelled' ? 'text-slate-500 bg-slate-50 border-slate-100' :
-                                                            'text-amber-600 bg-amber-50 border-amber-100'}`}>
+                                            <span className={`text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md border 
+                                                ${req.status === 'approved' ? 'text-green-600 bg-green-50 border-green-100' :
+                                                    req.status === 'rejected' ? 'text-red-600 bg-red-50 border-red-100' :
+                                                        req.status === 'cancelled' ? 'text-gray-600 bg-gray-50 border-gray-100' :
+                                                            'text-orange-600 bg-orange-50 border-orange-100'}`}>
                                                 {req.status}
                                             </span>
                                         </div>
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-2 text-[9px] text-slate-400 font-black uppercase tracking-widest">
-                                                <CalendarDays className="w-3.5 h-3.5 text-slate-300" />
-                                                {req.selectedDates ? "Beberapa Tanggal" : "Rentang Waktu"}
+                                        <div className="space-y-1">
+                                            <div className="flex items-center gap-1.5 text-[10px] text-gray-500 font-bold uppercase">
+                                                <CalendarDays className="w-3 h-3 text-gray-400" />
+                                                {req.selectedDates ? "Beberapa Tanggal" : "Rentang Tanggal"}
                                             </div>
-                                            <p className="text-sm font-black text-slate-700">
+                                            <p className="text-xs font-bold text-gray-700">
                                                 {format(new Date(req.startDate), "d MMM")} - {format(new Date(req.endDate), "d MMM yyyy")}
                                             </p>
                                         </div>
-                                        <div className="mt-4 p-3 bg-white rounded-2xl border border-slate-100/50 text-xs text-slate-500 italic line-clamp-2 leading-relaxed">
+                                        <div className="mt-2 text-xs text-gray-500 italic line-clamp-1">
                                             "{req.reason}"
                                         </div>
                                     </div>
                                 ))}
                                 {(!leaveRequests || leaveRequests.length === 0) && (
-                                    <div className="col-span-full py-16 text-center">
-                                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mx-auto mb-4">
-                                            <FileText className="w-8 h-8" />
-                                        </div>
-                                        <p className="text-slate-400 font-bold text-sm uppercase tracking-wider">Belum ada pengajuan cuti</p>
+                                    <div className="col-span-full py-12 text-center text-gray-400">
+                                        <p>Belum ada pengajuan cuti.</p>
                                     </div>
                                 )}
                             </div>
@@ -827,32 +789,6 @@ export default function AdminDashboard() {
                 </div>
 
             </main>
-            <AlertDialog open={isImportConfirmOpen} onOpenChange={setIsImportConfirmOpen}>
-                <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl p-8">
-                    <AlertDialogHeader>
-                        <div className="mx-auto w-20 h-20 bg-amber-100 rounded-[2rem] flex items-center justify-center mb-6 shadow-inner">
-                            <DatabaseBackup className="w-10 h-10 text-amber-600" />
-                        </div>
-                        <AlertDialogTitle className="text-center text-2xl font-black tracking-tight uppercase">Import Database?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-center text-sm font-medium text-slate-500 pt-3 leading-relaxed">
-                            Apakah Anda yakin ingin meng-import file <span className="text-slate-900 font-bold underline">{pendingImportFile?.name}</span>? 
-                            <br/><br/>
-                            <span className="text-rose-600 font-black">PERINGATAN:</span> Data saat ini mungkin akan tertimpa dan digantikan oleh data dari file backup tersebut.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="mt-8 gap-3 sm:gap-0 sm:flex-row-reverse">
-                        <AlertDialogAction 
-                            onClick={confirmImport}
-                            className="h-14 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-amber-200"
-                        >
-                            Ya, Import Sekarang
-                        </AlertDialogAction>
-                        <AlertDialogCancel className="h-14 rounded-2xl border-slate-200 text-slate-400 font-bold text-xs uppercase tracking-widest hover:bg-slate-50">
-                            Batalkan
-                        </AlertDialogCancel>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </div>
     );
 }
