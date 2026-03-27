@@ -256,9 +256,6 @@ export default function AdminEmployeeList() {
                             <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                             Hapus ({selectedEmployeeIds.length})
                         </Button>
-                            <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                            Hapus ({selectedEmployeeIds.length})
-                        </Button>
                     )}
                     <Dialog open={csvOpen} onOpenChange={setCsvOpen}>
                         <DialogTrigger asChild>
