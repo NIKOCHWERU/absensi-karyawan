@@ -319,10 +319,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         {children}
                     </div>
                 </SidebarInset>
-                    <div className="flex-1 overflow-auto bg-gray-50/50">
-                        {children}
-                    </div>
-                </SidebarInset>
             </div>
         </SidebarProvider>
     );
