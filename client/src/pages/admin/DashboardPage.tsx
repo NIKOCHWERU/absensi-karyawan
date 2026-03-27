@@ -626,8 +626,6 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Live Feed and Absence List */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Live Feed and Absence List */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <Card className="border-none shadow-sm bg-white rounded-[2rem] lg:col-span-2 overflow-hidden shadow-slate-200/50">
                         <CardHeader className="p-8 pb-4">
