@@ -50,9 +50,9 @@ export default function RegistrationPage() {
     }
   });
 
-  const [previews, setPreviews] = useState<{ ktp?: string; profile?: string }>({});
+  const [previews, setPreviews] = useState<{ ktp?: string; profile?: string; bpjs?: string; npwp?: string }>({});
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'ktp' | 'profile') => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'ktp' | 'profile' | 'bpjs' | 'npwp') => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -104,6 +104,8 @@ export default function RegistrationPage() {
 
       const ktpInput = document.getElementById('ktp-upload') as HTMLInputElement;
       const profInput = document.getElementById('prof-upload') as HTMLInputElement;
+      const bpjsInput = document.getElementById('bpjs-upload') as HTMLInputElement;
+      const npwpInput = document.getElementById('npwp-upload') as HTMLInputElement;
 
       if (!ktpInput?.files?.[0]) {
         toast({ title: "Peringatan", description: "Foto KTP wajib diunggah.", variant: "destructive" });
@@ -118,6 +120,8 @@ export default function RegistrationPage() {
 
       if (ktpInput?.files?.[0]) formData.append('ktpPhoto', ktpInput.files[0]);
       if (profInput?.files?.[0]) formData.append('profilePhoto', profInput.files[0]);
+      if (bpjsInput?.files?.[0]) formData.append('bpjsPhoto', bpjsInput.files[0]);
+      if (npwpInput?.files?.[0]) formData.append('npwpPhoto', npwpInput.files[0]);
 
       const res = await fetch("/api/register-data", {
         method: "POST",
@@ -458,6 +462,42 @@ export default function RegistrationPage() {
                                 </>
                               )}
                               <input id="prof-upload" type="file" className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'profile')} />
+                            </label>
+                          </div>
+
+                          <div className="space-y-3">
+                            <FormLabel>Foto BPJS (Opsional)</FormLabel>
+                            <label 
+                              htmlFor="bpjs-upload" 
+                              className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-primary transition-all overflow-hidden"
+                            >
+                              {previews.bpjs ? (
+                                <img src={previews.bpjs} className="w-full h-full object-cover" />
+                              ) : (
+                                <>
+                                  <Upload className="w-8 h-8 text-slate-400 mb-2" />
+                                  <span className="text-xs text-slate-500 font-medium">Klik untuk upload BPJS</span>
+                                </>
+                              )}
+                              <input id="bpjs-upload" type="file" className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'bpjs')} />
+                            </label>
+                          </div>
+
+                          <div className="space-y-3">
+                            <FormLabel>Foto NPWP (Opsional)</FormLabel>
+                            <label 
+                              htmlFor="npwp-upload" 
+                              className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-primary transition-all overflow-hidden"
+                            >
+                              {previews.npwp ? (
+                                <img src={previews.npwp} className="w-full h-full object-cover" />
+                              ) : (
+                                <>
+                                  <Upload className="w-8 h-8 text-slate-400 mb-2" />
+                                  <span className="text-xs text-slate-500 font-medium">Klik untuk upload NPWP</span>
+                                </>
+                              )}
+                              <input id="npwp-upload" type="file" className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'npwp')} />
                             </label>
                           </div>
                         </div>

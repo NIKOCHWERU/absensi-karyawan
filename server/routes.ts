@@ -70,7 +70,7 @@ export async function registerRoutes(
     req.isAuthenticated() && (req.user!.role === 'admin' || req.user!.role === 'superadmin');
 
   // --- Employee: Edit own profile ---
-  app.patch("/api/profile", upload.single('profilePhoto'), async (req, res) => {
+  app.patch("/api/profile", upload.fields([{ name: 'profilePhoto', maxCount: 1 }, { name: 'bpjsPhoto', maxCount: 1 }, { name: 'npwpPhoto', maxCount: 1 }]), async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     try {
       const userId = req.user!.id;
@@ -78,11 +78,31 @@ export async function registerRoutes(
       const updates: any = {};
       allowed.forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k]; });
 
-      if (req.file) {
-        const filename = `prof-${userId}-${Date.now()}-${req.file.originalname}`;
-        const profPath = path.join(uploadsDir, filename);
-        fs.writeFileSync(profPath, req.file.buffer);
-        updates.photoUrl = `/uploads/${filename}`;
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      if (files?.profilePhoto?.[0]) {
+        const profFilename = `prof-${userId}-${Date.now()}-${files.profilePhoto[0].originalname}`;
+        const profDir = path.join(uploadsDir, 'profile');
+        if (!fs.existsSync(profDir)) fs.mkdirSync(profDir, { recursive: true });
+        const profPath = path.join(profDir, profFilename);
+        fs.writeFileSync(profPath, files.profilePhoto[0].buffer);
+        updates.photoUrl = `/uploads/profile/${profFilename}`;
+      }
+
+      const empUploadsDir = path.join(uploadsDir, 'employees');
+      if (!fs.existsSync(empUploadsDir)) fs.mkdirSync(empUploadsDir, { recursive: true });
+
+      if (files?.bpjsPhoto?.[0]) {
+        const filename = `emp-${userId}-bpjs-${Date.now()}-${files.bpjsPhoto[0].originalname}`;
+        const filepath = path.join(empUploadsDir, filename);
+        fs.writeFileSync(filepath, files.bpjsPhoto[0].buffer);
+        updates.bpjsPhotoUrl = `/uploads/employees/${filename}`;
+      }
+
+      if (files?.npwpPhoto?.[0]) {
+        const filename = `emp-${userId}-npwp-${Date.now()}-${files.npwpPhoto[0].originalname}`;
+        const filepath = path.join(empUploadsDir, filename);
+        fs.writeFileSync(filepath, files.npwpPhoto[0].buffer);
+        updates.npwpPhotoUrl = `/uploads/employees/${filename}`;
       }
 
       const updatedUser = await storage.updateUser(userId, updates);
@@ -558,7 +578,12 @@ export async function registerRoutes(
 
   // --- Registration & Shift Routes ---
 
-  app.post("/api/register-data", upload.fields([{ name: 'ktpPhoto', maxCount: 1 }, { name: 'profilePhoto', maxCount: 1 }]), async (req, res) => {
+  app.post("/api/register-data", upload.fields([
+    { name: 'ktpPhoto', maxCount: 1 }, 
+    { name: 'profilePhoto', maxCount: 1 },
+    { name: 'bpjsPhoto', maxCount: 1 },
+    { name: 'npwpPhoto', maxCount: 1 }
+  ]), async (req, res) => {
     try {
       // Safety check for empty body or strange data
       if (!req.body || Object.keys(req.body).length === 0) {
@@ -587,9 +612,28 @@ export async function registerRoutes(
 
         if (files?.profilePhoto?.[0]) {
           const profFilename = `prof-${userId}-${Date.now()}-${files.profilePhoto[0].originalname}`;
-          const profPath = path.join(uploadsDir, profFilename);
+          const profDir = path.join(uploadsDir, 'profile');
+          if (!fs.existsSync(profDir)) fs.mkdirSync(profDir, { recursive: true });
+          const profPath = path.join(profDir, profFilename);
           fs.writeFileSync(profPath, files.profilePhoto[0].buffer);
-          updates.photoUrl = `/uploads/${profFilename}`;
+          updates.photoUrl = `/uploads/profile/${profFilename}`;
+        }
+
+        const empUploadsDir = path.join(uploadsDir, 'employees');
+        if (!fs.existsSync(empUploadsDir)) fs.mkdirSync(empUploadsDir, { recursive: true });
+
+        if (files?.bpjsPhoto?.[0]) {
+          const filename = `emp-${userId}-bpjs-${Date.now()}-${files.bpjsPhoto[0].originalname}`;
+          const filepath = path.join(empUploadsDir, filename);
+          fs.writeFileSync(filepath, files.bpjsPhoto[0].buffer);
+          updates.bpjsPhotoUrl = `/uploads/employees/${filename}`;
+        }
+
+        if (files?.npwpPhoto?.[0]) {
+          const filename = `emp-${userId}-npwp-${Date.now()}-${files.npwpPhoto[0].originalname}`;
+          const filepath = path.join(empUploadsDir, filename);
+          fs.writeFileSync(filepath, files.npwpPhoto[0].buffer);
+          updates.npwpPhotoUrl = `/uploads/employees/${filename}`;
         }
 
         updates.registrationStatus = 'pending';
@@ -618,9 +662,28 @@ export async function registerRoutes(
 
         if (files?.profilePhoto?.[0]) {
           const profFilename = `prof-${nik}-${Date.now()}-${files.profilePhoto[0].originalname}`;
-          const profPath = path.join(uploadsDir, profFilename);
+          const profDir = path.join(uploadsDir, 'profile');
+          if (!fs.existsSync(profDir)) fs.mkdirSync(profDir, { recursive: true });
+          const profPath = path.join(profDir, profFilename);
           fs.writeFileSync(profPath, files.profilePhoto[0].buffer);
-          updates.photoUrl = `/uploads/${profFilename}`;
+          updates.photoUrl = `/uploads/profile/${profFilename}`;
+        }
+
+        const empUploadsDir = path.join(uploadsDir, 'employees');
+        if (!fs.existsSync(empUploadsDir)) fs.mkdirSync(empUploadsDir, { recursive: true });
+
+        if (files?.bpjsPhoto?.[0]) {
+          const filename = `emp-${nik}-bpjs-${Date.now()}-${files.bpjsPhoto[0].originalname}`;
+          const filepath = path.join(empUploadsDir, filename);
+          fs.writeFileSync(filepath, files.bpjsPhoto[0].buffer);
+          updates.bpjsPhotoUrl = `/uploads/employees/${filename}`;
+        }
+
+        if (files?.npwpPhoto?.[0]) {
+          const filename = `emp-${nik}-npwp-${Date.now()}-${files.npwpPhoto[0].originalname}`;
+          const filepath = path.join(empUploadsDir, filename);
+          fs.writeFileSync(filepath, files.npwpPhoto[0].buffer);
+          updates.npwpPhotoUrl = `/uploads/employees/${filename}`;
         }
 
         updates.username = nik;
