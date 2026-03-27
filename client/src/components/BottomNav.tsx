@@ -86,7 +86,7 @@ export function BottomNav() {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-border/50 pb-safe shadow-[0_-4px_16px_rgba(0,0,0,0.05)]">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-t border-slate-200/50 pb-safe shadow-[0_-8px_30px_rgb(0,0,0,0.04)]">
       <div className="flex items-center w-full h-16 max-w-lg mx-auto px-2">
         {tabs.map((tab) => {
           const isActive = location === tab.href;
@@ -111,7 +111,7 @@ export function BottomNav() {
                     </div>
                   ) : null}
                 </div>
-                <span className={`text-[10px] font-medium transition-colors duration-200 leading-tight ${isActive ? "text-primary" : "text-muted-foreground"
+                <span className={`text-[8px] font-black uppercase tracking-tighter transition-colors duration-200 mt-1 ${isActive ? "text-primary" : "text-slate-400 group-hover:text-slate-600"
                   }`}>
                   {tab.label}
                 </span>

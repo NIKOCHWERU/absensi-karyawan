@@ -262,11 +262,209 @@ export default function RecapPage() {
         setIsManualModalOpen(true);
     };
 
-    const formatDuration = (minutes: number) => {
-        if (minutes <= 0) return "-";
-        const h = Math.floor(minutes / 60);
-        const m = minutes % 60;
-        return `${h}j ${m}m`;
+    const getPhotoUrl = (path: string | null) => {
+        if (!path) return "";
+        if (path.startsWith('data:')) return path;
+        // Check if it's a UUID-like path (legacy/new storage)
+        if (!path.includes('/') && !path.includes('.') && path.length > 20)
+            return `/api/images/${path}`;
+        return `/uploads/${path}`;
+    };
+
+    const handleExportPhotos = async () => {
+        let periodStr = '';
+        if (reportType === 'daily') {
+            periodStr = format(targetDate, "dd MMMM yyyy", { locale: id }).toUpperCase();
+        } else if (reportType === 'weekly') {
+            periodStr = `${format(startDate, "dd MMM")} - ${format(endDate, "dd MMM yyyy", { locale: id })}`.toUpperCase();
+        } else {
+            periodStr = format(targetDate, "MMMM yyyy", { locale: id }).toUpperCase();
+        }
+
+        const fileName = `DOKUMENTASI FOTO ABSENSI - ${periodStr}.html`;
+        
+        let logoDataUrl = '';
+        try {
+            const logoRes = await fetch('/logo_elok_buah.jpg');
+            const logoBlob = await logoRes.blob();
+            logoDataUrl = await new Promise<string>((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result as string);
+                reader.readAsDataURL(logoBlob);
+            });
+        } catch (_) { }
+
+        // Filter and collect all photo events
+        const photoEntries: any[] = [];
+        processedData.forEach(row => {
+            const userName = getUserName(row.userId) || "-";
+            const dateStr = format(new Date(row.date), "EEEE, d MMMM yyyy", { locale: id });
+
+            if (row.checkInPhoto) {
+                photoEntries.push({
+                    name: userName,
+                    date: dateStr,
+                    type: "Absen Masuk",
+                    time: format(new Date(row.checkIn!), "HH:mm"),
+                    photo: getPhotoUrl(row.checkInPhoto),
+                    location: row.checkInLocation || "-"
+                });
+            }
+            if (row.breakStartPhoto) {
+                photoEntries.push({
+                    name: userName,
+                    date: dateStr,
+                    type: "Mulai Istirahat",
+                    time: format(new Date(row.breakStart!), "HH:mm"),
+                    photo: getPhotoUrl(row.breakStartPhoto),
+                    location: row.breakStartLocation || "-"
+                });
+            }
+             if (row.breakEndPhoto) {
+                photoEntries.push({
+                    name: userName,
+                    date: dateStr,
+                    type: "Selesai Istirahat",
+                    time: format(new Date(row.breakEnd!), "HH:mm"),
+                    photo: getPhotoUrl(row.breakEndPhoto),
+                    location: row.breakEndLocation || "-"
+                });
+            }
+            if (row.checkOutPhoto) {
+                photoEntries.push({
+                    name: userName,
+                    date: dateStr,
+                    type: "Absen Pulang",
+                    time: format(new Date(row.checkOut!), "HH:mm"),
+                    photo: getPhotoUrl(row.checkOutPhoto),
+                    location: row.checkOutLocation || "-"
+                });
+            }
+            if ((row as any).lateReasonPhoto) {
+                photoEntries.push({
+                    name: userName,
+                    date: dateStr,
+                    type: "Bukti Terlambat",
+                    time: "-",
+                    photo: getPhotoUrl((row as any).lateReasonPhoto),
+                    location: "-"
+                });
+            }
+        });
+
+        if (photoEntries.length === 0) {
+            toast({ title: "Peringatan", description: "Tidak ada data foto untuk periode ini.", variant: "destructive" });
+            return;
+        }
+
+        const html = `<!DOCTYPE html>
+<html>
+<head>
+  <title>${fileName}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #1e293b; background: white; padding: 28px 36px; }
+
+    /* LETTERHEAD */
+    .letterhead { display: flex; align-items: center; gap: 16px; padding-bottom: 10px; }
+    .logo-img { width: 60px; height: 60px; object-fit: contain; }
+    .company-block h1 { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; }
+    .company-block .tagline { font-size: 10px; color: #64748b; margin-top: 2px; }
+    .hr-thick { border: none; border-top: 2px solid #cbd5e1; margin: 6px 0 2px; }
+    .hr-thin  { border: none; border-top: 1px solid #e2e8f0; margin-bottom: 24px; }
+
+    /* TITLE */
+    .report-meta { text-align: center; margin-bottom: 30px; }
+    .report-meta h2 { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; color: #1e293b; }
+    .report-meta .sub { font-size: 11px; margin-top: 4px; color: #475569; font-weight: 600; }
+
+    /* PHOTO GRID */
+    .photo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+    .photo-item { border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; page-break-inside: avoid; background: #fff; }
+    .photo-header { padding: 10px 12px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+    .photo-header h3 { margin: 0; font-size: 12px; font-weight: 800; color: #0f172a; text-transform: uppercase; }
+    .photo-header p { margin: 2px 0 0; font-size: 9px; font-weight: 700; color: #64748b; letter-spacing: 0.3px; }
+    
+    .img-container { width: 100%; aspect-ratio: 4/3; background: #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .img-container img { width: 100%; height: 100%; object-fit: cover; }
+    
+    .photo-footer { padding: 10px 12px; min-height: 48px; }
+    .loc-label { font-size: 8px; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+    .loc-text { font-size: 9px; font-weight: 600; color: #475569; line-height: 1.3; }
+
+    /* SIGNATURE */
+    .signature-section { margin-top: 48px; display: flex; justify-content: space-between; padding: 0 24px; page-break-inside: avoid; }
+    .sig-box { text-align: center; width: 160px; }
+    .sig-label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #374151; margin-bottom: 64px; }
+    .sig-name { font-size: 11px; font-weight: 800; border-top: 1.5px solid #374151; padding-top: 6px; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; }
+
+    .footer { margin-top: 40px; font-size: 9px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 12px; text-align: center; font-style: italic; }
+
+    .btn-wrap { text-align: center; margin-top: 30px; }
+    .download-btn { display: inline-flex; align-items: center; gap: 8px; background: #1e293b; color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; }
+    
+    @media print {
+      .btn-wrap { display: none !important; }
+      body { padding: 20px 30px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="letterhead">
+    ${logoDataUrl ? `<img src="${logoDataUrl}" class="logo-img" alt="Logo" />` : ''}
+    <div class="company-block">
+      <h1>PT Elok Jaya Abadhi</h1>
+      <p class="tagline">Sistem Manajemen Kehadiran Digital</p>
+    </div>
+  </div>
+  <hr class="hr-thick" />
+  <div class="report-meta">
+    <h2>Dokumentasi Foto Kehadiran</h2>
+    <p class="sub">Periode: ${format(startDate, "d MMMM yyyy", { locale: id })} - ${format(endDate, "d MMMM yyyy", { locale: id })}</p>
+  </div>
+
+  <div class="photo-grid">
+    ${photoEntries.map(entry => `
+      <div class="photo-item">
+        <div class="photo-header">
+          <h3>${entry.name}</h3>
+          <p>${entry.type} • ${entry.date} ${entry.time !== '-' ? '• Pukul ' + entry.time : ''}</p>
+        </div>
+        <div class="img-container">
+          <img src="${entry.photo}" alt="Foto Absensi" />
+        </div>
+        <div class="photo-footer">
+          <div class="loc-label">📍 Lokasi Terdeteksi</div>
+          <div class="loc-text">${entry.location}</div>
+        </div>
+      </div>
+    `).join('')}
+  </div>
+
+  <div class="signature-section">
+    <div class="sig-box">
+      <p class="sig-label">Checked By</p>
+      <div class="sig-name">NIKO</div>
+    </div>
+    <div class="sig-box">
+      <p class="sig-label">Approved By</p>
+      <div class="sig-name">CLAVERINA</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Dokumen ini dicetak secara otomatis oleh Sistem Absensi PT Elok Jaya Abadhi &mdash; ${format(new Date(), "d MMMM yyyy, HH:mm", { locale: id })} WIB
+  </div>
+
+  <div class="btn-wrap">
+    <button class="download-btn" onclick="window.print()">Cetak / Simpan PDF</button>
+  </div>
+</body>
+</html>`;
+
+        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
     };
 
     const handleExport = async () => {
@@ -571,6 +769,13 @@ export default function RecapPage() {
                                 onClick={() => handleOpenManualModal()}
                             >
                                 <Plus className="h-5 w-5" /> Input Manual
+                            </Button>
+                            <Button 
+                                variant="outline" 
+                                className="h-11 px-6 gap-2 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 rounded-xl font-bold transition-all shadow-sm shadow-blue-100" 
+                                onClick={handleExportPhotos}
+                            >
+                                <Camera className="h-5 w-5" /> Export Foto
                             </Button>
                             <Button 
                                 variant="outline" 

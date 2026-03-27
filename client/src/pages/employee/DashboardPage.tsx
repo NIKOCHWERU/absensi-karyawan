@@ -709,18 +709,21 @@ export default function EmployeeDashboard() {
                     <DigitalClock />
 
                     <div className="mt-4 flex flex-col items-center">
-                        <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">Status Hari Ini</p>
-                        <div className="flex items-center gap-2">
-                            <span className={`text-2xl font-bold ${getStatusText() === 'Telat' ? 'text-red-600' : 'text-primary'}`}>
-                                {getStatusText()}
+                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Status Hari Ini</p>
+                        <div className="flex items-center gap-3">
+                            <span className={`text-4xl font-black tracking-tighter ${getStatusText() === 'Telat' ? 'text-rose-600' : 'text-slate-900 border-b-4 border-primary/20 pb-1'}`}>
+                                {getStatusText().toUpperCase()}
                             </span>
-                            {today?.status === 'late' && <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse">TELAT</span>}
-                            {sessionCount > 0 && <span className="bg-indigo-100 text-indigo-700 text-[10px] px-2 py-0.5 rounded-full font-semibold">Sesi {sessionCount}/5</span>}
+                            {today?.status === 'late' && <span className="bg-rose-500 text-white text-[10px] font-black px-3 py-1 rounded-full animate-pulse shadow-lg shadow-rose-200">TELAT</span>}
+                            {sessionCount > 0 && <span className="bg-blue-50 text-blue-700 text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest border border-blue-100">Sesi {sessionCount}/5</span>}
                         </div>
                         {locationAddress && (
-                            <p className="text-[10px] text-gray-400 mt-2 flex items-center justify-center gap-1 max-w-[200px] text-center">
-                                <MapPin className="w-3 h-3 flex-shrink-0" /> {locationAddress}
-                            </p>
+                            <div className="mt-4 px-4 py-2 bg-white/50 backdrop-blur-sm rounded-2xl border border-slate-200/50 flex items-center justify-center gap-2 max-w-[280px]">
+                                <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                                <p className="text-[11px] text-slate-500 font-bold text-center leading-tight truncate">
+                                    {locationAddress}
+                                </p>
+                            </div>
                         )}
                     </div>
 
@@ -892,22 +895,33 @@ export default function EmployeeDashboard() {
                         </div>
                     )}
 
-                    {/* Completed Sessions Summary */}
-                    {completedSessions.length > 0 && (
-                        <div className="pt-4 border-t border-slate-100 space-y-3">
-                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Sesi Selesai</p>
-                            <div className="grid gap-2">
+                     {/* Completed Sessions Summary */}
+                     {completedSessions.length > 0 && (
+                        <div className="pt-8 border-t border-slate-100 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Sesi Selesai</p>
+                                <span className="text-[10px] font-black text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100 uppercase tracking-widest">{completedSessions.length} Berhasil</span>
+                            </div>
+                            <div className="grid gap-3">
                                 {completedSessions.map((s: any, i: number) => (
-                                    <div key={s.id} className="flex justify-between items-center bg-slate-50/50 hover:bg-slate-100 rounded-xl px-4 py-3 border border-slate-100 transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-                                            <span className="font-black text-slate-700 text-[11px] uppercase tracking-wider">Sesi {s.sessionNumber}</span>
+                                    <div key={s.id} className="flex justify-between items-center bg-slate-50/50 hover:bg-white hover:shadow-xl hover:shadow-slate-200/30 rounded-3xl px-5 py-4 border border-slate-100 transition-all duration-300 group">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center text-emerald-500 font-black text-sm group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                                                {s.sessionNumber}
+                                            </div>
+                                            <div>
+                                                <p className="font-black text-slate-800 text-[11px] uppercase tracking-wider">Sesi {s.sessionNumber}</p>
+                                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Dokumentasi Foto ✓</p>
+                                            </div>
                                         </div>
-                                        <span className="font-mono font-black text-slate-500 text-xs">
-                                            {s.checkIn ? format(new Date(s.checkIn), "HH:mm") : "--:--"}
-                                            <span className="mx-2 text-slate-300">→</span>
-                                            {s.checkOut ? format(new Date(s.checkOut), "HH:mm") : "--:--"}
-                                        </span>
+                                        <div className="text-right">
+                                            <div className="font-mono font-black text-slate-900 text-xs">
+                                                {s.checkIn ? format(new Date(s.checkIn), "HH:mm") : "--:--"}
+                                                <span className="mx-2 text-slate-300">→</span>
+                                                {s.checkOut ? format(new Date(s.checkOut), "HH:mm") : "--:--"}
+                                            </div>
+                                            <p className="text-[9px] text-emerald-600 font-black uppercase tracking-widest mt-1">Selesai</p>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
