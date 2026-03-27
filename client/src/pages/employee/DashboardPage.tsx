@@ -93,6 +93,8 @@ export default function EmployeeDashboard() {
     // Shift Selection State
     const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
     const [isOffDayOpen, setIsOffDayOpen] = useState(false);
+    const [isEarlyLeaveOpen, setIsEarlyLeaveOpen] = useState(false);
+    const [isResumeConfirmOpen, setIsResumeConfirmOpen] = useState(false);
     const [selectedShiftId, setSelectedShiftId] = useState<number | null>(null);
 
     const shiftList = [
@@ -416,11 +418,7 @@ export default function EmployeeDashboard() {
         }
 
         if (isEarly) {
-            if (confirm("Belum waktunya pulang. Apakah Anda ingin mengajukan IZIN Pulang Cepat? \n\nKlik OK untuk Form Izin.\nKlik Cancel untuk membatalkan.")) {
-                setPermitType('permission');
-                setPermitNote("Pulang Cepat (Early Leave)");
-                setPermitOpen(true);
-            }
+            setIsEarlyLeaveOpen(true);
             return;
         }
 
@@ -448,13 +446,16 @@ export default function EmployeeDashboard() {
     };
 
     const handleResumeWork = async () => {
-        if (confirm("Mau lanjut kerja hari ini?")) {
-            try {
-                await resume();
-                toast({ title: "Selamat Bekerja Kembali", description: "Sesi Anda telah diaktifkan kembali." });
-            } catch (err: any) {
-                handleError(err);
-            }
+        setIsResumeConfirmOpen(true);
+    };
+
+    const confirmResume = async () => {
+        setIsResumeConfirmOpen(false);
+        try {
+            await resume();
+            toast({ title: "Selamat Bekerja Kembali", description: "Sesi Anda telah diaktifkan kembali." });
+        } catch (err: any) {
+            handleError(err);
         }
     };
 
@@ -1082,8 +1083,97 @@ export default function EmployeeDashboard() {
                         </Button>
                     </div>
                 </DialogContent>
-            </Dialog>
+            {/* Early Leave Confirmation Modal */}
+            <Dialog open={isEarlyLeaveOpen} onOpenChange={setIsEarlyLeaveOpen}>
+                <DialogContent className="rounded-3xl max-w-xs md:max-w-md p-8 border-none shadow-2xl overflow-hidden outline-none">
+                    <DialogHeader>
+                        <div className="mx-auto w-20 h-20 bg-amber-100 rounded-[2rem] flex items-center justify-center mb-6 shadow-inner">
+                            <Bell className="w-10 h-10 text-amber-600 animate-bounce" />
+                        </div>
+                        <DialogTitle className="text-center text-2xl font-black tracking-tight">Belum Waktu Pulang!</DialogTitle>
+                        <DialogDescription className="text-center text-sm font-medium text-slate-500 pt-3">
+                            Waktu kerja Anda belum berakhir. Apakah Anda ingin mengajukan <strong>Izin Pulang Cepat</strong>?
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="bg-amber-50 rounded-2xl p-5 border border-amber-100 mt-6 space-y-3">
+                        <div className="flex gap-3">
+                            <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5"></div>
+                            <p className="text-[11px] text-amber-800 font-bold leading-relaxed">Status absensi Anda hari ini akan dicatat sebagai <span className="underline decoration-2 decoration-amber-300">Izin (Pulang Cepat)</span>.</p>
+                        </div>
+                        <div className="flex gap-3">
+                            <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5"></div>
+                            <p className="text-[11px] text-amber-800 font-bold leading-relaxed">Anda tetap wajib mengambil foto bukti dan mencatat lokasi.</p>
+                        </div>
+                    </div>
 
+                    <div className="flex flex-col gap-3 mt-8">
+                        <Button
+                            onClick={() => {
+                                setIsEarlyLeaveOpen(false);
+                                setPermitType('permission');
+                                setPermitNote("Pulang Cepat (Early Leave)");
+                                setPermitOpen(true);
+                            }}
+                            className="w-full h-14 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-amber-200"
+                        >
+                            Ya, Izin Pulang Cepat
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            onClick={() => setIsEarlyLeaveOpen(false)}
+                            className="w-full h-12 text-slate-400 font-bold text-xs uppercase tracking-widest"
+                        >
+                            Lanjut Bekerja
+                        </Button>
+                    </div>
+                </DialogContent>
+            {/* Early Leave Confirmation Modal */}
+            <Dialog open={isEarlyLeaveOpen} onOpenChange={setIsEarlyLeaveOpen}>
+                <DialogContent className="rounded-3xl max-w-xs md:max-w-md p-8 border-none shadow-2xl overflow-hidden outline-none">
+                    <DialogHeader>
+                        <div className="mx-auto w-20 h-20 bg-amber-100 rounded-[2rem] flex items-center justify-center mb-6 shadow-inner">
+                            <Bell className="w-10 h-10 text-amber-600 animate-bounce" />
+                        </div>
+                        <DialogTitle className="text-center text-2xl font-black tracking-tight">Belum Waktu Pulang!</DialogTitle>
+                        <DialogDescription className="text-center text-sm font-medium text-slate-500 pt-3">
+                            Waktu kerja Anda belum berakhir. Apakah Anda ingin mengajukan <strong>Izin Pulang Cepat</strong>?
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="bg-amber-50 rounded-2xl p-5 border border-amber-100 mt-6 space-y-3">
+                        <div className="flex gap-3">
+                            <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5"></div>
+                            <p className="text-[11px] text-amber-800 font-bold leading-relaxed">Status absensi Anda hari ini akan dicatat sebagai <span className="underline decoration-2 decoration-amber-300">Izin (Pulang Cepat)</span>.</p>
+                        </div>
+                        <div className="flex gap-3">
+                            <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5"></div>
+                            <p className="text-[11px] text-amber-800 font-bold leading-relaxed">Anda tetap wajib mengambil foto bukti dan mencatat lokasi.</p>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3 mt-8">
+                        <Button
+                            onClick={() => {
+                                setIsEarlyLeaveOpen(false);
+                                setPermitType('permission');
+                                setPermitNote("Pulang Cepat (Early Leave)");
+                                setPermitOpen(true);
+                            }}
+                            className="w-full h-14 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-amber-200"
+                        >
+                            Ya, Izin Pulang Cepat
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            onClick={() => setIsEarlyLeaveOpen(false)}
+                            className="w-full h-12 text-slate-400 font-bold text-xs uppercase tracking-widest"
+                        >
+                            Lanjut Bekerja
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

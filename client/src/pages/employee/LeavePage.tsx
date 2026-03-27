@@ -11,15 +11,24 @@ import { useToast } from "@/hooks/use-toast";
 import { format, differenceInDays, isBefore, startOfDay, addDays } from "date-fns";
 import { id } from "date-fns/locale";
 import { useState } from "react";
-import { Loader2, Calendar as CalendarIcon, History, Send, Info } from "lucide-react";
-import { api } from "@shared/routes";
-import { DateRange } from "react-day-picker";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function LeavePage() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
     const [selectedDates, setSelectedDates] = useState<Date[] | undefined>([]);
     const [reason, setReason] = useState("");
+    const [cancellingId, setCancellingId] = useState<number | null>(null);
 
     const { data: balance, isLoading: isLoadingBalance } = useQuery<{ used: number, remaining: number, limit: number }>({
         queryKey: [api.leave.balance.path],
@@ -252,19 +261,44 @@ export default function LeavePage() {
                                                     {getStatusLabel(req.status!)}
                                                 </span>
                                                 {req.status === 'pending' && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="h-7 text-[10px] font-bold text-red-500 hover:text-red-600 hover:bg-red-50 px-2 rounded-lg"
-                                                        onClick={() => {
-                                                            if (confirm("Ingin membatalkan pengajuan ini?")) {
-                                                                cancelMutation.mutate(req.id);
-                                                            }
-                                                        }}
-                                                        disabled={cancelMutation.isPending}
-                                                    >
-                                                        {cancelMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "BATALKAN"}
-                                                    </Button>
+                                                    <AlertDialog open={cancellingId === req.id} onOpenChange={(open) => !open && setCancellingId(null)}>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-7 text-[10px] font-bold text-red-500 hover:text-red-600 hover:bg-red-50 px-2 rounded-lg"
+                                                                onClick={() => setCancellingId(req.id)}
+                                                                disabled={cancelMutation.isPending}
+                                                            >
+                                                                {cancelMutation.isPending && cancellingId === req.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "BATALKAN"}
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl p-8">
+                                                            <AlertDialogHeader>
+                                                                <div className="mx-auto w-20 h-20 bg-red-100 rounded-[2rem] flex items-center justify-center mb-6 shadow-inner">
+                                                                    <History className="w-10 h-10 text-red-600" />
+                                                                </div>
+                                                                <AlertDialogTitle className="text-center text-2xl font-black tracking-tight">Batalkan Cuti?</AlertDialogTitle>
+                                                                <AlertDialogDescription className="text-center text-sm font-medium text-slate-500 pt-3">
+                                                                    Ingin membatalkan pengajuan cuti ini? Tindakan ini tidak dapat dibatalkan.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter className="mt-8 gap-3 sm:gap-0 sm:flex-row-reverse">
+                                                                <AlertDialogAction 
+                                                                    onClick={() => {
+                                                                        cancelMutation.mutate(req.id);
+                                                                        setCancellingId(null);
+                                                                    }}
+                                                                    className="h-14 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-red-200"
+                                                                >
+                                                                    Ya, Batalkan
+                                                                </AlertDialogAction>
+                                                                <AlertDialogCancel className="h-14 rounded-2xl border-slate-200 text-slate-400 font-bold text-xs uppercase tracking-widest hover:bg-slate-50">
+                                                                    Tidak
+                                                                </AlertDialogCancel>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
                                                 )}
                                             </div>
                                         </div>

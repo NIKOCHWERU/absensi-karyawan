@@ -40,12 +40,24 @@ import {
     DialogDescription,
     DialogClose,
 } from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function AdminDashboard() {
     const [, setLocation] = useLocation();
     const { logout } = useAuth();
     const { toast } = useToast();
     const [absenceDate, setAbsenceDate] = useState(new Date().toISOString().split('T')[0]);
+    const [isImportConfirmOpen, setIsImportConfirmOpen] = useState(false);
+    const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
 
     const backupMutation = useMutation({
         mutationFn: async () => {
@@ -101,11 +113,18 @@ export default function AdminDashboard() {
                 toast({ title: "Format Tidak Valid", description: "Pastikan file berformat .sql", variant: "destructive" });
                 return;
             }
-            if (confirm("Apakah Anda yakin ingin meng-import database ini? Data saat ini mungkin akan tertimpa.")) {
-                importMutation.mutate(file);
-            }
+            setPendingImportFile(file);
+            setIsImportConfirmOpen(true);
             if (fileInputRef.current) fileInputRef.current.value = "";
         }
+    };
+
+    const confirmImport = () => {
+        if (pendingImportFile) {
+            importMutation.mutate(pendingImportFile);
+        }
+        setIsImportConfirmOpen(false);
+        setPendingImportFile(null);
     };
 
     const { data: stats } = useQuery<{ totalEmployees: number; presentToday: number }>({
@@ -224,8 +243,8 @@ export default function AdminDashboard() {
                         <p className="text-sm text-slate-500 font-medium mt-1 uppercase tracking-wider">Ringkasan Sistem & Performa</p>
                     </div>
                     
-                    <div className="flex flex-wrap items-center gap-3">
-                        <div className="flex bg-white p-1 rounded-2xl shadow-sm border border-slate-200">
+                    <div className="flex flex-wrap items-center gap-4">
+                        <div className="flex bg-white/80 backdrop-blur-md p-1.5 rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-200 items-center">
                             <input
                                 type="file"
                                 ref={fileInputRef}
@@ -236,28 +255,29 @@ export default function AdminDashboard() {
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="text-orange-600 hover:bg-orange-50 rounded-xl font-bold text-xs h-9 px-4"
+                                className="text-amber-600 hover:bg-amber-50 rounded-xl font-black text-[10px] uppercase tracking-widest h-10 px-5"
                                 onClick={handleImportClick}
                                 disabled={importMutation.isPending}
                             >
                                 {importMutation.isPending ? <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> : <Upload className="w-3.5 h-3.5 mr-2" />}
-                                Import
+                                Import DB
                             </Button>
+                            <div className="w-px h-6 bg-slate-200 mx-1" />
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="text-blue-600 hover:bg-blue-50 rounded-xl font-bold text-xs h-9 px-4"
+                                className="text-indigo-600 hover:bg-indigo-50 rounded-xl font-black text-[10px] uppercase tracking-widest h-10 px-5"
                                 onClick={() => backupMutation.mutate()}
                                 disabled={backupMutation.isPending}
                             >
                                 {backupMutation.isPending ? <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> : <DatabaseBackup className="w-3.5 h-3.5 mr-2" />}
-                                Backup
+                                Backup DB
                             </Button>
                         </div>
 
                         <Dialog>
                             <DialogTrigger asChild>
-                                <Button variant="outline" className="h-11 px-5 rounded-2xl border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50 shadow-sm font-bold text-sm">
+                                <Button variant="outline" className="h-11 px-6 rounded-2xl border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50 shadow-xl shadow-emerald-100/50 font-black text-xs uppercase tracking-widest transition-all hover:scale-105 active:scale-95">
                                     <Info className="w-4 h-4 mr-2" />
                                     Panduan
                                 </Button>
@@ -373,82 +393,90 @@ export default function AdminDashboard() {
                 </header>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
                     <Card
-                        className="border-none shadow-sm hover:shadow-xl transition-all bg-white rounded-[2rem] overflow-hidden group cursor-pointer hover:translate-y-[-4px]"
+                        className="border-none shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-emerald-200/50 transition-all bg-white rounded-[2.5rem] overflow-hidden group cursor-pointer hover:translate-y-[-8px] duration-500"
                         onClick={() => setLocation("/admin/employees")}
                     >
-                        <CardContent className="p-8">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Total Karyawan</p>
-                                    <h3 className="text-5xl font-black text-slate-800 tracking-tighter">{stats?.totalEmployees || 0}</h3>
-                                    <p className="text-xs text-emerald-600 font-bold mt-2">Aktif di Sistem</p>
+                        <CardContent className="p-10 relative">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-bl-[5rem] -mr-10 -mt-10 group-hover:bg-emerald-100 transition-colors duration-500" />
+                            <div className="relative flex flex-col items-center text-center">
+                                <div className="p-5 bg-emerald-600 text-white rounded-[2rem] shadow-lg shadow-emerald-200 mb-6 group-hover:scale-110 transition-transform duration-500">
+                                    <Users className="h-8 w-8" />
                                 </div>
-                                <div className="p-4 bg-emerald-50 text-emerald-600 rounded-2xl group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300">
-                                    <Users className="h-7 w-7" />
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Total Karyawan</p>
+                                <h3 className="text-6xl font-black text-slate-900 tracking-tighter mb-1">{stats?.totalEmployees || 0}</h3>
+                                <div className="flex items-center gap-1.5 mt-2">
+                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                    <p className="text-[10px] text-emerald-600 font-black uppercase tracking-widest">Aktif di Sistem</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card
-                        className="border-none shadow-sm hover:shadow-xl transition-all bg-white rounded-[2rem] overflow-hidden group cursor-pointer hover:translate-y-[-4px]"
+                        className="border-none shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-blue-200/50 transition-all bg-white rounded-[2.5rem] overflow-hidden group cursor-pointer hover:translate-y-[-8px] duration-500"
                         onClick={() => setLocation("/admin/recap")}
                     >
-                        <CardContent className="p-8">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Hadir Hari Ini</p>
-                                    <h3 className="text-5xl font-black text-slate-800 tracking-tighter">{stats?.presentToday || 0}</h3>
-                                    <p className="text-xs text-blue-600 font-bold mt-2">Update Terkini</p>
+                        <CardContent className="p-10 relative">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-[5rem] -mr-10 -mt-10 group-hover:bg-blue-100 transition-colors duration-500" />
+                            <div className="relative flex flex-col items-center text-center">
+                                <div className="p-5 bg-blue-600 text-white rounded-[2rem] shadow-lg shadow-blue-200 mb-6 group-hover:scale-110 transition-transform duration-500">
+                                    <Clock className="h-8 w-8" />
                                 </div>
-                                <div className="p-4 bg-blue-50 text-blue-600 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
-                                    <Clock className="h-7 w-7" />
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Hadir Hari Ini</p>
+                                <h3 className="text-6xl font-black text-slate-900 tracking-tighter mb-1">{stats?.presentToday || 0}</h3>
+                                <div className="flex items-center gap-1.5 mt-2">
+                                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                                    <p className="text-[10px] text-blue-600 font-black uppercase tracking-widest">Update Terkini</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card
-                        className="border-none shadow-sm hover:shadow-xl transition-all bg-white rounded-[2rem] overflow-hidden group cursor-pointer hover:translate-y-[-4px]"
+                        className="border-none shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-amber-200/50 transition-all bg-white rounded-[2.5rem] overflow-hidden group cursor-pointer hover:translate-y-[-8px] duration-500"
                         onClick={() => setLocation("/admin/attendance-summary")}
                     >
-                        <CardContent className="p-8">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Izin / Sakit</p>
-                                    <h3 className="text-5xl font-black text-slate-800 tracking-tighter">
-                                        {(() => {
-                                            const now = new Date();
-                                            const isToday = (date: any) => new Date(date).toDateString() === now.toDateString();
-                                            return attendanceHistory?.filter(a => isToday(a.date) && ['sick', 'permission'].includes(a.status || '')).length || 0;
-                                        })()}
-                                    </h3>
-                                    <p className="text-xs text-amber-600 font-bold mt-2">Butuh Lampiran</p>
+                        <CardContent className="p-10 relative">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-bl-[5rem] -mr-10 -mt-10 group-hover:bg-amber-100 transition-colors duration-500" />
+                            <div className="relative flex flex-col items-center text-center">
+                                <div className="p-5 bg-amber-500 text-white rounded-[2rem] shadow-lg shadow-amber-200 mb-6 group-hover:scale-110 transition-transform duration-500">
+                                    <CalendarDays className="h-8 w-8" />
                                 </div>
-                                <div className="p-4 bg-amber-50 text-amber-600 rounded-2xl group-hover:bg-amber-600 group-hover:text-white transition-all duration-300">
-                                    <CalendarDays className="h-7 w-7" />
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Izin / Sakit</p>
+                                <h3 className="text-6xl font-black text-slate-900 tracking-tighter mb-1">
+                                    {(() => {
+                                        const now = new Date();
+                                        const isToday = (date: any) => new Date(date).toDateString() === now.toDateString();
+                                        return attendanceHistory?.filter(a => isToday(a.date) && ['sick', 'permission'].includes(a.status || '')).length || 0;
+                                    })()}
+                                </h3>
+                                <div className="flex items-center gap-1.5 mt-2">
+                                    <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                                    <p className="text-[10px] text-amber-600 font-black uppercase tracking-widest">Butuh Lampiran</p>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card
-                        className="border-none shadow-sm hover:shadow-xl transition-all bg-white rounded-[2rem] overflow-hidden group cursor-pointer hover:translate-y-[-4px]"
+                        className="border-none shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-rose-200/50 transition-all bg-white rounded-[2.5rem] overflow-hidden group cursor-pointer hover:translate-y-[-8px] duration-500"
                         onClick={() => setLocation("/admin/leave")}
                     >
-                        <CardContent className="p-8">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Cuti Menunggu</p>
-                                    <h3 className="text-5xl font-black text-rose-600 tracking-tighter">
-                                        {leaveRequests?.filter(r => r.status === 'pending').length || 0}
-                                    </h3>
-                                    <p className="text-xs text-rose-500 font-bold mt-2">Perlu Persetujuan</p>
+                        <CardContent className="p-10 relative">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-rose-50 rounded-bl-[5rem] -mr-10 -mt-10 group-hover:bg-rose-100 transition-colors duration-500" />
+                            <div className="relative flex flex-col items-center text-center">
+                                <div className="p-5 bg-rose-600 text-white rounded-[2rem] shadow-lg shadow-rose-200 mb-6 group-hover:scale-110 transition-transform duration-500">
+                                    <CalendarDays className="h-8 w-8" />
                                 </div>
-                                <div className="p-4 bg-rose-50 text-rose-600 rounded-2xl group-hover:bg-rose-600 group-hover:text-white transition-all duration-300">
-                                    <CalendarDays className="h-7 w-7" />
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Cuti Menunggu</p>
+                                <h3 className="text-6xl font-black text-rose-600 tracking-tighter mb-1">
+                                    {leaveRequests?.filter(r => r.status === 'pending').length || 0}
+                                </h3>
+                                <div className="flex items-center gap-1.5 mt-2">
+                                    <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                                    <p className="text-[10px] text-rose-600 font-black uppercase tracking-widest">Perlu Approval</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -799,6 +827,32 @@ export default function AdminDashboard() {
                 </div>
 
             </main>
+            <AlertDialog open={isImportConfirmOpen} onOpenChange={setIsImportConfirmOpen}>
+                <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl p-8">
+                    <AlertDialogHeader>
+                        <div className="mx-auto w-20 h-20 bg-amber-100 rounded-[2rem] flex items-center justify-center mb-6 shadow-inner">
+                            <DatabaseBackup className="w-10 h-10 text-amber-600" />
+                        </div>
+                        <AlertDialogTitle className="text-center text-2xl font-black tracking-tight uppercase">Import Database?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-center text-sm font-medium text-slate-500 pt-3 leading-relaxed">
+                            Apakah Anda yakin ingin meng-import file <span className="text-slate-900 font-bold underline">{pendingImportFile?.name}</span>? 
+                            <br/><br/>
+                            <span className="text-rose-600 font-black">PERINGATAN:</span> Data saat ini mungkin akan tertimpa dan digantikan oleh data dari file backup tersebut.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="mt-8 gap-3 sm:gap-0 sm:flex-row-reverse">
+                        <AlertDialogAction 
+                            onClick={confirmImport}
+                            className="h-14 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-black text-sm uppercase tracking-widest shadow-lg shadow-amber-200"
+                        >
+                            Ya, Import Sekarang
+                        </AlertDialogAction>
+                        <AlertDialogCancel className="h-14 rounded-2xl border-slate-200 text-slate-400 font-bold text-xs uppercase tracking-widest hover:bg-slate-50">
+                            Batalkan
+                        </AlertDialogCancel>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
