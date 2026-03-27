@@ -283,6 +283,7 @@ export default function RecapPage() {
 
         const fileName = `DOKUMENTASI FOTO ABSENSI - ${periodStr}.html`;
         
+        // Embed logo as base64
         let logoDataUrl = '';
         try {
             const logoRes = await fetch('/logo_elok_buah.jpg');
@@ -294,66 +295,56 @@ export default function RecapPage() {
             });
         } catch (_) { }
 
-        // Filter and collect all photo events
-        const photoEntries: any[] = [];
+        // Group data by Date, User, and Session
+        const sessionRows: any[] = [];
         processedData.forEach(row => {
             const userName = getUserName(row.userId) || "-";
-            const dateStr = format(new Date(row.date), "EEEE, d MMMM yyyy", { locale: id });
-
-            if (row.checkInPhoto) {
-                photoEntries.push({
-                    name: userName,
-                    date: dateStr,
-                    type: "Absen Masuk",
-                    time: format(new Date(row.checkIn!), "HH:mm"),
-                    photo: getPhotoUrl(row.checkInPhoto),
-                    location: row.checkInLocation || "-"
-                });
-            }
-            if (row.breakStartPhoto) {
-                photoEntries.push({
-                    name: userName,
-                    date: dateStr,
-                    type: "Mulai Istirahat",
-                    time: format(new Date(row.breakStart!), "HH:mm"),
-                    photo: getPhotoUrl(row.breakStartPhoto),
-                    location: row.breakStartLocation || "-"
-                });
-            }
-             if (row.breakEndPhoto) {
-                photoEntries.push({
-                    name: userName,
-                    date: dateStr,
-                    type: "Selesai Istirahat",
-                    time: format(new Date(row.breakEnd!), "HH:mm"),
-                    photo: getPhotoUrl(row.breakEndPhoto),
-                    location: row.breakEndLocation || "-"
-                });
-            }
-            if (row.checkOutPhoto) {
-                photoEntries.push({
-                    name: userName,
-                    date: dateStr,
-                    type: "Absen Pulang",
-                    time: format(new Date(row.checkOut!), "HH:mm"),
-                    photo: getPhotoUrl(row.checkOutPhoto),
-                    location: row.checkOutLocation || "-"
-                });
-            }
-            if ((row as any).lateReasonPhoto) {
-                photoEntries.push({
-                    name: userName,
-                    date: dateStr,
-                    type: "Bukti Terlambat",
-                    time: "-",
-                    photo: getPhotoUrl((row as any).lateReasonPhoto),
-                    location: "-"
-                });
-            }
+            const nik = users?.find(u => u.id === row.userId)?.nik || "-";
+            const dateStr = format(new Date(row.date), "EEEE, d MMM yyyy", { locale: id });
+            
+            sessionRows.push({
+                name: userName,
+                nik: nik,
+                date: dateStr,
+                session: (row as any).sessionNumber || 1,
+                status: row.status,
+                notes: row.notes,
+                lateReason: (row as any).lateReason,
+                photos: [
+                    { 
+                        label: 'Masuk', 
+                        photo: row.checkInPhoto, 
+                        time: row.checkIn ? format(new Date(row.checkIn), "HH:mm") : null,
+                        loc: row.checkInLocation,
+                        placeholder: 'Belum Absen Masuk'
+                    },
+                    { 
+                        label: 'Mulai Istirahat', 
+                        photo: row.breakStartPhoto, 
+                        time: row.breakStart ? format(new Date(row.breakStart), "HH:mm") : null,
+                        loc: row.breakStartLocation,
+                        placeholder: 'Belum Mulai Istirahat'
+                    },
+                    { 
+                        label: 'Selesai Istirahat', 
+                        photo: row.breakEndPhoto, 
+                        time: row.breakEnd ? format(new Date(row.breakEnd), "HH:mm") : null,
+                        loc: row.breakEndLocation,
+                        placeholder: 'Belum Selesai Istirahat'
+                    },
+                    { 
+                        label: 'Pulang', 
+                        photo: row.checkOutPhoto, 
+                        time: row.checkOut ? format(new Date(row.checkOut), "HH:mm") : null,
+                        loc: row.checkOutLocation,
+                        placeholder: 'Belum Absen Pulang'
+                    }
+                ]
+            });
         });
 
-        if (photoEntries.length === 0) {
-            toast({ title: "Peringatan", description: "Tidak ada data foto untuk periode ini.", variant: "destructive" });
+        if (sessionRows.length === 0) {
+            toast({ title: "Peringatan", description: "Tidak ada data untuk periode ini.", variant: "destructive" });
             return;
         }
 
@@ -363,101 +354,132 @@ export default function RecapPage() {
   <title>${fileName}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #1e293b; background: white; padding: 28px 36px; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 10px; color: #334155; background: white; padding: 20px; }
+    @page { size: A4 landscape; margin: 1cm; }
 
-    /* LETTERHEAD */
-    .letterhead { display: flex; align-items: center; gap: 16px; padding-bottom: 10px; }
-    .logo-img { width: 60px; height: 60px; object-fit: contain; }
-    .company-block h1 { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; }
-    .company-block .tagline { font-size: 10px; color: #64748b; margin-top: 2px; }
-    .hr-thick { border: none; border-top: 2px solid #cbd5e1; margin: 6px 0 2px; }
-    .hr-thin  { border: none; border-top: 1px solid #e2e8f0; margin-bottom: 24px; }
+    /* HEADER */
+    .header { display: flex; align-items: center; gap: 20px; border-bottom: 3px solid #1e293b; padding-bottom: 10px; margin-bottom: 20px; }
+    .logo { width: 70px; height: 70px; object-fit: contain; }
+    .title-block h1 { font-size: 18px; font-weight: 900; color: #0f172a; text-transform: uppercase; margin: 0; }
+    .title-block p { font-size: 11px; color: #64748b; margin: 2px 0 0; font-weight: 600; }
 
-    /* TITLE */
-    .report-meta { text-align: center; margin-bottom: 30px; }
-    .report-meta h2 { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; color: #1e293b; }
-    .report-meta .sub { font-size: 11px; margin-top: 4px; color: #475569; font-weight: 600; }
+    .meta { text-align: center; margin-bottom: 25px; }
+    .meta h2 { font-size: 15px; font-weight: 800; color: #1e293b; text-transform: uppercase; letter-spacing: 1px; }
+    .meta p { font-size: 11px; color: #475569; margin-top: 5px; font-weight: 600; }
 
-    /* PHOTO GRID */
-    .photo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
-    .photo-item { border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; page-break-inside: avoid; background: #fff; }
-    .photo-header { padding: 10px 12px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
-    .photo-header h3 { margin: 0; font-size: 12px; font-weight: 800; color: #0f172a; text-transform: uppercase; }
-    .photo-header p { margin: 2px 0 0; font-size: 9px; font-weight: 700; color: #64748b; letter-spacing: 0.3px; }
+    /* TABLE */
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    th { background: #f8fafc; color: #475569; font-weight: 800; text-transform: uppercase; font-size: 9px; padding: 10px 5px; border: 1px solid #e2e8f0; text-align: center; }
+    td { border: 1px solid #e2e8f0; vertical-align: top; padding: 8px 5px; }
+
+    .col-info { width: 150px; }
+    .info-box { display: flex; flex-direction: column; gap: 4px; }
+    .emp-name { font-size: 11px; font-weight: 900; color: #0f172a; line-height: 1.1; }
+    .emp-nik { font-size: 9px; color: #64748b; font-weight: 700; }
+    .date-box { margin-top: 8px; font-size: 10px; font-weight: 800; color: #1e40af; }
+    .session-badge { display: inline-block; background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px; font-size: 8px; font-weight: 900; margin-top: 4px; text-transform: uppercase; }
+
+    /* PHOTO CELL */
+    .photo-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .img-wrap { width: 100%; aspect-ratio: 4/3; background: #f1f5f9; border-radius: 6px; overflow: hidden; border: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: center; position: relative; }
+    .img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+    .img-wrap .no-img { font-size: 8px; font-weight: 800; color: #94a3b8; text-align: center; padding: 10px; line-height: 1.3; text-transform: uppercase; }
     
-    .img-container { width: 100%; aspect-ratio: 4/3; background: #f1f5f9; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-    .img-container img { width: 100%; height: 100%; object-fit: cover; }
-    
-    .photo-footer { padding: 10px 12px; min-height: 48px; }
-    .loc-label { font-size: 8px; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
-    .loc-text { font-size: 9px; font-weight: 600; color: #475569; line-height: 1.3; }
+    .time-badge { background: #1e293b; color: #fff; padding: 2px 8px; border-radius: 4px; font-family: monospace; font-size: 11px; font-weight: 700; }
+    .loc-box { font-size: 8px; color: #64748b; line-height: 1.2; text-align: center; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
     /* SIGNATURE */
-    .signature-section { margin-top: 48px; display: flex; justify-content: space-between; padding: 0 24px; page-break-inside: avoid; }
-    .sig-box { text-align: center; width: 160px; }
-    .sig-label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #374151; margin-bottom: 64px; }
-    .sig-name { font-size: 11px; font-weight: 800; border-top: 1.5px solid #374151; padding-top: 6px; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; }
+    .sig-row { margin-top: 40px; display: flex; justify-content: space-between; padding: 0 40px; page-break-inside: avoid; }
+    .sig-col { text-align: center; width: 180px; }
+    .sig-label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 60px; }
+    .sig-line { border-top: 2.5px solid #1e293b; padding-top: 5px; font-size: 11px; font-weight: 900; text-transform: uppercase; }
 
-    .footer { margin-top: 40px; font-size: 9px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 12px; text-align: center; font-style: italic; }
+    .footer { margin-top: 30px; border-top: 1px dashed #cbd5e1; padding-top: 10px; font-size: 8px; color: #94a3b8; font-style: italic; text-align: center; }
 
     .btn-wrap { text-align: center; margin-top: 30px; }
-    .download-btn { display: inline-flex; align-items: center; gap: 8px; background: #1e293b; color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; }
+    .print-btn { background: #0f172a; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 14px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
     
     @media print {
       .btn-wrap { display: none !important; }
-      body { padding: 20px 30px; }
+      body { padding: 0; }
+      tr { page-break-inside: avoid; }
     }
   </style>
 </head>
 <body>
-  <div class="letterhead">
-    ${logoDataUrl ? `<img src="${logoDataUrl}" class="logo-img" alt="Logo" />` : ''}
-    <div class="company-block">
-      <h1>PT Elok Jaya Abadhi</h1>
-      <p class="tagline">Sistem Manajemen Kehadiran Digital</p>
+  <div class="header">
+    ${logoDataUrl ? `<img src="${logoDataUrl}" class="logo" />` : ''}
+    <div class="title-block">
+      <h1>PT ELOK JAYA ABADHI</h1>
+      <p>Laporan Dokumentasi Foto Kehadiran Karyawan Digital</p>
     </div>
   </div>
-  <hr class="hr-thick" />
-  <div class="report-meta">
-    <h2>Dokumentasi Foto Kehadiran</h2>
-    <p class="sub">Periode: ${format(startDate, "d MMMM yyyy", { locale: id })} - ${format(endDate, "d MMMM yyyy", { locale: id })}</p>
+
+  <div class="meta">
+    <h2>DOKUMENTASI FOTO ABSENSI</h2>
+    <p>Periode: ${periodStr}</p>
   </div>
 
-  <div class="photo-grid">
-    ${photoEntries.map(entry => `
-      <div class="photo-item">
-        <div class="photo-header">
-          <h3>${entry.name}</h3>
-          <p>${entry.type} • ${entry.date} ${entry.time !== '-' ? '• Pukul ' + entry.time : ''}</p>
-        </div>
-        <div class="img-container">
-          <img src="${entry.photo}" alt="Foto Absensi" />
-        </div>
-        <div class="photo-footer">
-          <div class="loc-label">📍 Lokasi Terdeteksi</div>
-          <div class="loc-text">${entry.location}</div>
-        </div>
-      </div>
-    `).join('')}
-  </div>
+  <table>
+    <thead>
+      <tr>
+        <th class="col-info">Informasi Karyawan</th>
+        <th>Absen Masuk</th>
+        <th>Mulai Istirahat</th>
+        <th>Selesai Istirahat</th>
+        <th>Absen Pulang</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${sessionRows.map(row => `
+        <tr>
+          <td class="col-info">
+            <div class="info-box">
+              <div class="emp-name">${row.name}</div>
+              <div class="emp-nik">NIK: ${row.nik}</div>
+              <div class="date-box">${row.date}</div>
+              <div class="session-badge">Sesi Ke-${row.session}</div>
+              <div style="margin-top:4px; font-size:8px; font-weight:700;">
+                Status: <span style="color:${row.status === 'present' ? '#16a34a' : '#dc2626'}">${row.status?.toUpperCase() || '-'}</span>
+              </div>
+              ${row.notes ? `<div style="margin-top:2px; font-size:7.5px; color:#64748b; font-style:italic; border-top:1px solid #f1f5f9; padding-top:2px;">"${row.notes}"</div>` : ''}
+            </div>
+          </td>
+          ${row.photos.map(p => `
+            <td>
+              <div class="photo-cell">
+                <div class="img-wrap">
+                  ${p.photo ? `<img src="${getPhotoUrl(p.photo)}" />` : `<div class="no-img">${p.placeholder}</div>`}
+                </div>
+                ${p.time ? `<div class="time-badge">${p.time}</div>` : ''}
+                <div class="loc-box">
+                  ${p.loc || '-'}
+                </div>
+              </div>
+            </td>
+          `).join('')}
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
 
-  <div class="signature-section">
-    <div class="sig-box">
-      <p class="sig-label">Checked By</p>
-      <div class="sig-name">NIKO</div>
+  <div class="sig-row">
+    <div class="sig-col">
+      <div class="sig-label">Diperiksa Oleh,</div>
+      <div class="sig-line">NIKO</div>
     </div>
-    <div class="sig-box">
-      <p class="sig-label">Approved By</p>
-      <div class="sig-name">CLAVERINA</div>
+    <div class="sig-col">
+      <div class="sig-label">Disetujui Oleh,</div>
+      <div class="sig-line">CLAVERINA</div>
     </div>
   </div>
 
   <div class="footer">
-    Dokumen ini dicetak secara otomatis oleh Sistem Absensi PT Elok Jaya Abadhi &mdash; ${format(new Date(), "d MMMM yyyy, HH:mm", { locale: id })} WIB
+    Dicetak otomatis oleh Sistem Absensi PT EJA pada ${new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })} WIB
   </div>
 
   <div class="btn-wrap">
-    <button class="download-btn" onclick="window.print()">Cetak / Simpan PDF</button>
+    <button class="print-btn" onclick="window.print()">CETAK / SIMPAN PDF</button>
   </div>
 </body>
 </html>`;
