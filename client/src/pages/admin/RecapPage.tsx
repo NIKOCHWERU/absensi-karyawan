@@ -508,36 +508,36 @@ export default function RecapPage() {
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
-            <header className="bg-white border-b border-gray-200 p-4 sm:px-8 flex flex-col sm:flex-row items-start sm:items-center justify-between sticky top-0 z-20 gap-4">
-                <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
-                    <Button variant="ghost" size="icon" onClick={() => setLocation("/admin")} className="shrink-0">
-                        <ArrowLeft className="h-5 w-5" />
+            <header className="bg-white border-b border-gray-100 p-4 sm:px-10 flex flex-col sm:flex-row items-start sm:items-center justify-between sticky top-0 z-20 gap-4 backdrop-blur-md bg-white/90">
+                <div className="flex items-center gap-4 w-full sm:w-auto">
+                    <Button variant="ghost" size="icon" onClick={() => setLocation("/admin")} className="shrink-0 hover:bg-gray-100 rounded-full transition-all">
+                        <ArrowLeft className="h-6 w-6 text-gray-700" />
                     </Button>
-                    <h1 className="text-lg sm:text-xl font-bold text-gray-800 leading-tight">Rekap Absensi</h1>
+                    <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight leading-tight">Rekap Absensi</h1>
                 </div>
-                <div className="flex items-center gap-2 bg-white border rounded-lg p-1 w-full sm:w-auto justify-between sm:justify-start">
+                <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl p-1.5 w-full sm:w-auto shadow-sm">
                     <Select value={reportType} onValueChange={(v: any) => setReportType(v)}>
-                        <SelectTrigger className="w-[100px] sm:w-[120px] h-8 border-none bg-transparent text-xs sm:text-sm">
+                        <SelectTrigger className="w-[90px] sm:w-[110px] h-9 border-none bg-transparent text-xs sm:text-sm font-bold text-slate-700 focus:ring-0">
                             <SelectValue placeholder="Tipe" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="rounded-xl border-slate-200">
                             <SelectItem value="daily">Harian</SelectItem>
                             <SelectItem value="weekly">Mingguan</SelectItem>
                             <SelectItem value="monthly">Bulanan</SelectItem>
                         </SelectContent>
                     </Select>
-                    <div className="h-4 w-[1px] bg-gray-200 mx-1"></div>
-                    <div className="flex items-center gap-1 flex-1 sm:flex-none justify-center">
-                        <Button variant="ghost" size="icon" onClick={handlePrev} className="h-8 w-8">
-                            <ChevronLeft className="h-4 w-4" />
+                    <div className="h-5 w-[1px] bg-slate-200 mx-1"></div>
+                    <div className="flex items-center gap-0.5 flex-1 sm:flex-none justify-center">
+                        <Button variant="ghost" size="icon" onClick={handlePrev} className="h-9 w-9 rounded-lg hover:bg-white hover:shadow-sm transition-all text-slate-600">
+                            <ChevronLeft className="h-5 w-5" />
                         </Button>
-                        <span className="text-[10px] sm:text-sm font-bold text-gray-700 min-w-[90px] text-center whitespace-nowrap">
+                        <span className="text-[11px] sm:text-[13px] font-black text-slate-800 min-w-[100px] text-center whitespace-nowrap px-2">
                             {reportType === 'daily' ? format(targetDate, "d MMM yyyy", { locale: id }) :
                                 reportType === 'weekly' ? `${format(startDate, "d MMM")} - ${format(endDate, "d MMM yyyy", { locale: id })}` :
                                     format(targetDate, "MMMM yyyy", { locale: id })}
                         </span>
-                        <Button variant="ghost" size="icon" onClick={handleNext} className="h-8 w-8">
-                            <ChevronRight className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" onClick={handleNext} className="h-9 w-9 rounded-lg hover:bg-white hover:shadow-sm transition-all text-slate-600">
+                            <ChevronRight className="h-5 w-5" />
                         </Button>
                     </div>
                 </div>
@@ -545,51 +545,62 @@ export default function RecapPage() {
 
             <main className="p-8 flex-1 overflow-auto">
                 <Card className="border-none shadow-sm">
-                    <CardHeader className="flex flex-col md:flex-row items-center justify-between gap-4">
+                    <CardHeader className="p-6 sm:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
                         <div className="space-y-1">
-                            <CardTitle>Laporan Bulanan</CardTitle>
-                            <p className="text-sm text-gray-500">
-                                Periode: {format(startDate, "EEEE, d MMM yyyy", { locale: id })} - {format(endDate, "EEEE, d MMM yyyy", { locale: id })}
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Laporan Absensi</p>
+                            <CardTitle className="text-2xl font-black text-slate-800">
+                                {reportType === 'daily' ? 'Presensi Harian' : reportType === 'weekly' ? 'Rekap Mingguan' : 'Rekap Bulanan'}
+                            </CardTitle>
+                            <p className="text-[13px] text-slate-500 font-medium">
+                                Periode: <span className="text-slate-800 font-bold">{format(startDate, "d MMMM yyyy", { locale: id })} - {format(endDate, "d MMMM yyyy", { locale: id })}</span>
                             </p>
                         </div>
-                        <div className="flex items-center gap-3 w-full md:w-auto">
-                            <div className="relative flex-1 md:w-64">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
+                            <div className="relative flex-1 lg:w-72">
+                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-slate-400" />
                                 <Input
-                                    placeholder="Cari nama..."
-                                    className="pl-9"
+                                    placeholder="Cari nama karyawan..."
+                                    className="pl-11 h-11 bg-slate-50 border-slate-200 rounded-xl focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all text-sm font-medium"
                                     value={searchName}
                                     onChange={(e) => setSearchName(e.target.value)}
                                 />
                             </div>
-                            <Button variant="outline" className="gap-2 bg-green-50 text-green-700 border-green-200 hover:bg-green-100" onClick={() => handleOpenManualModal()}>
-                                <Plus className="h-4 w-4" /> Input Manual
+                            <Button 
+                                variant="outline" 
+                                className="h-11 px-6 gap-2 bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 rounded-xl font-bold transition-all shadow-sm shadow-emerald-100" 
+                                onClick={() => handleOpenManualModal()}
+                            >
+                                <Plus className="h-5 w-5" /> Input Manual
                             </Button>
-                            <Button variant="outline" className="gap-2" onClick={handleExport}>
-                                <FileDown className="h-4 w-4" /> Export
+                            <Button 
+                                variant="outline" 
+                                className="h-11 px-6 gap-2 bg-slate-800 text-white border-slate-800 hover:bg-slate-900 rounded-xl font-bold transition-all shadow-sm"
+                                onClick={handleExport}
+                            >
+                                <FileDown className="h-5 w-5" /> Export
                             </Button>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-4 sm:p-6">
-                        <div className="rounded-xl border border-gray-100 overflow-hidden shadow-sm">
-                            <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-200">
-                                <table className="w-full text-sm text-left">
-                                <thead className="bg-gray-50 text-gray-700 font-semibold uppercase text-xs">
+                    <CardContent className="p-0 sm:p-2 sm:px-6 pb-8">
+                        <div className="rounded-2xl border border-slate-100 overflow-hidden bg-white shadow-xl shadow-slate-200/50">
+                            <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200">
+                                <table className="w-full text-sm text-left border-collapse">
+                                <thead className="bg-slate-50/80 backdrop-blur-sm text-slate-500 border-b border-slate-100">
                                     <tr>
-                                        <th className="px-4 py-3 cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('date')}>
-                                            <div className="flex items-center gap-1">Tanggal <ArrowUpDown className="h-3 w-3" /></div>
+                                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 transition-colors uppercase text-[10px] font-black tracking-widest text-slate-400" onClick={() => toggleSort('date')}>
+                                            <div className="flex items-center gap-1.5 ">Tgl <ArrowUpDown className="h-3 w-3" /></div>
                                         </th>
-                                        <th className="px-4 py-3 cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('name')}>
-                                            <div className="flex items-center gap-1">Nama Karyawan <ArrowUpDown className="h-3 w-3" /></div>
+                                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 transition-colors uppercase text-[10px] font-black tracking-widest text-slate-400" onClick={() => toggleSort('name')}>
+                                            <div className="flex items-center gap-1.5 ">Karyawan <ArrowUpDown className="h-3 w-3" /></div>
                                         </th>
-                                        <th className="px-4 py-3">Masuk</th>
-                                        <th className="px-4 py-3">Istirahat</th>
-                                        <th className="px-4 py-3">Selesai</th>
-                                        <th className="px-4 py-3">Pulang</th>
-                                        <th className="px-4 py-3">Jam Kerja</th>
-                                        <th className="px-4 py-3">Total Istirahat</th>
-                                        <th className="px-4 py-3">Status</th>
-                                        <th className="px-4 py-3">Keterangan</th>
+                                        <th className="px-6 py-4 uppercase text-[10px] font-black tracking-widest text-slate-400 text-center">Masuk</th>
+                                        <th className="px-6 py-4 uppercase text-[10px] font-black tracking-widest text-slate-400 text-center">Break</th>
+                                        <th className="px-6 py-4 uppercase text-[10px] font-black tracking-widest text-slate-400 text-center">Selesai</th>
+                                        <th className="px-6 py-4 uppercase text-[10px] font-black tracking-widest text-slate-400 text-center">Pulang</th>
+                                        <th className="px-6 py-4 uppercase text-[10px] font-black tracking-widest text-slate-400 text-center">Durasi Kerja</th>
+                                        <th className="px-6 py-4 uppercase text-[10px] font-black tracking-widest text-slate-400 text-center">Istirahat</th>
+                                        <th className="px-6 py-4 uppercase text-[10px] font-black tracking-widest text-slate-400 text-center">Status</th>
+                                        <th className="px-6 py-4 uppercase text-[10px] font-black tracking-widest text-slate-400 min-w-[200px]">Notes</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
@@ -607,30 +618,32 @@ export default function RecapPage() {
                                             prevRow.userId === row.userId;
 
                                         return (
-                                            <tr key={row.id} className="hover:bg-gray-50/50">
-                                                <td className="px-4 py-3 text-gray-900 font-medium relative">
+                                            <tr key={row.id} className="hover:bg-slate-50/80 transition-all group">
+                                                <td className="px-6 py-4 text-slate-500 font-bold whitespace-nowrap relative">
                                                     {isSameDayAndUser ? (
-                                                        <div className="absolute left-8 top-0 h-full w-px bg-gray-200"></div> /* Connector */
+                                                        <div className="absolute left-10 top-0 h-full w-px bg-slate-100"></div> /* Connector */
                                                     ) : (
                                                         format(new Date(row.date), "dd/MM/yyyy")
                                                     )}
                                                 </td>
-                                                <td className="px-4 py-3 text-gray-700">
-                                                    {isSameDayAndUser ? "" : getUserName(row.userId)}
+                                                <td className="px-6 py-4">
+                                                    {isSameDayAndUser ? "" : (
+                                                        <span className="text-slate-800 font-black tracking-tight">{getUserName(row.userId)}</span>
+                                                    )}
                                                 </td>
-                                                <td className="px-4 py-3 text-green-600 font-mono">
+                                                <td className="px-6 py-4 text-emerald-600 font-black font-mono text-center bg-emerald-50/30">
                                                     {row.checkIn ? format(new Date(row.checkIn), "HH:mm") : "-"}
                                                 </td>
-                                                <td className="px-4 py-3 text-green-600 font-mono">
+                                                <td className="px-6 py-4 text-amber-600 font-black font-mono text-center">
                                                     {row.breakStart ? format(new Date(row.breakStart), "HH:mm") : "-"}
                                                 </td>
-                                                <td className="px-4 py-3 text-green-600 font-mono">
+                                                <td className="px-6 py-4 text-amber-600 font-black font-mono text-center">
                                                     {row.breakEnd ? format(new Date(row.breakEnd), "HH:mm") : "-"}
                                                 </td>
-                                                <td className="px-4 py-3 text-red-600 font-mono">
+                                                <td className="px-6 py-4 text-rose-600 font-black font-mono text-center bg-rose-50/30">
                                                     {row.checkOut ? format(new Date(row.checkOut), "HH:mm") : "-"}
                                                 </td>
-                                                <td className="px-4 py-3">
+                                                <td className="px-6 py-4 text-center">
                                                     {!isSameDayAndUser && (() => {
                                                         const daily = dailyTotals.get(key);
                                                         const inTime = row.checkIn ? 'yes' : '-';
@@ -643,44 +656,43 @@ export default function RecapPage() {
                                                         const showTotal = daily?.complete && (daily?.mins ?? 0) > 0 && !isSequenceIncomplete;
 
                                                         return (
-                                                            <div className="text-gray-900 font-bold mb-1 text-xs">
+                                                            <div className="flex flex-col items-center">
                                                                 {isSequenceIncomplete ? (
-                                                                    <span className="text-orange-600 font-bold leading-tight block">Data Absensi<br />Tidak Lengkap</span>
+                                                                    <span className="text-rose-600 font-black text-[10px] leading-tight uppercase px-2 py-1 bg-rose-50 rounded-lg">Data Tidak Lengkap</span>
                                                                 ) : (
-                                                                    <>
-                                                                        Total: {showTotal ? formatDuration(daily!.mins) : "-"}
-                                                                        {!row.checkOut && <span className="ml-1 text-[10px] text-yellow-600 font-semibold">(Belum Absen Pulang)</span>}
-                                                                    </>
+                                                                    <div className="bg-slate-800 text-white px-3 py-1 rounded-lg">
+                                                                        <span className="text-[11px] font-black">{showTotal ? formatDuration(daily!.mins) : "-"}</span>
+                                                                    </div>
                                                                 )}
                                                             </div>
                                                         );
                                                     })()}
-                                                    <div className="text-xs text-gray-500 mt-1">
+                                                    <div className="text-[10px] text-slate-400 font-bold mt-1.5 uppercase tracking-tighter">
                                                         {(() => {
                                                             const brkS = row.breakStart ? 'yes' : '-';
                                                             const brkE = row.breakEnd ? 'yes' : '-';
                                                             const isSeqIncomplete = (!row.checkOut) || (row.checkIn && row.checkOut && ((brkS !== '-' && brkE === '-') || (brkS === '-' && brkE !== '-') || (brkS === '-' && brkE === '-')));
-                                                            if (!row.checkOut) return <span className="text-yellow-600 font-semibold">Belum Absen Pulang</span>;
-                                                            if (isSeqIncomplete) return <span className="text-orange-600 font-semibold text-[10px]">Urutan Absen Terputus</span>;
-                                                            return <>Sesi: {formatDuration(sessionNetMins)}</>;
+                                                            if (!row.checkOut) return <span className="text-amber-600">Belum Pulang</span>;
+                                                            if (isSeqIncomplete) return <span className="text-rose-500">Iregular</span>;
+                                                            return <span className="text-slate-400">Sesi: {formatDuration(sessionNetMins)}</span>;
                                                         })()}
                                                     </div>
                                                 </td>
-                                                <td className="px-4 py-3 text-xs text-gray-500">
+                                                <td className="px-6 py-4 text-center text-[11px] font-black text-amber-600">
                                                     {(() => {
                                                         const secs = calculateDurationSeconds(row.breakStart, row.breakEnd);
                                                         return secs > 0 ? formatDurationFull(secs) : "-";
                                                     })()}
                                                 </td>
-                                                <td className="px-4 py-3">
-                                                    <span className={`px-2 py-1 rounded-full text-xs font-semibold
-                                                ${row.status === 'present' ? 'bg-green-100 text-green-700' :
-                                                            row.status === 'late' ? 'bg-orange-100 text-orange-700' :
-                                                                row.status === 'sick' ? 'bg-blue-100 text-blue-700' :
-                                                                    row.status === 'permission' ? 'bg-purple-100 text-purple-700' :
-                                                                        row.status === 'off' ? 'bg-gray-200 text-gray-800' :
-                                                                            row.status === 'cuti' ? 'bg-teal-100 text-teal-700' :
-                                                                                'bg-gray-100 text-gray-700'}`}>
+                                                <td className="px-6 py-4 text-center">
+                                                    <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm
+                                                ${row.status === 'present' ? 'bg-emerald-500 text-white' :
+                                                             row.status === 'late' ? 'bg-rose-500 text-white' :
+                                                                 row.status === 'sick' ? 'bg-blue-500 text-white' :
+                                                                     row.status === 'permission' ? 'bg-purple-500 text-white' :
+                                                                         row.status === 'off' ? 'bg-slate-400 text-white' :
+                                                                             row.status === 'cuti' ? 'bg-teal-500 text-white' :
+                                                                                 'bg-slate-200 text-slate-600'}`}>
                                                         {row.status === 'present' ? 'Hadir' :
                                                             row.status === 'late' ? 'Telat' :
                                                                 row.status === 'sick' ? 'Sakit' :
@@ -688,41 +700,45 @@ export default function RecapPage() {
                                                                         row.status === 'off' ? 'Libur' :
                                                                             row.status === 'cuti' ? 'Cuti' :
                                                                                 row.status === 'absent' ? 'Alpha' : row.status}
-                                                        {(row as any).sessionNumber > 1 && ` (Sesi ${(row as any).sessionNumber})`}
                                                     </span>
+                                                    {(row as any).sessionNumber > 1 && (
+                                                        <div className="text-[9px] font-black text-slate-400 mt-1 uppercase">Sesi {(row as any).sessionNumber}</div>
+                                                    )}
                                                 </td>
-                                                <td className="px-4 py-3 text-gray-500 italic max-w-xs">
-                                                    <div className="flex flex-col gap-1">
-                                                        <div className="flex items-center gap-1">
-                                                            <span className={!row.checkOut ? "text-yellow-600 font-semibold" : ""}>
+                                                <td className="px-6 py-4 max-w-xs">
+                                                    <div className="flex flex-col gap-2">
+                                                        <div className="flex items-center gap-2 group/actions">
+                                                            <span className={`text-[13px] leading-relaxed font-medium ${!row.checkOut ? "text-amber-600 italic font-bold" : "text-slate-600"}`}>
                                                                 {row.notes ? row.notes : (!row.checkOut ? "Belum Absen Pulang" : "-")}
                                                             </span>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-6 w-6 text-gray-400 hover:text-green-600"
-                                                                onClick={() => handleOpenManualModal(row)}
-                                                            >
-                                                                <Edit2 className="h-3 w-3" />
-                                                            </Button>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-6 w-6 text-gray-400 hover:text-red-600"
-                                                                onClick={() => setDeleteConfirmId(row.id)}
-                                                            >
-                                                                <Trash2 className="h-3 w-3" />
-                                                            </Button>
+                                                            <div className="flex items-center gap-1 opacity-0 group-hover/actions:opacity-100 transition-opacity">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg"
+                                                                    onClick={() => handleOpenManualModal(row)}
+                                                                >
+                                                                    <Edit2 className="h-3.5 w-3.5" />
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
+                                                                    onClick={() => setDeleteConfirmId(row.id)}
+                                                                >
+                                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                                </Button>
+                                                            </div>
                                                         </div>
                                                         {((row as any).lateReason || (row as any).checkInPhoto || (row as any).checkOutPhoto || (row as any).lateReasonPhoto) && (
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                className="h-auto p-0 text-[11px] text-blue-600 hover:text-blue-700 hover:bg-transparent justify-start font-bold uppercase tracking-tight flex items-center gap-1.5"
+                                                                className="h-8 px-3 text-[10px] text-blue-600 hover:text-blue-700 hover:bg-blue-50 justify-start font-black uppercase tracking-wider flex items-center gap-2 rounded-lg border border-blue-100 bg-white"
                                                                 onClick={() => setSelectedPhotoRecord(row)}
                                                             >
-                                                                <Camera className="h-3 w-3" />
-                                                                Lihat Detail Foto
+                                                                <Camera className="h-3.5 w-3.5" />
+                                                                Detail Foto
                                                             </Button>
                                                         )}
                                                     </div>

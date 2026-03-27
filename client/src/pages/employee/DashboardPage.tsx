@@ -459,148 +459,133 @@ export default function EmployeeDashboard() {
     };
 
     const renderMainButton = () => {
-        // --- PERMIT / SICK STATE ---
-        // After permit or sick is submitted, today always has checkOut set (server always closes session).
-        // Show an informational card + "Lanjut Bekerja" option.
         if (today?.status === 'sick' || today?.status === 'permission' || today?.status === 'off') {
             const permitLabel = today.status === 'sick' ? 'Sakit' : today.status === 'off' ? 'Libur' : 'Izin';
-            const permitColor = today.status === 'sick' ? 'blue' : today.status === 'off' ? 'gray' : 'purple';
-            const emoji = today.status === 'sick' ? '🤒' : today.status === 'off' ? '😴' : '📋';
+            const permitColor = today.status === 'sick' ? 'blue' : today.status === 'off' ? 'slate' : 'purple';
+            const Icon = today.status === 'sick' ? Stethoscope : today.status === 'off' ? Umbrella : FileText;
+            
             return (
-                <div className="flex flex-col gap-3 w-full">
-                    {/* Info card */}
-                    <div className={`rounded-2xl p-4 bg-${permitColor}-50 border border-${permitColor}-200 flex items-start gap-3`}>
-                        <span className={`text-${permitColor}-500 mt-0.5`}>
-                            {today.status === 'sick' ? <Stethoscope className="w-6 h-6" /> : today.status === 'off' ? <Umbrella className="w-6 h-6" /> : <FileText className="w-6 h-6" />}
-                        </span>
-                        <div>
-                            <p className={`text-xs font-bold text-${permitColor}-700 uppercase tracking-wide`}>
-                                Status: {permitLabel}
-                            </p>
-                            <p className={`text-sm text-${permitColor}-600 font-medium mt-0.5`}>
+                <div className="flex flex-col gap-4 w-full">
+                    <div className={`rounded-3xl p-5 bg-${permitColor}-50/50 border border-${permitColor}-100 flex items-start gap-4 shadow-sm`}>
+                        <div className={`w-12 h-12 rounded-2xl bg-${permitColor}-500/10 flex items-center justify-center shrink-0`}>
+                            <Icon className={`w-6 h-6 text-${permitColor}-600`} />
+                        </div>
+                        <div className="space-y-1">
+                            <p className={`text-[10px] font-black text-${permitColor}-600 uppercase tracking-[0.2em]`}>Status: {permitLabel}</p>
+                            <p className="text-sm text-slate-700 font-bold leading-relaxed">
                                 {today.notes || `Absensi ${permitLabel} hari ini sudah tercatat.`}
-                            </p>
-                            <p className={`text-xs text-${permitColor}-400 mt-1`}>
-                                Jika sudah siap, Anda dapat melanjutkan bekerja di bawah ini.
                             </p>
                         </div>
                     </div>
-                    {/* Lanjut Bekerja button — uses clockIn flow (photo + shift) */}
                     <Button
                         onClick={() => startAttendanceFlow(clockIn, "Berhasil Absen Masuk", true)}
                         disabled={isLoading || sessionCount >= 5}
-                        className="w-full h-14 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold shadow-blue-200 shadow-lg text-lg"
+                        className="w-full h-16 rounded-[1.25rem] bg-slate-900 hover:bg-slate-800 text-white font-black shadow-xl shadow-slate-200 text-lg group transition-all"
                     >
                         {isLoading ? <Loader2 className="animate-spin mr-2" /> : (
-                            <>
-                                <Zap className="mr-2 h-5 w-5" />
-                                Lanjut Bekerja {sessionCount > 0 ? `(Sesi ${sessionCount + 1}/5)` : ''}
-                            </>
+                            <div className="flex items-center gap-3">
+                                <Zap className="h-6 w-6 text-yellow-400 group-hover:scale-110 transition-transform" />
+                                <span>Lanjut Bekerja {sessionCount > 0 ? `(Sesi ${sessionCount + 1})` : ''}</span>
+                            </div>
                         )}
                     </Button>
-                    {sessionCount >= 5 && (
-                        <p className="text-center text-xs text-red-500 font-medium">Batas 5 sesi per hari tercapai</p>
-                    )}
                 </div>
             );
         }
 
-        // --- SESSION COMPLETE (normal clock-out) ---
         if (today?.checkOut) {
             return (
-                <div className="flex flex-col gap-3 w-full">
-                    <Button
-                        disabled
-                        className="w-full py-8 text-xl font-bold rounded-2xl shadow-lg bg-gray-200 text-gray-400"
-                    >
-                        Sesi Hari Ini Selesai
-                    </Button>
+                <div className="flex flex-col gap-4 w-full">
+                    <div className="bg-slate-100/50 rounded-3xl p-6 border border-slate-200 border-dashed text-center">
+                        <p className="text-slate-400 font-black text-sm uppercase tracking-widest">Sesi Hari Ini Selesai</p>
+                    </div>
                     <Button
                         onClick={() => startAttendanceFlow(clockIn, "Berhasil Absen Masuk", true)}
                         disabled={sessionCount >= 5}
-                        className="w-full h-14 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold shadow-blue-200 shadow-lg text-lg"
+                        className="w-full h-16 rounded-[1.25rem] bg-slate-900 hover:bg-slate-800 text-white font-black shadow-xl shadow-slate-200 text-lg group transition-all"
                     >
                         {isLoading ? <Loader2 className="animate-spin mr-2" /> : (
-                            <>
-                                <Zap className="mr-2 h-5 w-5" />
-                                Lanjut Kerja (Sesi {sessionCount + 1}/5)
-                            </>
+                            <div className="flex items-center gap-3">
+                                <Zap className="h-6 w-6 text-yellow-400 group-hover:scale-110 transition-transform" />
+                                <span>Lanjut Kerja (Sesi {sessionCount + 1})</span>
+                            </div>
                         )}
                     </Button>
-                    {sessionCount >= 5 && (
-                        <p className="text-center text-xs text-red-500 font-medium">Batas 5 sesi per hari tercapai</p>
-                    )}
                 </div>
             );
         }
 
-        // --- NOT YET CLOCKED IN ---
         if (!hasCheckedIn) {
             return (
                 <Button
                     onClick={() => startAttendanceFlow(clockIn, "Berhasil Absen Masuk", true)}
                     disabled={isLoading}
-                    className="w-full h-14 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold shadow-green-200 shadow-lg text-lg"
+                    className="w-full h-20 rounded-[1.5rem] bg-emerald-500 hover:bg-emerald-600 text-white font-black shadow-2xl shadow-emerald-200 text-xl group transition-all"
                 >
                     {isLoading ? <Loader2 className="animate-spin mr-2" /> : (
-                        <>
-                            <Camera className="mr-2 h-5 w-5" />
-                            Absen Masuk
-                        </>
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <Camera className="h-7 w-7" />
+                            </div>
+                            <span>ABSEN MASUK</span>
+                        </div>
                     )}
                 </Button>
             );
         }
 
-        // --- IN PROGRESS: waiting for break start ---
         if (!isBreak && !hasBreakEnded) {
             return (
                 <Button
                     onClick={() => startAttendanceFlow(breakStart, "Selamat Istirahat")}
                     disabled={isLoading}
-                    className="w-full h-14 rounded-xl bg-gradient-to-r from-orange-400 to-amber-500 hover:from-orange-500 hover:to-amber-600 text-white font-semibold shadow-orange-200 shadow-lg text-lg"
+                    className="w-full h-20 rounded-[1.5rem] bg-amber-500 hover:bg-amber-600 text-white font-black shadow-2xl shadow-amber-200 text-xl group transition-all"
                 >
                     {isLoading ? <Loader2 className="animate-spin mr-2" /> : (
-                        <>
-                            <Coffee className="mr-2 h-5 w-5" />
-                            Mulai Istirahat
-                        </>
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <Coffee className="h-7 w-7" />
+                            </div>
+                            <span>MULAI ISTIRAHAT</span>
+                        </div>
                     )}
                 </Button>
             );
         }
 
-        // --- IN BREAK: waiting for break end ---
         if (isBreak && !hasBreakEnded) {
             return (
                 <Button
                     onClick={() => startAttendanceFlow(breakEnd, "Selamat Bekerja Kembali")}
                     disabled={isLoading}
-                    className="w-full h-14 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold shadow-orange-200 shadow-lg text-lg"
+                    className="w-full h-20 rounded-[1.5rem] bg-orange-600 hover:bg-orange-700 text-white font-black shadow-2xl shadow-orange-200 text-xl group transition-all"
                 >
                     {isLoading ? <Loader2 className="animate-spin mr-2" /> : (
-                        <>
-                            <Camera className="mr-2 h-5 w-5" />
-                            Selesai Istirahat
-                        </>
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <Camera className="h-7 w-7" />
+                            </div>
+                            <span>SELESAI ISTIRAHAT</span>
+                        </div>
                     )}
                 </Button>
             );
         }
 
-        // --- READY TO CLOCK OUT ---
         if (hasCheckedIn && hasBreakEnded && !hasCheckedOut) {
             return (
                 <Button
                     onClick={handleClockOutClick}
                     disabled={isLoading}
-                    className="w-full h-14 rounded-xl bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-bold shadow-red-200 shadow-lg text-lg"
+                    className="w-full h-20 rounded-[1.5rem] bg-rose-500 hover:bg-rose-600 text-white font-black shadow-2xl shadow-rose-200 text-xl group transition-all"
                 >
                     {isLoading ? <Loader2 className="animate-spin mr-2" /> : (
-                        <>
-                            <LogOut className="mr-2 h-5 w-5" />
-                            Absen Pulang
-                        </>
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <LogOut className="h-7 w-7" />
+                            </div>
+                            <span>ABSEN PULANG</span>
+                        </div>
                     )}
                 </Button>
             );
@@ -673,29 +658,40 @@ export default function EmployeeDashboard() {
                 <motion.div
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    className="bg-white rounded-3xl p-5 shadow-xl shadow-black/5 border border-orange-100 flex items-center justify-between relative overflow-hidden"
+                    className="bg-white rounded-[2rem] p-6 shadow-2xl shadow-slate-200/50 border border-slate-100 flex items-center justify-between relative overflow-hidden group"
                 >
-                    <div className="space-y-1.5 z-10">
-                        <h2 className="text-lg font-bold text-gray-800">{user?.fullName}</h2>
-                        <div className="text-xs text-gray-500 space-y-0.5">
-                            <p>NIK: <span className="font-semibold text-gray-700">{user?.username}</span></p>
-                            <p>Cabang: <span className="font-semibold text-gray-700">{user?.branch || '-'}</span></p>
-                            <p>Jabatan: <span className="font-semibold text-gray-700">{user?.position || '-'}</span></p>
-                            <p>Shift: <span className="font-bold text-orange-600">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-primary/10 transition-colors"></div>
+                    <div className="space-y-2 z-10">
+                        <div className="space-y-0.5">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Selamat Datang,</p>
+                            <h2 className="text-xl font-black text-slate-800 tracking-tight">{user?.fullName}</h2>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            <div className="flex items-center gap-2 px-2.5 py-1 bg-slate-50 rounded-lg w-fit border border-slate-100">
+                                <User className="w-3.5 h-3.5 text-slate-400" />
+                                <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">{user?.username}</span>
+                            </div>
+                            <div className="text-[11px] text-slate-500 font-medium flex flex-wrap gap-x-3 gap-y-1">
+                                <p className="flex items-center gap-1"><span className="w-1 h-1 bg-slate-300 rounded-full"></span> {user?.branch || '-'}</p>
+                                <p className="flex items-center gap-1"><span className="w-1 h-1 bg-slate-300 rounded-full"></span> {user?.position || '-'}</p>
+                            </div>
+                        </div>
+                        <div className="pt-1">
+                            <span className="text-[10px] font-black bg-orange-50 text-orange-600 px-3 py-1 rounded-full border border-orange-100 inline-block uppercase tracking-widest">
                                 {(() => {
                                     const baseShift = (todaySessions && todaySessions.length > 0) ? (todaySessions[0] as any).shift : (shiftList?.find(s => s.id === selectedShiftId)?.name);
                                     if (!baseShift) return 'Belum Absen Masuk';
                                     return sessionCount > 1 ? `${baseShift} ( Sesi ${sessionCount} )` : baseShift;
                                 })()}
-                            </span></p>
+                            </span>
                         </div>
                     </div>
                     <div className="z-10">
-                        <div className="w-20 h-20 rounded-xl bg-gray-100 border-2 border-white shadow-md overflow-hidden">
+                        <div className="w-20 h-20 rounded-2xl bg-slate-100 border-4 border-white shadow-xl overflow-hidden ring-1 ring-slate-100">
                             {user?.photoUrl ? (
                                 <img src={user.photoUrl} alt="User" className="w-full h-full object-cover" />
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-orange-50 text-orange-500 font-bold text-2xl">
+                                <div className="w-full h-full flex items-center justify-center bg-slate-50 text-slate-400 font-black text-3xl">
                                     {user?.fullName?.charAt(0)}
                                 </div>
                             )}
@@ -747,12 +743,12 @@ export default function EmployeeDashboard() {
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.2 }}
-                    className="space-y-4"
+                    className="space-y-6"
                 >
-                    <div className="flex flex-col gap-3 w-full max-w-sm mx-auto">
+                    <div className="flex flex-col gap-4 w-full">
                         {renderMainButton()}
 
-                        <div className="grid grid-cols-3 gap-2 mt-2">
+                        <div className="grid grid-cols-3 gap-3">
                             <Button
                                 variant="outline"
                                 disabled={!!today?.checkOut || today?.status === 'sick' || today?.status === 'permission' || today?.status === 'off'}
@@ -761,11 +757,10 @@ export default function EmployeeDashboard() {
                                     setPermitNote("");
                                     setPermitOpen(true);
                                 }}
-                                className="h-14 rounded-xl border-blue-100 hover:bg-blue-50 text-blue-700 bg-white"
+                                className="h-16 flex-col gap-1 rounded-2xl border-slate-100 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-100 transition-all font-bold group shadow-sm bg-white"
                             >
-                                <div className="flex flex-col items-center gap-0.5">
-                                    <span className="font-bold text-sm">Sakit</span>
-                                </div>
+                                <Stethoscope className="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                                <span className="text-[11px] uppercase tracking-wider">Sakit</span>
                             </Button>
                             <Button
                                 variant="outline"
@@ -775,21 +770,19 @@ export default function EmployeeDashboard() {
                                     setPermitNote("");
                                     setPermitOpen(true);
                                 }}
-                                className="h-14 rounded-xl border-purple-100 hover:bg-purple-50 text-purple-700 bg-white"
+                                className="h-16 flex-col gap-1 rounded-2xl border-slate-100 hover:bg-purple-50 hover:text-purple-600 hover:border-purple-100 transition-all font-bold group shadow-sm bg-white"
                             >
-                                <div className="flex flex-col items-center gap-0.5">
-                                    <span className="font-bold text-sm">Izin</span>
-                                </div>
+                                <FileText className="w-5 h-5 text-slate-400 group-hover:text-purple-500 transition-colors" />
+                                <span className="text-[11px] uppercase tracking-wider">Izin</span>
                             </Button>
                             <Button
                                 variant="outline"
                                 disabled={!!today?.checkOut || today?.status === 'sick' || today?.status === 'permission' || today?.status === 'off' || hasCheckedIn}
                                 onClick={() => setIsOffDayOpen(true)}
-                                className="h-14 rounded-xl border-gray-200 hover:bg-gray-100 text-gray-700 bg-white"
+                                className="h-16 flex-col gap-1 rounded-2xl border-slate-100 hover:bg-slate-100 hover:text-slate-800 transition-all font-bold group shadow-sm bg-white"
                             >
-                                <div className="flex flex-col items-center gap-0.5">
-                                    <span className="font-bold text-sm">Libur</span>
-                                </div>
+                                <Umbrella className="w-5 h-5 text-slate-400 group-hover:text-slate-600 transition-colors" />
+                                <span className="text-[11px] uppercase tracking-wider">Libur</span>
                             </Button>
                         </div>
                     </div>
@@ -800,93 +793,99 @@ export default function EmployeeDashboard() {
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.3 }}
-                    className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4"
+                    className="bg-white rounded-[2rem] p-8 shadow-xl shadow-slate-200/40 border border-slate-100 space-y-6"
                 >
-                    <h4 className="font-bold text-gray-800 border-b pb-2">Riwayat Hari Ini</h4>
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                        <h4 className="font-black text-slate-800 uppercase tracking-widest text-xs">Riwayat Hari Ini</h4>
+                        <div className="w-2 h-2 rounded-full bg-primary/20"></div>
+                    </div>
 
-                    {/* ⚠️ Warning: Sedang istirahat belum selesai */}
-                    {isBreak && !hasBreakEnded && (
-                        <div className="flex items-start gap-3 bg-orange-50 border border-orange-200 rounded-xl p-3">
-                            <Timer className="text-orange-500 w-5 h-5 mt-0.5" />
-                            <div>
-                                <p className="text-xs font-bold text-orange-700 uppercase tracking-wide">Sedang Istirahat</p>
-                                <p className="text-sm text-orange-600 font-medium mt-0.5">Jangan lupa tekan <strong>Selesai Istirahat</strong> saat kembali bekerja!</p>
+                    {/* ⚠️ Warnings */}
+                    <div className="space-y-3">
+                        {isBreak && !hasBreakEnded && (
+                            <div className="flex items-start gap-4 bg-amber-50 rounded-2xl p-4 border border-amber-100 shadow-sm shadow-amber-100/50">
+                                <Timer className="text-amber-600 w-5 h-5 shrink-0" />
+                                <div className="space-y-0.5">
+                                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em]">Sedang Istirahat</p>
+                                    <p className="text-sm text-slate-700 font-bold leading-relaxed">Jangan lupa tekan <span className="text-amber-700">Selesai Istirahat</span> saat kembali bekerja!</p>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {/* ⚠️ Warning: Sudah check-in & selesai istirahat, belum absen pulang */}
-                    {hasCheckedIn && hasBreakEnded && !hasCheckedOut && (
-                        <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-3">
-                            <Bell className="text-red-500 w-5 h-5 mt-0.5" />
-                            <div>
-                                <p className="text-xs font-bold text-red-700 uppercase tracking-wide">Jangan Lupa Absen Pulang!</p>
-                                <p className="text-sm text-red-600 font-medium mt-0.5">Tekan <strong>Absen Pulang</strong> sebelum meninggalkan tempat kerja agar jam kerja tercatat.</p>
+                        {hasCheckedIn && hasBreakEnded && !hasCheckedOut && (
+                            <div className="flex items-start gap-4 bg-rose-50 rounded-2xl p-4 border border-rose-100 shadow-sm shadow-rose-100/50">
+                                <Bell className="text-rose-600 w-5 h-5 shrink-0" />
+                                <div className="space-y-0.5">
+                                    <p className="text-[10px] font-black text-rose-600 uppercase tracking-[0.2em]">Peringatan</p>
+                                    <p className="text-sm text-slate-700 font-bold leading-relaxed">Tekan <span className="text-rose-700">Absen Pulang</span> sebelum meninggalkan tempat kerja.</p>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {/* ⚠️ Warning: Sudah check-in, belum mulai istirahat, belum pulang */}
-                    {hasCheckedIn && !isBreak && !hasBreakEnded && !hasCheckedOut && (
-                        <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl p-3">
-                            <Info className="text-blue-500 w-5 h-5 mt-0.5" />
-                            <div>
-                                <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">Sedang Bekerja</p>
-                                <p className="text-sm text-blue-600 font-medium mt-0.5">Jika ingin istirahat tekan <strong>Mulai Istirahat</strong>. Jangan lupa <strong>Absen Pulang</strong> saat selesai bekerja.</p>
+                        {hasCheckedIn && !isBreak && !hasBreakEnded && !hasCheckedOut && (
+                            <div className="flex items-start gap-4 bg-blue-50 rounded-2xl p-4 border border-blue-100 shadow-sm shadow-blue-100/50">
+                                <Info className="text-blue-600 w-5 h-5 shrink-0" />
+                                <div className="space-y-0.5">
+                                    <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em]">Sedang Bekerja</p>
+                                    <p className="text-sm text-slate-700 font-bold leading-relaxed">Sesi aktif. Gunakan menu istirahat atau pulang jika diperlukan.</p>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
 
-                    <div className="grid grid-cols-2 gap-y-4">
-                        <div>
-                            <p className="text-gray-400 text-xs font-medium">Masuk</p>
-                            <p className="font-mono font-bold text-gray-800">
+                    <div className="grid grid-cols-2 gap-6 bg-slate-50/50 rounded-3xl p-6 border border-slate-100">
+                        <div className="space-y-1">
+                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Masuk</p>
+                            <p className="font-black text-slate-800 text-lg font-mono">
                                 {today?.checkIn ? format(new Date(today.checkIn), "HH:mm") : "--:--"}
                             </p>
                         </div>
-                        <div>
-                            <p className="text-gray-400 text-xs font-medium">Pulang</p>
-                            <p className="font-mono font-bold text-gray-800">
+                        <div className="space-y-1 text-right">
+                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Pulang</p>
+                            <p className="font-black text-slate-800 text-lg font-mono">
                                 {today?.checkOut ? format(new Date(today.checkOut), "HH:mm") : "--:--"}
                             </p>
                         </div>
-                        <div>
-                            <p className="text-gray-400 text-xs font-medium">Mulai Istirahat</p>
-                            <p className="font-mono font-bold text-gray-800">
+                        <div className="space-y-1">
+                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Istirahat</p>
+                            <p className="font-black text-slate-800 text-lg font-mono">
                                 {today?.breakStart ? format(new Date(today.breakStart), "HH:mm") : "--:--"}
                             </p>
                         </div>
-                        <div>
-                            <p className="text-gray-400 text-xs font-medium">Total Istirahat</p>
-                            <p className="font-mono font-bold text-gray-800 italic text-[10px]">
-                                {today?.breakStart && today?.breakEnd ? "Selesai" : "--:--"}
+                        <div className="space-y-1 text-right">
+                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Selesai</p>
+                            <p className="font-black text-slate-800 text-lg font-mono">
+                                {today?.breakEnd ? format(new Date(today.breakEnd), "HH:mm") : "--:--"}
                             </p>
                         </div>
                     </div>
 
                     {today?.notes && (
-                        <div className="mt-2 p-3 bg-gray-50 rounded-xl border border-gray-100">
-                            <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Keterangan:</p>
-                            <p className="text-xs text-gray-600 line-clamp-3">{today.notes}</p>
+                        <div className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2">Catatan:</p>
+                            <p className="text-sm text-slate-600 font-medium leading-relaxed italic">"{today.notes}"</p>
                         </div>
                     )}
 
                     {(today as any)?.lateReason && (
-                        <div className="mt-2 p-3 bg-red-50 rounded-xl border border-red-100/50">
-                            <p className="text-[10px] text-red-500 font-bold uppercase mb-1">Alasan Terlambat:</p>
-                            <p className="text-xs text-red-800 font-medium italic">"{(today as any).lateReason}"</p>
+                        <div className="p-5 bg-rose-50/50 rounded-3xl border border-rose-100 space-y-4">
+                            <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
+                                <p className="text-[10px] text-rose-600 font-black uppercase tracking-widest">Alasan Terlambat</p>
+                            </div>
+                            <p className="text-sm text-slate-700 font-bold italic leading-relaxed">"{(today as any).lateReason}"</p>
                             {(today as any).lateReasonPhoto && (
                                 <div
-                                    className="mt-2 aspect-video rounded-xl overflow-hidden border border-red-200 cursor-pointer relative group"
+                                    className="aspect-video rounded-2xl overflow-hidden border-2 border-white shadow-xl cursor-pointer relative group ring-1 ring-rose-100"
                                     onClick={() => setSelectedPhoto(getPhotoUrl((today as any).lateReasonPhoto))}
                                 >
                                     <img
                                         src={getPhotoUrl((today as any).lateReasonPhoto)}
                                         alt="Bukti Telat"
-                                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                     />
-                                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Camera className="text-white h-6 w-6" />
+                                    <div className="absolute inset-0 bg-black/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Camera className="text-white h-8 w-8 drop-shadow-lg" />
                                     </div>
                                 </div>
                             )}
@@ -895,18 +894,23 @@ export default function EmployeeDashboard() {
 
                     {/* Completed Sessions Summary */}
                     {completedSessions.length > 0 && (
-                        <div className="mt-3 border-t pt-3 space-y-2">
-                            <p className="text-[10px] text-gray-400 font-bold uppercase">Sesi Selesai</p>
-                            {completedSessions.map((s: any, i: number) => (
-                                <div key={s.id} className="flex justify-between items-center text-xs bg-gray-50 rounded-lg px-3 py-2">
-                                    <span className="font-semibold text-gray-600">Sesi {s.sessionNumber}</span>
-                                    <span className="font-mono text-gray-500">
-                                        {s.checkIn ? format(new Date(s.checkIn), "HH:mm") : "--:--"}
-                                        {" → "}
-                                        {s.checkOut ? format(new Date(s.checkOut), "HH:mm") : "--:--"}
-                                    </span>
-                                </div>
-                            ))}
+                        <div className="pt-4 border-t border-slate-100 space-y-3">
+                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Sesi Selesai</p>
+                            <div className="grid gap-2">
+                                {completedSessions.map((s: any, i: number) => (
+                                    <div key={s.id} className="flex justify-between items-center bg-slate-50/50 hover:bg-slate-100 rounded-xl px-4 py-3 border border-slate-100 transition-colors">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+                                            <span className="font-black text-slate-700 text-[11px] uppercase tracking-wider">Sesi {s.sessionNumber}</span>
+                                        </div>
+                                        <span className="font-mono font-black text-slate-500 text-xs">
+                                            {s.checkIn ? format(new Date(s.checkIn), "HH:mm") : "--:--"}
+                                            <span className="mx-2 text-slate-300">→</span>
+                                            {s.checkOut ? format(new Date(s.checkOut), "HH:mm") : "--:--"}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
                 </motion.div>
