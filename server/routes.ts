@@ -504,15 +504,13 @@ export async function registerRoutes(
   app.get(api.attendance.list.path, async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
-    // Admin can see all, Employee sees only theirs
+    // Admin/Superadmin can see all, Employee sees only theirs
     const qUserId = req.query.userId;
     const parsedUserId = qUserId ? Number(Array.isArray(qUserId) ? qUserId[0] : qUserId) : undefined;
-    let monthStr: string | undefined = undefined;
-    if (req.query.month) {
-      monthStr = Array.isArray(req.query.month) ? req.query.month[0] as string : req.query.month as string;
-    }
+    const monthStr = req.query.month ? (Array.isArray(req.query.month) ? req.query.month[0] as string : req.query.month as string) : undefined;
 
-    const userId = req.user!.role === 'admin' ? parsedUserId : req.user!.id;
+    const isAdmin = isAdminRole(req);
+    const userId = isAdmin ? parsedUserId : req.user!.id;
     const month = monthStr;
 
     const records = await storage.getAttendanceHistory(userId, month);
@@ -875,10 +873,13 @@ export async function registerRoutes(
   app.post("/api/admin/users/:id", async (req, res) => {
     if (!isAdminRole(req)) return res.sendStatus(401);
     try {
-      const id = parseInt(req.params.id);
       const updateData = { ...req.body };
-      if (updateData.isAdmin === 'true') updateData.isAdmin = true;
-      if (updateData.isAdmin === 'false') updateData.isAdmin = false;
+      
+      // Normalize isAdmin and is_admin to boolean
+      if (updateData.isAdmin === 'true' || updateData.is_admin === 'true') updateData.isAdmin = true;
+      if (updateData.isAdmin === 'false' || updateData.is_admin === 'false') updateData.isAdmin = false;
+      if (updateData.is_admin !== undefined) delete updateData.is_admin;
+
       if (updateData.role === 'admin' || updateData.role === 'superadmin') {
         updateData.isAdmin = true;
       }
@@ -989,9 +990,10 @@ export async function registerRoutes(
         }
       });
 
-      // Fix is_admin (string "true" from FormData -> boolean)
-      if (updates.isAdmin === 'true') updates.isAdmin = true;
-      if (updates.isAdmin === 'false') updates.isAdmin = false;
+      // Normalize isAdmin and is_admin to boolean (from FormData strings)
+      if (updates.isAdmin === 'true' || updates.is_admin === 'true') updates.isAdmin = true;
+      if (updates.isAdmin === 'false' || updates.is_admin === 'false') updates.isAdmin = false;
+      if (updates.is_admin !== undefined) delete updates.is_admin;
       
       // Auto-set isAdmin based on role if it's admin or superadmin
       if (updates.role === 'admin' || updates.role === 'superadmin') {
