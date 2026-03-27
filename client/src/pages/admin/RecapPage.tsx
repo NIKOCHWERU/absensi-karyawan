@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, FileDown, ArrowLeft, Search, ArrowUpDown, MessageSquare, Plus, Edit2, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileDown, ArrowLeft, Search, ArrowUpDown, MessageSquare, Plus, Edit2, Trash2, Eye, Users } from "lucide-react";
 import { useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
 import { differenceInMinutes } from "date-fns";
@@ -26,7 +26,7 @@ export default function RecapPage() {
     // State for selected period (e.g., Feb 2026 means Jan 26 - Feb 25)
     // We store the "target" month (Feb 2026)
     const [targetDate, setTargetDate] = useState(new Date());
-    const [selectedPhotoRecord, setSelectedPhotoRecord] = useState<Attendance | null>(null);
+    const [selectedDetailRecord, setSelectedDetailRecord] = useState<Attendance | null>(null);
     const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
 
     // Manual Attendance Modal State
@@ -694,7 +694,16 @@ export default function RecapPage() {
                                                             <span className={!row.checkOut ? "text-yellow-600 font-semibold" : ""}>
                                                                 {row.notes ? row.notes : (!row.checkOut ? "Belum Absen Pulang" : "-")}
                                                             </span>
-                                                            <Button
+                                                             <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-6 w-6 text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                                                                onClick={() => setSelectedDetailRecord(row)}
+                                                                title="Lihat Detail Absensi & Karyawan"
+                                                            >
+                                                                <Eye className="h-3 w-3" />
+                                                            </Button>
+                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
                                                                 className="h-6 w-6 text-gray-400 hover:text-green-600"
@@ -711,17 +720,6 @@ export default function RecapPage() {
                                                                 <Trash2 className="h-3 w-3" />
                                                             </Button>
                                                         </div>
-                                                        {((row as any).lateReason || (row as any).checkInPhoto || (row as any).checkOutPhoto || (row as any).lateReasonPhoto) && (
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-auto p-0 text-[11px] text-blue-600 hover:text-blue-700 hover:bg-transparent justify-start font-bold uppercase tracking-tight flex items-center gap-1.5"
-                                                                onClick={() => setSelectedPhotoRecord(row)}
-                                                            >
-                                                                <Camera className="h-3 w-3" />
-                                                                Lihat Detail Foto
-                                                            </Button>
-                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -741,102 +739,137 @@ export default function RecapPage() {
                 </Card>
             </main>
 
-            <Dialog open={!!selectedPhotoRecord} onOpenChange={(open) => !open && setSelectedPhotoRecord(null)}>
-                <DialogContent className="sm:max-w-md bg-white border-zinc-200 text-zinc-900 rounded-3xl p-6 max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle className="text-xl font-black text-blue-600 uppercase">Detail Bukti & Keterangan</DialogTitle>
-                        <DialogDescription className="text-zinc-500">
-                            Detail alasan dan bukti foto yang dikirimkan karyawan.
-                        </DialogDescription>
-                    </DialogHeader>
-                    {selectedPhotoRecord && (
-                        <div className="space-y-4 mt-2">
-                            <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
-                                <p className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">Karyawan</p>
-                                <p className="font-bold text-zinc-800">{getUserName(selectedPhotoRecord.userId)}</p>
-                                <p className="text-xs text-zinc-500 font-medium">
-                                    Tanggal Absen: {format(new Date(selectedPhotoRecord.date), "dd MMMM yyyy", { locale: id })}
-                                </p>
+            <Dialog open={!!selectedDetailRecord} onOpenChange={(open) => !open && setSelectedDetailRecord(null)}>
+                <DialogContent className="sm:max-w-md bg-white border-zinc-200 text-zinc-900 rounded-3xl p-0 overflow-hidden shadow-2xl">
+                    <div className="bg-slate-800 p-6 text-white text-center">
+                        <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                        <h2 className="text-xl font-bold uppercase tracking-tight">Detail Absensi & Karyawan</h2>
+                        {selectedDetailRecord && (
+                            <p className="text-xs text-slate-300 font-medium">
+                                {format(new Date(selectedDetailRecord.date), "dd MMMM yyyy", { locale: id })}
+                            </p>
+                        )}
+                    </div>
+
+                    {selectedDetailRecord && (() => {
+                        const employee = users?.find(u => u.id === selectedDetailRecord.userId);
+                        return (
+                            <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+                                {/* Employee Header */}
+                                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                    <div className="w-16 h-16 rounded-xl bg-white border border-gray-200 overflow-hidden shadow-sm shrink-0">
+                                        {employee?.photoUrl ? (
+                                            <img src={employee.photoUrl} alt="Foto" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold text-2xl uppercase">
+                                                {employee?.fullName?.charAt(0)}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="font-bold text-gray-900 truncate uppercase">{employee?.fullName}</h3>
+                                        <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">{employee?.position} &bull; {employee?.branch}</p>
+                                        <p className="text-xs text-green-600 font-bold mt-1">NIK: {employee?.nik || '-'}</p>
+                                    </div>
+                                </div>
+
+                                {/* Attendance Info Grid */}
+                                <div className="space-y-4">
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] border-b border-gray-100 pb-1">Detail Kehadiran</p>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Waktu Masuk</p>
+                                            <p className="text-sm font-bold text-green-600 font-mono">
+                                                {selectedDetailRecord.checkIn ? format(new Date(selectedDetailRecord.checkIn), "HH:mm") : '-'}
+                                            </p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Waktu Pulang</p>
+                                            <p className="text-sm font-bold text-red-600 font-mono">
+                                                {selectedDetailRecord.checkOut ? format(new Date(selectedDetailRecord.checkOut), "HH:mm") : '-'}
+                                            </p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Istirahat</p>
+                                            <p className="text-xs font-bold text-amber-600 font-mono">
+                                                {selectedDetailRecord.breakStart ? format(new Date(selectedDetailRecord.breakStart), "HH:mm") : '-'} - {selectedDetailRecord.breakEnd ? format(new Date(selectedDetailRecord.breakEnd), "HH:mm") : '-'}
+                                            </p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</p>
+                                            <p className="text-xs font-bold uppercase">{selectedDetailRecord.status}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Notes/Reasons */}
+                                {(selectedDetailRecord.notes || (selectedDetailRecord as any).lateReason) && (
+                                    <div className="space-y-2">
+                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Catatan & Alasan</p>
+                                        <div className="p-3 bg-amber-50 rounded-xl border border-amber-100 text-xs text-amber-800 leading-relaxed">
+                                            {selectedDetailRecord.notes && <p className="mb-2">{selectedDetailRecord.notes}</p>}
+                                            {(selectedDetailRecord as any).lateReason && (
+                                                <p className="font-bold">[TELAT: {(selectedDetailRecord as any).lateReason}]</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Photos Section */}
+                                <div className="space-y-4">
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] border-b border-gray-100 pb-1">Bukti Foto</p>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {['checkInPhoto', 'checkOutPhoto', 'lateReasonPhoto'].map(photoKey => {
+                                            const photoVal = (selectedDetailRecord as any)[photoKey];
+                                            if (!photoVal) return null;
+                                            const label = photoKey === 'checkInPhoto' ? 'Masuk' : photoKey === 'checkOutPhoto' ? 'Pulang' : 'Bukti Telat';
+                                            const photoUrl = photoVal.startsWith('data:') ? photoVal :
+                                                            (!photoVal.includes('/') && !photoVal.includes('.') && photoVal.length > 20) ? `/api/images/${photoVal}` :
+                                                            `/uploads/${photoVal}`;
+                                            return (
+                                                <div key={photoKey} className="space-y-1.5">
+                                                    <p className="text-[9px] font-black text-gray-400 uppercase">{label}</p>
+                                                    <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden border border-gray-200">
+                                                        <img src={photoUrl} alt={label} className="w-full h-full object-cover" />
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Profile Details */}
+                                <div className="space-y-3 pt-2">
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] border-b border-gray-100 pb-1">Data Profil Karyawan</p>
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                                        <div>
+                                            <p className="text-[9px] font-black text-gray-400 uppercase">Telepon</p>
+                                            <p className="text-xs font-bold text-gray-700">{employee?.phone || '-'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black text-gray-400 uppercase">Agama</p>
+                                            <p className="text-xs font-bold text-gray-700">{employee?.religion || '-'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black text-gray-400 uppercase">Input Tahun</p>
+                                            <p className="text-xs font-bold text-gray-700">{employee?.joinYear || '-'}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black text-gray-400 uppercase">Username</p>
+                                            <p className="text-xs font-bold text-green-600 lowercase">{employee?.username}</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+                        );
+                    })()}
 
-                            {/* Alasan Terlambat & Foto Alasan */}
-                            {(selectedPhotoRecord as any).lateReason && (
-                                <div className="space-y-2">
-                                    <p className="text-xs font-bold uppercase tracking-wider text-zinc-400 ml-1">Alasan Keterlambatan</p>
-                                    <div className="p-4 bg-red-50/50 rounded-2xl border border-red-100/50 min-h-[60px]">
-                                        <p className="text-sm text-zinc-700 leading-relaxed">{(selectedPhotoRecord as any).lateReason}</p>
-                                    </div>
-                                </div>
-                            )}
-                            {(selectedPhotoRecord as any).lateReasonPhoto && (
-                                <div className="space-y-2">
-                                    <p className="text-xs font-bold uppercase tracking-wider text-zinc-400 ml-1">Bukti Terlambar (Foto)</p>
-                                    <div className="aspect-video bg-zinc-100 rounded-2xl overflow-hidden border border-zinc-200">
-                                        <img
-                                            src={(() => {
-                                                const p = (selectedPhotoRecord as any).lateReasonPhoto;
-                                                if (!p) return '';
-                                                if (p.startsWith('data:')) return p;
-                                                if (!p.includes('/') && !p.includes('.') && p.length > 20)
-                                                    return `/api/images/${p}`;
-                                                return `/uploads/${p}`;
-                                            })()}
-                                            alt="Bukti Telat"
-                                            className="w-full h-full object-cover"
-                                        />
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Foto Masuk */}
-                            {(selectedPhotoRecord as any).checkInPhoto && (
-                                <div className="space-y-2">
-                                    <p className="text-xs font-bold uppercase tracking-wider text-zinc-400 ml-1">Bukti Check-In (Masuk)</p>
-                                    <div className="aspect-video bg-zinc-100 rounded-2xl overflow-hidden border border-zinc-200">
-                                        <img
-                                            src={(() => {
-                                                const p = (selectedPhotoRecord as any).checkInPhoto;
-                                                if (!p) return '';
-                                                if (p.startsWith('data:')) return p;
-                                                if (!p.includes('/') && !p.includes('.') && p.length > 20)
-                                                    return `/api/images/${p}`;
-                                                return `/uploads/${p}`;
-                                            })()}
-                                            alt="Bukti Check-In"
-                                            className="w-full h-full object-cover"
-                                        />
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Foto Pulang */}
-                            {(selectedPhotoRecord as any).checkOutPhoto && (
-                                <div className="space-y-2">
-                                    <p className="text-xs font-bold uppercase tracking-wider text-zinc-400 ml-1">Bukti Check-Out (Pulang)</p>
-                                    <div className="aspect-video bg-zinc-100 rounded-2xl overflow-hidden border border-zinc-200">
-                                        <img
-                                            src={(() => {
-                                                const p = (selectedPhotoRecord as any).checkOutPhoto;
-                                                if (!p) return '';
-                                                if (p.startsWith('data:')) return p;
-                                                if (!p.includes('/') && !p.includes('.') && p.length > 20)
-                                                    return `/api/images/${p}`;
-                                                return `/uploads/${p}`;
-                                            })()}
-                                            alt="Bukti Check-Out"
-                                            className="w-full h-full object-cover"
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                    <div className="pt-4">
+                    <div className="p-6 pt-2 border-t border-gray-50 bg-gray-50/50">
                         <Button
-                            className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-bold rounded-2xl h-12"
-                            onClick={() => setSelectedPhotoRecord(null)}
+                            className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-2xl h-11"
+                            onClick={() => setSelectedDetailRecord(null)}
                         >
-                            Tutup
+                            Tutup Detail
                         </Button>
                     </div>
                 </DialogContent>
@@ -1018,6 +1051,7 @@ export default function RecapPage() {
                     </div>
                 </DialogContent>
             </Dialog>
+
         </div>
     );
 }
