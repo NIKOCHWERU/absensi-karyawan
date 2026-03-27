@@ -35,13 +35,13 @@ export default function RecapPage() {
     const [manualEntry, setManualEntry] = useState({
         userId: "",
         date: format(new Date(), "yyyy-MM-dd"),
-        checkIn: "",
-        checkOut: "",
-        breakStart: "",
-        breakEnd: "",
+        checkIn: "08:00",
+        checkOut: "17:00",
+        breakStart: "12:00",
+        breakEnd: "13:00",
         status: "present",
         notes: "",
-        shift: "Karyawan"
+        shift: "Management"
     });
 
     const { data: users } = useQuery<User[]>({
@@ -59,7 +59,9 @@ export default function RecapPage() {
         refetchInterval: 5000,
     });
 
-    const [reportType, setReportType] = useState<"daily" | "weekly" | "monthly">("daily");
+    const [reportType, setReportType] = useState<"daily" | "weekly" | "monthly" | "custom">("daily");
+    const [customStartDate, setCustomStartDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+    const [customEndDate, setCustomEndDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
 
     // Calculate Period Range
     let startDate: Date;
@@ -71,6 +73,9 @@ export default function RecapPage() {
     } else if (reportType === "weekly") {
         startDate = startOfWeek(targetDate, { weekStartsOn: 1 }); // Monday
         endDate = endOfWeek(targetDate, { weekStartsOn: 1 });
+    } else if (reportType === "custom") {
+        startDate = startOfDay(new Date(customStartDate));
+        endDate = endOfDay(new Date(customEndDate));
     } else {
         // Default: 26th of previous month to 25th of current month
         startDate = new Date(targetDate.getFullYear(), targetDate.getMonth() - 1, 26);
@@ -243,20 +248,20 @@ export default function RecapPage() {
                 breakEnd: toTime(existing.breakEnd),
                 status: existing.status || "present",
                 notes: existing.notes || "",
-                shift: existing.shift || "Karyawan"
+                shift: existing.shift || "Management"
             });
         } else {
             setEditingAttendance(null);
             setManualEntry({
                 userId: "",
                 date: format(new Date(), "yyyy-MM-dd"),
-                checkIn: "",
-                checkOut: "",
-                breakStart: "",
-                breakEnd: "",
+                checkIn: "08:00",
+                checkOut: "17:00",
+                breakStart: "12:00",
+                breakEnd: "13:00",
                 status: "present",
                 notes: "",
-                shift: "Karyawan"
+                shift: "Management"
             });
         }
         setIsManualModalOpen(true);
@@ -495,6 +500,8 @@ export default function RecapPage() {
             periodStr = format(targetDate, "dd MMMM yyyy", { locale: id }).toUpperCase();
         } else if (reportType === 'weekly') {
             periodStr = `${format(startDate, "dd MMM")} - ${format(endDate, "dd MMM yyyy", { locale: id })}`.toUpperCase();
+        } else if (reportType === 'custom') {
+            periodStr = `${format(startDate, "dd MMM yyyy", { locale: id })} - ${format(endDate, "dd MMM yyyy", { locale: id })}`.toUpperCase();
         } else {
             periodStr = format(targetDate, "MMMM yyyy", { locale: id }).toUpperCase();
         }
@@ -584,7 +591,7 @@ export default function RecapPage() {
 </head>
 <body>
   <div class="letterhead">
-    <img src="${logoDataUrl}" class="logo-img" alt="Logo" />
+    ${logoDataUrl ? `<img src="${logoDataUrl}" class="logo-img" alt="Logo" />` : ''}
     <div class="company-block">
       <h1>PT Elok Jaya Abadhi</h1>
       <p class="tagline">Sistem Manajemen Kehadiran Digital</p>
@@ -595,7 +602,7 @@ export default function RecapPage() {
 
   <div class="report-meta">
     <h2>Laporan Rekapitulasi Absensi</h2>
-    <p class="sub">Tipe: ${reportType === 'daily' ? 'Harian' : reportType === 'weekly' ? 'Mingguan' : 'Bulanan'}</p>
+    <p class="sub">Tipe: ${reportType === 'daily' ? 'Harian' : reportType === 'weekly' ? 'Mingguan' : reportType === 'custom' ? 'Kustom' : 'Bulanan'}</p>
     <p class="sub">Periode: ${format(startDate, "EEEE, d MMM yyyy", { locale: id })} - ${format(endDate, "EEEE, d MMM yyyy", { locale: id })}</p>
   </div>
 
@@ -633,9 +640,8 @@ export default function RecapPage() {
                 row.status === 'late' ? 'Telat' :
                     row.status === 'sick' ? 'Sakit' :
                         row.status === 'permission' ? 'Izin' :
-                            row.status === 'off' ? 'Libur' :
-                                row.status === 'cuti' ? 'Cuti' :
-                                    row.status === 'absent' ? 'Alpha' : (row.status || '-');
+                            row.status === 'cuti' ? 'Cuti' :
+                                row.status === 'absent' ? 'Alpha' : (row.status || '-');
             const statusClass = row.status === 'present' ? 'st-hadir' :
                 row.status === 'late' ? 'st-telat' :
                     row.status === 'sick' ? 'st-sakit' :
@@ -651,19 +657,20 @@ export default function RecapPage() {
             // Validation for incomplete sequences (e.g. checkIn and checkOut exist but no breakStart/End)
             // Also if not checked out at all
             const isSequenceIncomplete = (row.checkIn && !row.checkOut) ||
-                (inTime !== '-' && outTime !== '-' && ((brkTime !== '-' && brkEnd === '-') || (brkTime === '-' && brkEnd !== '-') || (brkTime === '-' && brkEnd === '-')));
+                (inTime !== '-' && outTime !== '-' && ((brkTime !== '-' && brkEnd === '-') || (brkTime === '-' && brkEnd !== '-')));
+            const isNoBreak = (inTime !== '-' && outTime !== '-' && brkTime === '-' && brkEnd === '-');
 
             const jamKerja = !isSameDayAndUser
-                ? (isSequenceIncomplete
-                    ? '<span class="note-warn" style="font-size:10px;">Data Absensi<br>Tidak Lengkap</span>'
-                    : (dailyIsComplete && dailyTotalMins > 0 ? formatDuration(dailyTotalMins) : '-'))
+                ? (dailyTotalMins > 0 ? formatDuration(dailyTotalMins) : '-')
                 : '';
 
             let keterangan = row.notes ? row.notes : '-';
             if (!row.checkOut) {
-                keterangan = row.notes ? row.notes + ' <span class="note-warn">(Belum Pulang)</span>' : '<span class="note-warn">Belum Pulang</span>';
+                keterangan = row.notes ? row.notes + ' <br><span class="note-warn">(Belum Pulang)</span>' : '<span class="note-warn">Belum Pulang</span>';
             } else if (isSequenceIncomplete) {
-                keterangan = row.notes ? row.notes + ' <span class="note-warn">(Data Absensi Tidak Lengkap)</span>' : '<span class="note-warn">Data Absensi Tidak Lengkap</span>';
+                keterangan = row.notes ? row.notes + ' <br><span class="note-warn">(Data Absensi Tidak Lengkap)</span>' : '<span class="note-warn">Data Absensi Tidak Lengkap</span>';
+            } else if (isNoBreak) {
+                keterangan = row.notes ? row.notes + ' <br><span class="note-warn">(Tanpa Istirahat)</span>' : '<span class="note-warn">Tanpa Istirahat</span>';
             }
             const lateNote = row.status === 'late' && (row as any).lateReason
                 ? `<br><span class="note-late">[Telat: ${(row as any).lateReason}]</span>`
@@ -679,12 +686,118 @@ export default function RecapPage() {
           <td class="col-time ${outTime === '-' ? 't-dash' : 't-out'}">${outTime}</td>
           <td class="col-work">${jamKerja}</td>
           <td class="col-brk">${breakMins > 0 ? formatDuration(breakMins) : '-'}</td>
-          <td class="col-stat"><span class="${statusClass} ${row.status === 'off' ? 'st-off' : ''}">${statusLabel}</span></td>
+          <td class="col-stat"><span class="${statusClass}">${statusLabel}</span></td>
           <td class="col-note">${keterangan}${lateNote}</td>
         </tr>`;
         }).join('')}
     </tbody>
   </table>
+
+  ${(() => {
+                // Generate Summary Page
+                const usersSummary = new Map<number, { name: string, totalMins: number, breakdown: string[] }>();
+                const recordsByUser = new Map<number, typeof processedData>();
+                processedData.forEach(r => {
+                    if (!recordsByUser.has(r.userId)) recordsByUser.set(r.userId, []);
+                    recordsByUser.get(r.userId)!.push(r);
+                });
+
+                recordsByUser.forEach((records, userId) => {
+                    const name = getUserName(userId) || '-';
+                    const userSummary = { name, totalMins: 0, breakdown: [] as string[] };
+                    const recordsByDay = new Map<string, typeof processedData>();
+                    records.forEach(r => {
+                        const d = format(new Date(r.date), "yyyy-MM-dd");
+                        if (!recordsByDay.has(d)) recordsByDay.set(d, []);
+                        recordsByDay.get(d)!.push(r);
+                    });
+
+                    const days = Array.from(recordsByDay.keys()).sort();
+                    days.forEach(day => {
+                        const dayRecords = recordsByDay.get(day)!;
+                        const hasIn = dayRecords.some(r => r.checkIn);
+                        const hasBrkS = dayRecords.some(r => r.breakStart);
+                        const hasBrkE = dayRecords.some(r => r.breakEnd);
+                        const hasOut = dayRecords.some(r => r.checkOut);
+                        const isComplete = hasIn && hasBrkS && hasBrkE && hasOut;
+                        const isNoBreakComplete = hasIn && !hasBrkS && !hasBrkE && hasOut;
+                        const dateStr = format(new Date(day), "dd/MM/yyyy");
+
+                        const statuses = dayRecords.map(r => r.status).filter(Boolean);
+                        let specialStatus = "";
+                        if (statuses.includes('sick')) specialStatus = "Sakit";
+                        else if (statuses.includes('cuti')) specialStatus = "Cuti";
+                        else if (statuses.includes('permission')) specialStatus = "Izin";
+                        else if (statuses.includes('off') || dayRecords.some(r => r.notes?.toLowerCase()?.includes('libur'))) specialStatus = "Libur";
+
+                        if (isComplete || isNoBreakComplete || (specialStatus && hasIn)) {
+                            const { netWorkMins } = calculateDailyTotal(dayRecords);
+
+                            if (isComplete || isNoBreakComplete || (hasIn && hasOut)) {
+                                userSummary.totalMins += netWorkMins;
+                            }
+
+                            const firstIn = dayRecords.map(r => r.checkIn).filter(Boolean).sort()[0];
+                            const lastOut = dayRecords.map(r => r.checkOut).filter(Boolean).sort().reverse()[0];
+                            const inTimeStr = firstIn ? format(new Date(firstIn), "HH.mm") : "";
+                            const outTimeStr = lastOut ? format(new Date(lastOut), "HH.mm") : "-";
+
+                            const totalBreakMins = dayRecords.reduce((sum, r) => sum + (r.breakStart && r.breakEnd ? calculateDurationSeconds(r.breakStart, r.breakEnd) / 60 : 0), 0);
+                            const brkStr = totalBreakMins > 0 ? (totalBreakMins >= 60 ? `${Math.floor(totalBreakMins / 60)} jam ${totalBreakMins % 60} menit` : `${totalBreakMins} menit`) : `0 jam (Tanpa Istirahat)`;
+
+                            let workDetail = `Kerja jam ${inTimeStr || '-'} - jam ${outTimeStr} istirahat ${brkStr} (Total: ${netWorkMins > 0 ? formatDuration(netWorkMins) : '-'})`;
+
+                            if (specialStatus) {
+                                workDetail = `<span style="color:#ea580c;font-weight:600;">[${specialStatus}]</span> ${workDetail}`;
+                            } else if (!isComplete && !isNoBreakComplete) {
+                                workDetail = `<span style="color:#dc2626;font-weight:600;">(Absensi tidak lengkap)</span> Kerja jam ${inTimeStr || '-'} - jam ${outTimeStr}`;
+                            }
+
+                            userSummary.breakdown.push(`<span style="color:#1e293b;font-weight:600;">${dateStr}</span> : ${workDetail}`);
+                        } else if (specialStatus) {
+                            userSummary.breakdown.push(`<span style="color:#1e293b;font-weight:600;">${dateStr}</span> : <span style="color:#ea580c;font-weight:600;">[${specialStatus}]</span> - (Tidak ada jam kerja tercatat)`);
+                        } else {
+                            userSummary.breakdown.push(`<span style="color:#dc2626;font-weight:600;">${dateStr}</span> : <span style="color:#b91c1c;">Absensi tidak lengkap</span>`);
+                        }
+                    });
+                    usersSummary.set(userId, userSummary);
+                });
+
+                let sumHtml = `<div style="page-break-before: always; padding-top: 20px;">
+              <div class="report-meta">
+                <h2>Rekapitulasi Total Jam Kerja</h2>
+                <p class="sub">Tipe: ${reportType === 'daily' ? 'Harian' : reportType === 'weekly' ? 'Mingguan' : reportType === 'custom' ? 'Kustom' : 'Bulanan'}</p>
+                <p class="sub">Periode: ${format(startDate, "EEEE, d MMM yyyy", { locale: id })} - ${format(endDate, "EEEE, d MMM yyyy", { locale: id })}</p>
+                <p class="sub" style="font-size:9.5px;color:#ef4444;margin-top:6px;max-width:400px;margin-left:auto;margin-right:auto;">
+                  *Hanya menghitung jam kerja jika karyawan melakukan minimal: absen masuk & absen pulang (termasuk tanpa istirahat) dalam 1 hari.
+                </p>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th class="c" style="width:40px;">No</th>
+                    <th style="width:180px;">Nama Karyawan</th>
+                    <th class="c" style="width:100px;">Total Jam Kerja</th>
+                    <th>Rincian Harian</th>
+                  </tr>
+                </thead>
+                <tbody>`;
+
+                let sumIdx = 1;
+                usersSummary.forEach((summary) => {
+                    const rowMins = summary.totalMins;
+                    const rowHoursStr = rowMins > 0 ? formatDuration(rowMins) : `-`;
+                    sumHtml += `<tr>
+                    <td class="col-no">${sumIdx++}</td>
+                    <td class="col-name">${summary.name}</td>
+                    <td class="c" style="font-weight:bold;font-size:12px;">${rowHoursStr}</td>
+                    <td style="font-size:10.5px;line-height:1.6;padding-bottom:12px;padding-top:12px;white-space:normal;">${summary.breakdown.join('<br>')}</td>
+                  </tr>`;
+                });
+
+                sumHtml += `</tbody></table></div>`;
+                return sumHtml;
+            })()}
 
   <div class="signature-section">
     <div class="sig-box">
@@ -714,7 +827,6 @@ export default function RecapPage() {
         btn.href = window.location.href;
         btn.download = _fn;
       }
-      window.onafterprint = function() { window.close(); };
       setTimeout(function() { window.print(); }, 600);
     };
   </script>
@@ -733,43 +845,62 @@ export default function RecapPage() {
                     <Button variant="ghost" size="icon" onClick={() => setLocation("/admin")} className="shrink-0 hover:bg-gray-100 rounded-full transition-all">
                         <ArrowLeft className="h-6 w-6 text-gray-700" />
                     </Button>
-                    <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight leading-tight">Rekap Absensi</h1>
+                    <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight leading-tight uppercase">Rekap Absensi Management</h1>
                 </div>
                 <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl p-1.5 w-full sm:w-auto shadow-sm">
                     <Select value={reportType} onValueChange={(v: any) => setReportType(v)}>
-                        <SelectTrigger className="w-[90px] sm:w-[110px] h-9 border-none bg-transparent text-xs sm:text-sm font-bold text-slate-700 focus:ring-0">
-                            <SelectValue placeholder="Tipe" />
+                        <SelectTrigger className="w-[110px] sm:w-[130px] h-9 border-none bg-transparent text-xs sm:text-sm font-bold text-slate-700 focus:ring-0">
+                            <SelectValue placeholder="Tipe Laporan" />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-slate-200">
                             <SelectItem value="daily">Harian</SelectItem>
                             <SelectItem value="weekly">Mingguan</SelectItem>
                             <SelectItem value="monthly">Bulanan</SelectItem>
+                            <SelectItem value="custom">Kustom Pilihan</SelectItem>
                         </SelectContent>
                     </Select>
                     <div className="h-5 w-[1px] bg-slate-200 mx-1"></div>
-                    <div className="flex items-center gap-0.5 flex-1 sm:flex-none justify-center">
-                        <Button variant="ghost" size="icon" onClick={handlePrev} className="h-9 w-9 rounded-lg hover:bg-white hover:shadow-sm transition-all text-slate-600">
-                            <ChevronLeft className="h-5 w-5" />
-                        </Button>
-                        <span className="text-[11px] sm:text-[13px] font-black text-slate-800 min-w-[100px] text-center whitespace-nowrap px-2">
-                            {reportType === 'daily' ? format(targetDate, "d MMM yyyy", { locale: id }) :
-                                reportType === 'weekly' ? `${format(startDate, "d MMM")} - ${format(endDate, "d MMM yyyy", { locale: id })}` :
-                                    format(targetDate, "MMMM yyyy", { locale: id })}
-                        </span>
-                        <Button variant="ghost" size="icon" onClick={handleNext} className="h-9 w-9 rounded-lg hover:bg-white hover:shadow-sm transition-all text-slate-600">
-                            <ChevronRight className="h-5 w-5" />
-                        </Button>
-                    </div>
+                    {reportType === 'custom' ? (
+                        <div className="flex items-center gap-2 px-2">
+                            <Input
+                                type="date"
+                                className="h-8 text-[11px] font-bold py-0 px-2 min-w-[120px] bg-white border-slate-200 rounded-lg"
+                                value={customStartDate}
+                                onChange={e => setCustomStartDate(e.target.value)}
+                            />
+                            <span className="text-slate-400 font-bold text-xs">-</span>
+                            <Input
+                                type="date"
+                                className="h-8 text-[11px] font-bold py-0 px-2 min-w-[120px] bg-white border-slate-200 rounded-lg"
+                                value={customEndDate}
+                                onChange={e => setCustomEndDate(e.target.value)}
+                            />
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-0.5 flex-1 sm:flex-none justify-center">
+                            <Button variant="ghost" size="icon" onClick={handlePrev} className="h-9 w-9 rounded-lg hover:bg-white hover:shadow-sm transition-all text-slate-600">
+                                <ChevronLeft className="h-5 w-5" />
+                            </Button>
+                            <span className="text-[11px] sm:text-[13px] font-black text-slate-800 min-w-[100px] text-center whitespace-nowrap px-2">
+                                {reportType === 'daily' ? format(targetDate, "d MMM yyyy", { locale: id }) :
+                                    reportType === 'weekly' ? `${format(startDate, "d MMM")} - ${format(endDate, "d MMM yyyy", { locale: id })}` :
+                                        format(targetDate, "MMMM yyyy", { locale: id })}
+                            </span>
+                            <Button variant="ghost" size="icon" onClick={handleNext} className="h-9 w-9 rounded-lg hover:bg-white hover:shadow-sm transition-all text-slate-600">
+                                <ChevronRight className="h-5 w-5" />
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </header>
 
             <main className="p-8 flex-1 overflow-auto">
-                <Card className="border-none shadow-sm">
-                    <CardHeader className="p-6 sm:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                <Card className="border-none shadow-sm rounded-[2rem] overflow-hidden">
+                    <CardHeader className="p-6 sm:p-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 bg-white">
                         <div className="space-y-1">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Laporan Absensi</p>
-                            <CardTitle className="text-2xl font-black text-slate-800">
-                                {reportType === 'daily' ? 'Presensi Harian' : reportType === 'weekly' ? 'Rekap Mingguan' : 'Rekap Bulanan'}
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Laporan Absensi Management</p>
+                            <CardTitle className="text-2xl font-black text-slate-800 uppercase tracking-tight">
+                                {reportType === 'daily' ? 'Presensi Harian' : reportType === 'weekly' ? 'Rekap Mingguan' : reportType === 'custom' ? 'Rekap Kustom' : 'Rekap Bulanan'}
                             </CardTitle>
                             <p className="text-[13px] text-slate-500 font-medium">
                                 Periode: <span className="text-slate-800 font-bold">{format(startDate, "d MMMM yyyy", { locale: id })} - {format(endDate, "d MMMM yyyy", { locale: id })}</span>
@@ -794,50 +925,47 @@ export default function RecapPage() {
                             </Button>
                             <Button 
                                 variant="outline" 
+                                className="h-11 px-6 gap-2 bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 rounded-xl font-bold transition-all shadow-sm" 
+                                onClick={handleExport}
+                            >
+                                <FileDown className="h-5 w-5" /> Export Recap
+                            </Button>
+                            <Button 
+                                variant="outline" 
                                 className="h-11 px-6 gap-2 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 rounded-xl font-bold transition-all shadow-sm shadow-blue-100" 
                                 onClick={handleExportPhotos}
                             >
                                 <Camera className="h-5 w-5" /> Export Foto
                             </Button>
-                            <Button 
-                                variant="outline" 
-                                className="h-11 px-6 gap-2 bg-slate-800 text-white border-slate-800 hover:bg-slate-900 rounded-xl font-bold transition-all shadow-sm"
-                                onClick={handleExport}
-                            >
-                                <FileDown className="h-5 w-5" /> Export
-                            </Button>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-0 sm:p-2 sm:px-6 pb-8">
-                        <div className="rounded-2xl border border-slate-100 overflow-hidden bg-white shadow-xl shadow-slate-200/50">
-                            <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200">
-                                <table className="w-full text-sm text-left border-collapse">
-                                <thead className="bg-slate-50/80 backdrop-blur-sm text-slate-500 border-b border-slate-100">
+                    <CardContent className="p-0">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm text-left border-collapse">
+                                <thead className="bg-slate-800 text-white font-bold uppercase text-[10px] tracking-widest sticky top-0 z-10">
                                     <tr>
-                                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 transition-colors uppercase text-[10px] font-black tracking-widest text-slate-400" onClick={() => toggleSort('date')}>
-                                            <div className="flex items-center gap-1.5 ">Tgl <ArrowUpDown className="h-3 w-3" /></div>
+                                        <th className="px-6 py-5 cursor-pointer hover:bg-slate-700 transition-colors" onClick={() => toggleSort('date')}>
+                                            <div className="flex items-center gap-2">Tanggal <ArrowUpDown className="h-3 w-3" /></div>
                                         </th>
-                                        <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 transition-colors uppercase text-[10px] font-black tracking-widest text-slate-400" onClick={() => toggleSort('name')}>
-                                            <div className="flex items-center gap-1.5 ">Karyawan <ArrowUpDown className="h-3 w-3" /></div>
+                                        <th className="px-6 py-5 cursor-pointer hover:bg-slate-700 transition-colors" onClick={() => toggleSort('name')}>
+                                            <div className="flex items-center gap-2">Karyawan <ArrowUpDown className="h-3 w-3" /></div>
                                         </th>
-                                        <th className="px-6 py-4 uppercase text-[10px] font-black tracking-widest text-slate-400 text-center">Masuk</th>
-                                        <th className="px-6 py-4 uppercase text-[10px] font-black tracking-widest text-slate-400 text-center">Break</th>
-                                        <th className="px-6 py-4 uppercase text-[10px] font-black tracking-widest text-slate-400 text-center">Selesai</th>
-                                        <th className="px-6 py-4 uppercase text-[10px] font-black tracking-widest text-slate-400 text-center">Pulang</th>
-                                        <th className="px-6 py-4 uppercase text-[10px] font-black tracking-widest text-slate-400 text-center">Durasi Kerja</th>
-                                        <th className="px-6 py-4 uppercase text-[10px] font-black tracking-widest text-slate-400 text-center">Istirahat</th>
-                                        <th className="px-6 py-4 uppercase text-[10px] font-black tracking-widest text-slate-400 text-center">Status</th>
-                                        <th className="px-6 py-4 uppercase text-[10px] font-black tracking-widest text-slate-400 min-w-[200px]">Notes</th>
+                                        <th className="px-4 py-5 font-black">Masuk</th>
+                                        <th className="px-4 py-5 font-black">Istirahat</th>
+                                        <th className="px-4 py-5 font-black">Selesai</th>
+                                        <th className="px-4 py-5 font-black">Pulang</th>
+                                        <th className="px-6 py-5 font-black">Jam Kerja</th>
+                                        <th className="px-6 py-5 font-black text-center">Total Istirahat</th>
+                                        <th className="px-6 py-5 font-black text-center">Status</th>
+                                        <th className="px-6 py-5 font-black">Keterangan</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100">
+                                <tbody className="divide-y divide-slate-100 bg-white">
                                     {processedData.map((row, index) => {
-                                        // Calculate per-session stats
-                                        const { netWorkMins: sessionNetMins, totalBreakMins: sessionBreakMins } = calculateDailyTotal([row]);
-
-                                        // Grouping Logic: Check if same as previous row
+                                        const { netWorkMins: sessionNetMins } = calculateDailyTotal([row]);
                                         const dateStr = format(new Date(row.date), "yyyy-MM-dd");
                                         const key = `${dateStr}-${row.userId}`;
+                                        const dailyEntry = dailyTotals.get(key);
 
                                         const prevRow = index > 0 ? processedData[index - 1] : null;
                                         const isSameDayAndUser = prevRow &&
@@ -845,107 +973,95 @@ export default function RecapPage() {
                                             prevRow.userId === row.userId;
 
                                         return (
-                                            <tr key={row.id} className="hover:bg-slate-50/80 transition-all group">
-                                                <td className="px-6 py-4 text-slate-500 font-bold whitespace-nowrap relative">
+                                            <tr key={row.id} className="group hover:bg-slate-50/50 transition-all border-b border-slate-50 last:border-none">
+                                                <td className="px-6 py-5 text-slate-900 font-bold relative">
                                                     {isSameDayAndUser ? (
-                                                        <div className="absolute left-10 top-0 h-full w-px bg-slate-100"></div> /* Connector */
+                                                        <div className="flex items-center gap-2 text-slate-300">
+                                                            <div className="w-px h-10 bg-slate-100 absolute left-8 -top-5"></div>
+                                                            <span className="text-lg">↳</span>
+                                                        </div>
                                                     ) : (
                                                         format(new Date(row.date), "dd/MM/yyyy")
                                                     )}
                                                 </td>
-                                                <td className="px-6 py-4">
-                                                    {isSameDayAndUser ? "" : (
-                                                        <span className="text-slate-800 font-black tracking-tight">{getUserName(row.userId)}</span>
-                                                    )}
+                                                <td className="px-6 py-5 text-slate-700 font-black uppercase tracking-tight">
+                                                    {isSameDayAndUser ? "" : getUserName(row.userId)}
                                                 </td>
-                                                <td className="px-6 py-4 text-emerald-600 font-black font-mono text-center bg-emerald-50/30">
+                                                <td className="px-4 py-5 text-emerald-600 font-black tabular-nums">
                                                     {row.checkIn ? format(new Date(row.checkIn), "HH:mm") : "-"}
                                                 </td>
-                                                <td className="px-6 py-4 text-amber-600 font-black font-mono text-center">
+                                                <td className="px-4 py-5 text-amber-600 font-black tabular-nums">
                                                     {row.breakStart ? format(new Date(row.breakStart), "HH:mm") : "-"}
                                                 </td>
-                                                <td className="px-6 py-4 text-amber-600 font-black font-mono text-center">
+                                                <td className="px-4 py-5 text-amber-600 font-black tabular-nums">
                                                     {row.breakEnd ? format(new Date(row.breakEnd), "HH:mm") : "-"}
                                                 </td>
-                                                <td className="px-6 py-4 text-rose-600 font-black font-mono text-center bg-rose-50/30">
+                                                <td className="px-4 py-5 text-rose-600 font-black tabular-nums">
                                                     {row.checkOut ? format(new Date(row.checkOut), "HH:mm") : "-"}
                                                 </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    {!isSameDayAndUser && (() => {
-                                                        const daily = dailyTotals.get(key);
-                                                        const inTime = row.checkIn ? 'yes' : '-';
-                                                        const outTime = row.checkOut ? 'yes' : '-';
-                                                        const brkStart = row.breakStart ? 'yes' : '-';
-                                                        const brkEnd = row.breakEnd ? 'yes' : '-';
-                                                        const isSequenceIncomplete = (inTime !== '-' && !row.checkOut) ||
-                                                            (inTime !== '-' && outTime !== '-' && ((brkStart !== '-' && brkEnd === '-') || (brkStart === '-' && brkEnd !== '-') || (brkStart === '-' && brkEnd === '-')));
-
-                                                        const showTotal = daily?.complete && (daily?.mins ?? 0) > 0 && !isSequenceIncomplete;
-
-                                                        return (
-                                                            <div className="flex flex-col items-center">
-                                                                {isSequenceIncomplete ? (
-                                                                    <span className="text-rose-600 font-black text-[10px] leading-tight uppercase px-2 py-1 bg-rose-50 rounded-lg">Data Tidak Lengkap</span>
-                                                                ) : (
-                                                                    <div className="bg-slate-800 text-white px-3 py-1 rounded-lg">
-                                                                        <span className="text-[11px] font-black">{showTotal ? formatDuration(daily!.mins) : "-"}</span>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    })()}
-                                                    <div className="text-[10px] text-slate-400 font-bold mt-1.5 uppercase tracking-tighter">
+                                                <td className="px-6 py-5">
+                                                    {!isSameDayAndUser && (
+                                                        <div className="text-slate-900 font-black mb-1 text-sm bg-slate-100 px-3 py-1 mr-4 rounded-lg inline-block">
+                                                            TOTAL: {dailyEntry?.mins && dailyEntry.mins > 0 ? formatDuration(dailyEntry.mins) : "-"}
+                                                        </div>
+                                                    )}
+                                                    <div className="text-[11px] text-slate-500 font-bold uppercase tracking-wide mt-1">
                                                         {(() => {
                                                             const brkS = row.breakStart ? 'yes' : '-';
                                                             const brkE = row.breakEnd ? 'yes' : '-';
-                                                            const isSeqIncomplete = (!row.checkOut) || (row.checkIn && row.checkOut && ((brkS !== '-' && brkE === '-') || (brkS === '-' && brkE !== '-') || (brkS === '-' && brkE === '-')));
-                                                            if (!row.checkOut) return <span className="text-amber-600">Belum Pulang</span>;
-                                                            if (isSeqIncomplete) return <span className="text-rose-500">Iregular</span>;
-                                                            return <span className="text-slate-400">Sesi: {formatDuration(sessionNetMins)}</span>;
+                                                            const isSeqIncomplete = (!row.checkOut) || (row.checkIn && row.checkOut && ((brkS !== '-' && brkE === '-') || (brkS === '-' && brkE !== '-')));
+                                                            const isNoBreak = (row.checkIn && row.checkOut && brkS === '-' && brkE === '-');
+                                                            
+                                                            if (!row.checkOut) return <span className="text-amber-600">BELUM ABSEN PULANG</span>;
+                                                            if (isSeqIncomplete) return <span className="text-rose-600">URUTAN ABSEN TERPUTUS</span>;
+                                                            if (isNoBreak) return <div className="flex flex-col"><span>SESI: {formatDuration(sessionNetMins)}</span><span className="text-[10px] text-slate-400">TANPA ISTIRAHAT</span></div>;
+                                                            return <span>SESI: {formatDuration(sessionNetMins)}</span>;
                                                         })()}
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 text-center text-[11px] font-black text-amber-600">
+                                                <td className="px-6 py-5 text-[13px] text-slate-600 font-bold text-center bg-slate-50/30">
                                                     {(() => {
                                                         const secs = calculateDurationSeconds(row.breakStart, row.breakEnd);
                                                         return secs > 0 ? formatDurationFull(secs) : "-";
                                                     })()}
                                                 </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm
-                                                ${row.status === 'present' ? 'bg-emerald-500 text-white' :
-                                                             row.status === 'late' ? 'bg-rose-500 text-white' :
-                                                                 row.status === 'sick' ? 'bg-blue-500 text-white' :
-                                                                     row.status === 'permission' ? 'bg-purple-500 text-white' :
-                                                                         row.status === 'off' ? 'bg-slate-400 text-white' :
-                                                                             row.status === 'cuti' ? 'bg-teal-500 text-white' :
-                                                                                 'bg-slate-200 text-slate-600'}`}>
-                                                        {row.status === 'present' ? 'Hadir' :
-                                                            row.status === 'late' ? 'Telat' :
-                                                                row.status === 'sick' ? 'Sakit' :
-                                                                    row.status === 'permission' ? 'Izin' :
-                                                                        row.status === 'off' ? 'Libur' :
+                                                <td className="px-6 py-5 text-center">
+                                                    <div className="flex flex-col items-center gap-1">
+                                                        <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest
+                                                    ${row.status === 'present' ? 'bg-emerald-100 text-emerald-700 shadow-sm shadow-emerald-100' :
+                                                                row.status === 'late' ? 'bg-amber-100 text-amber-700 shadow-sm shadow-amber-100' :
+                                                                    row.status === 'sick' ? 'bg-blue-100 text-blue-700 shadow-sm shadow-blue-100' :
+                                                                        row.status === 'permission' ? 'bg-purple-100 text-purple-700 shadow-sm shadow-purple-100' :
+                                                                            row.status === 'cuti' ? 'bg-teal-100 text-teal-700 shadow-sm shadow-teal-100' :
+                                                                                'bg-slate-100 text-slate-700'}`}>
+                                                            {row.status === 'present' ? 'Hadir' :
+                                                                row.status === 'late' ? 'Telat' :
+                                                                    row.status === 'sick' ? 'Sakit' :
+                                                                        row.status === 'permission' ? 'Izin' :
                                                                             row.status === 'cuti' ? 'Cuti' :
                                                                                 row.status === 'absent' ? 'Alpha' : row.status}
-                                                    </span>
-                                                    {(row as any).sessionNumber > 1 && (
-                                                        <div className="text-[9px] font-black text-slate-400 mt-1 uppercase">Sesi {(row as any).sessionNumber}</div>
-                                                    )}
-                                                </td>
-                                                <td className="px-6 py-4 max-w-xs">
-                                                    <div className="flex flex-col gap-2">
-                                                        <div className="flex items-center gap-2 group/actions">
-                                                            <span className={`text-[13px] leading-relaxed font-medium ${!row.checkOut ? "text-amber-600 italic font-bold" : "text-slate-600"}`}>
-                                                                {row.notes ? row.notes : (!row.checkOut ? "Belum Absen Pulang" : "-")}
+                                                        </span>
+                                                        {(row as any).sessionNumber > 1 && (
+                                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                                                Sesi Ke-{(row as any).sessionNumber}
                                                             </span>
-                                                            <div className="flex items-center gap-1 opacity-0 group-hover/actions:opacity-100 transition-opacity">
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-5 text-slate-500 italic max-w-xs font-medium">
+                                                    <div className="flex flex-col gap-2">
+                                                        <div className="flex items-start justify-between gap-2 group/btn">
+                                                            <span className={!row.checkOut ? "text-amber-600 font-bold" : "text-[13px]"}>
+                                                                {row.notes ? row.notes : (!row.checkOut ? "BELUM ABSEN PULANG" : "-")}
+                                                            </span>
+                                                            <div className="flex items-center gap-1 opacity-10 group-hover/btn:opacity-100 transition-opacity">
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"
                                                                     className="h-8 w-8 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg"
                                                                     onClick={() => handleOpenManualModal(row)}
                                                                 >
-                                                                    <Edit2 className="h-3.5 w-3.5" />
+                                                                    <Edit2 className="h-4 w-4" />
                                                                 </Button>
                                                                 <Button
                                                                     variant="ghost"
@@ -953,7 +1069,7 @@ export default function RecapPage() {
                                                                     className="h-8 w-8 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
                                                                     onClick={() => setDeleteConfirmId(row.id)}
                                                                 >
-                                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                                    <Trash2 className="h-4 w-4" />
                                                                 </Button>
                                                             </div>
                                                         </div>
@@ -961,11 +1077,11 @@ export default function RecapPage() {
                                                             <Button
                                                                 variant="ghost"
                                                                 size="sm"
-                                                                className="h-8 px-3 text-[10px] text-blue-600 hover:text-blue-700 hover:bg-blue-50 justify-start font-black uppercase tracking-wider flex items-center gap-2 rounded-lg border border-blue-100 bg-white"
+                                                                className="h-auto p-0 text-[10px] text-blue-600 hover:text-blue-700 hover:bg-transparent justify-start font-black uppercase tracking-widest flex items-center gap-1.5"
                                                                 onClick={() => setSelectedPhotoRecord(row)}
                                                             >
                                                                 <Camera className="h-3.5 w-3.5" />
-                                                                Detail Foto
+                                                                Lihat Detail Bukti
                                                             </Button>
                                                         )}
                                                     </div>
@@ -975,18 +1091,17 @@ export default function RecapPage() {
                                     })}
                                     {processedData.length === 0 && (
                                         <tr>
-                                            <td colSpan={10} className="px-4 py-8 text-center text-gray-400">
-                                                Tidak ada data absensi untuk periode ini.
+                                            <td colSpan={10} className="px-6 py-20 text-center text-slate-400 font-bold uppercase tracking-widest bg-slate-50/20">
+                                                Tidak ada data absensi tercatat
                                             </td>
                                         </tr>
                                     )}
                                 </tbody>
                             </table>
                         </div>
-                    </div>
-                </CardContent>
-            </Card>
-        </main>
+                    </CardContent>
+                </Card>
+            </main>
 
             <Dialog open={!!selectedPhotoRecord} onOpenChange={(open) => !open && setSelectedPhotoRecord(null)}>
                 <DialogContent className="sm:max-w-md bg-white border-zinc-200 text-zinc-900 rounded-3xl p-6 max-h-[90vh] overflow-y-auto">
@@ -1139,6 +1254,7 @@ export default function RecapPage() {
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
+                                        <SelectItem value="Management">Management</SelectItem>
                                         <SelectItem value="Karyawan">Karyawan</SelectItem>
                                         <SelectItem value="Office">Office</SelectItem>
                                         <SelectItem value="Security">Security</SelectItem>
