@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,7 +11,6 @@ import { Progress } from "@/components/ui/progress";
 import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { compressImage } from "@/lib/utils";
 import { Loader2, ChevronRight, ChevronLeft, Check, Camera, Upload, User, Briefcase, FileText, ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -51,9 +50,9 @@ export default function RegistrationPage() {
     }
   });
 
-const [previews, setPreviews] = useState<{ ktp?: string; profile?: string; npwp?: string; bpjs?: string }>({});
+  const [previews, setPreviews] = useState<{ ktp?: string; profile?: string; bpjs?: string; npwp?: string }>({});
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'ktp' | 'profile' | 'npwp' | 'bpjs') => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'ktp' | 'profile' | 'bpjs' | 'npwp') => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -105,6 +104,8 @@ const [previews, setPreviews] = useState<{ ktp?: string; profile?: string; npwp?
 
       const ktpInput = document.getElementById('ktp-upload') as HTMLInputElement;
       const profInput = document.getElementById('prof-upload') as HTMLInputElement;
+      const bpjsInput = document.getElementById('bpjs-upload') as HTMLInputElement;
+      const npwpInput = document.getElementById('npwp-upload') as HTMLInputElement;
 
       if (!ktpInput?.files?.[0]) {
         toast({ title: "Peringatan", description: "Foto KTP wajib diunggah.", variant: "destructive" });
@@ -116,9 +117,6 @@ const [previews, setPreviews] = useState<{ ktp?: string; profile?: string; npwp?
         setIsSubmitting(false);
         return;
       }
-
-      const npwpInput = document.getElementById('npwp-upload') as HTMLInputElement;
-      const bpjsInput = document.getElementById('bpjs-upload') as HTMLInputElement;
 
       if (ktpInput?.files?.[0]) formData.append('ktpPhoto', ktpInput.files[0]);
       if (profInput?.files?.[0]) formData.append('profilePhoto', profInput.files[0]);
@@ -143,7 +141,6 @@ const [previews, setPreviews] = useState<{ ktp?: string; profile?: string; npwp?
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       setLocation("/pending");
     } catch (err: any) {
-      console.error("Registration submission error:", err);
       toast({
         title: "Gagal Mengirim data",
         description: err.message || "Terjadi kesalahan saat menyimpan pendaftaran.",
@@ -168,21 +165,21 @@ const [previews, setPreviews] = useState<{ ktp?: string; profile?: string; npwp?
         <div className="mb-8 relative px-4">
           <div className="flex justify-between items-center mb-4 relative z-10">
             {steps.map((s) => (
-              <div key={s.id} className="flex flex-col items-center">
+              <div key={s.id} className="flex flex-col items-center flex-1">
                 <div 
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border-2 ${
+                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-300 border-2 ${
                     step >= s.id ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" : "bg-white border-slate-200 text-slate-400"
                   }`}
                 >
-                  {step > s.id ? <Check className="w-5 h-5" /> : s.icon}
+                  {step > s.id ? <Check className="w-4 h-4 sm:w-5 sm:h-5" /> : <span className="[&>svg]:w-4 [&>svg]:h-4 sm:[&>svg]:w-5 sm:[&>svg]:h-5">{s.icon}</span>}
                 </div>
-                <span className={`text-[10px] mt-2 font-semibold uppercase tracking-tight ${step >= s.id ? "text-primary" : "text-slate-400"}`}>
+                <span className={`text-[8px] sm:text-[10px] mt-2 font-bold uppercase tracking-tight text-center ${step >= s.id ? "text-primary" : "text-slate-400"}`}>
                   {s.title}
                 </span>
               </div>
             ))}
           </div>
-          <Progress value={progress} className="h-1.5 absolute top-5 left-8 right-8 bg-slate-200 z-0" />
+          <Progress value={progress} className="h-1 absolute top-4 sm:top-5 left-10 right-10 bg-slate-200 z-0" />
         </div>
 
         <Card className="border-none shadow-xl shadow-slate-200/50 overflow-hidden">
@@ -431,76 +428,76 @@ const [previews, setPreviews] = useState<{ ktp?: string; profile?: string; npwp?
                       <div className="space-y-6">
                         <CardTitle className="text-xl">Upload Dokumen</CardTitle>
                         
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                          <div className="space-y-3">
-                            <FormLabel>Foto KTP</FormLabel>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                          <div className="space-y-2">
+                            <FormLabel className="text-sm font-medium">Foto KTP</FormLabel>
                             <label 
                               htmlFor="ktp-upload" 
-                              className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-primary transition-all overflow-hidden"
+                              className="flex flex-col items-center justify-center w-full h-32 sm:h-40 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-primary transition-all overflow-hidden"
                             >
                               {previews.ktp ? (
                                 <img src={previews.ktp} className="w-full h-full object-cover" />
                               ) : (
                                 <>
-                                  <Camera className="w-8 h-8 text-slate-400 mb-2" />
-                                  <span className="text-xs text-slate-500 font-medium">Klik untuk upload KTP</span>
+                                  <Camera className="w-6 h-6 sm:w-8 sm:h-8 text-slate-400 mb-2" />
+                                  <span className="text-[10px] sm:text-xs text-slate-500 font-medium">Klik untuk upload KTP</span>
                                 </>
                               )}
                               <input id="ktp-upload" type="file" className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'ktp')} />
                             </label>
                           </div>
 
-                          <div className="space-y-3">
-                            <FormLabel>Foto Profil</FormLabel>
+                          <div className="space-y-2">
+                            <FormLabel className="text-sm font-medium">Foto Profil</FormLabel>
                             <label 
                               htmlFor="prof-upload" 
-                              className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-primary transition-all overflow-hidden"
+                              className="flex flex-col items-center justify-center w-full h-32 sm:h-40 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-primary transition-all overflow-hidden"
                             >
                               {previews.profile ? (
                                 <img src={previews.profile} className="w-full h-full object-cover" />
                               ) : (
                                 <>
-                                  <User className="w-8 h-8 text-slate-400 mb-2" />
-                                  <span className="text-xs text-slate-500 font-medium">Klik untuk upload Foto</span>
+                                  <User className="w-6 h-6 sm:w-8 sm:h-8 text-slate-400 mb-2" />
+                                  <span className="text-[10px] sm:text-xs text-slate-500 font-medium">Klik untuk upload Foto</span>
                                 </>
                               )}
                               <input id="prof-upload" type="file" className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'profile')} />
                             </label>
                           </div>
 
-                          <div className="space-y-3">
-                            <FormLabel>Foto NPWP (Opsional)</FormLabel>
-                            <label 
-                              htmlFor="npwp-upload" 
-                              className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-primary transition-all overflow-hidden"
-                            >
-                              {previews.npwp ? (
-                                <img src={previews.npwp} className="w-full h-full object-cover" />
-                              ) : (
-                                <>
-                                  <FileText className="w-8 h-8 text-slate-400 mb-2" />
-                                  <span className="text-xs text-slate-500 font-medium">Klik untuk upload NPWP</span>
-                                </>
-                              )}
-                              <input id="npwp-upload" type="file" className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'npwp')} />
-                            </label>
-                          </div>
-
-                          <div className="space-y-3">
-                            <FormLabel>Foto BPJS (Opsional)</FormLabel>
+                          <div className="space-y-2">
+                            <FormLabel className="text-sm font-medium">Foto BPJS (Opsional)</FormLabel>
                             <label 
                               htmlFor="bpjs-upload" 
-                              className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-primary transition-all overflow-hidden"
+                              className="flex flex-col items-center justify-center w-full h-32 sm:h-40 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-primary transition-all overflow-hidden"
                             >
                               {previews.bpjs ? (
                                 <img src={previews.bpjs} className="w-full h-full object-cover" />
                               ) : (
                                 <>
-                                  <FileText className="w-8 h-8 text-slate-400 mb-2" />
-                                  <span className="text-xs text-slate-500 font-medium">Klik untuk upload BPJS</span>
+                                  <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-slate-400 mb-2" />
+                                  <span className="text-[10px] sm:text-xs text-slate-500 font-medium">Klik untuk upload BPJS</span>
                                 </>
                               )}
                               <input id="bpjs-upload" type="file" className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'bpjs')} />
+                            </label>
+                          </div>
+
+                          <div className="space-y-2">
+                            <FormLabel className="text-sm font-medium">Foto NPWP (Opsional)</FormLabel>
+                            <label 
+                              htmlFor="npwp-upload" 
+                              className="flex flex-col items-center justify-center w-full h-32 sm:h-40 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-primary transition-all overflow-hidden"
+                            >
+                              {previews.npwp ? (
+                                <img src={previews.npwp} className="w-full h-full object-cover" />
+                              ) : (
+                                <>
+                                  <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-slate-400 mb-2" />
+                                  <span className="text-[10px] sm:text-xs text-slate-500 font-medium">Klik untuk upload NPWP</span>
+                                </>
+                              )}
+                              <input id="npwp-upload" type="file" className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'npwp')} />
                             </label>
                           </div>
                         </div>

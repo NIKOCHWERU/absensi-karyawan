@@ -60,7 +60,7 @@ export default function ComplaintPage() {
             
             for (let i = 0; i < photos.length; i++) {
                 const p = photos[i];
-                formData.append("photos", p.file, `photo_${i}.jpg`);
+                formData.append("photos", p.file);
                 formData.append("captions", p.caption);
             }
 

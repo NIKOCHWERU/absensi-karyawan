@@ -68,13 +68,13 @@ export default function ProfilePage() {
       const formData = new FormData();
       Object.entries(values).forEach(([k, v]) => { if (v !== undefined && v !== null) formData.append(k, v); });
       if (photoFile) {
-        formData.append("profilePhoto", photoFile, "profile.jpg");
+        formData.append("profilePhoto", photoFile);
       }
       if (npwpFile) {
-        formData.append("npwpPhoto", npwpFile, "npwp.jpg");
+        formData.append("npwpPhoto", npwpFile);
       }
       if (bpjsFile) {
-        formData.append("bpjsPhoto", bpjsFile, "bpjs.jpg");
+        formData.append("bpjsPhoto", bpjsFile);
       }
       const res = await fetch("/api/profile", { method: "PATCH", body: formData, credentials: "include" });
       if (!res.ok) {
