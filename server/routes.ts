@@ -624,7 +624,7 @@ export async function registerRoutes(
   });
 
   // --- File Upload API ---
-  app.post("/api/upload-single", upload.single('photo'), (req, res) => {
+  app.post("/api/upload-single", upload.single('photo'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "Tidak ada file yang diunggah" });
@@ -635,19 +635,34 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Ukuran foto maksimal 15MB. Silakan pilih foto lain atau kompres file Anda." });
       }
 
-      const tempDir = path.join(uploadsDir, 'temp');
-      if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+      const { employeeName, type } = req.body;
 
-      // Generate a unique identifier to prevent overwrites
-      const uniqueId = req.isAuthenticated() ? req.user!.id : 'anon-reg-' + Date.now();
-      const safeOriginalName = req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
-      const filename = `temp-${uniqueId}-${Date.now()}-${safeOriginalName}`;
-      const filepath = path.join(tempDir, filename);
+      // If it's a profile photo or missing employeeName, save locally
+      if (type === 'profile' || !employeeName) {
+        const tempDir = path.join(uploadsDir, 'temp');
+        if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+
+        const uniqueId = req.isAuthenticated() ? req.user!.id : 'anon-reg-' + Date.now();
+        const safeOriginalName = req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const filename = `temp-${uniqueId}-${type || 'media'}-${Date.now()}-${safeOriginalName}`;
+        const filepath = path.join(tempDir, filename);
+        
+        fs.writeFileSync(filepath, req.file.buffer);
+        const url = `/uploads/temp/${filename}`;
+        return res.json({ url });
+      }
+
+      // Otherwise, upload non-profile photos to Google Drive
+      const dateStr = new Date().toISOString().split('T')[0];
+      const safeName = employeeName.replace(/[^a-zA-Z0-9]/g, '');
+      const gdriveFilename = `${type.toUpperCase()}_${safeName}_${dateStr}.jpg`;
+
+      const result = await uploadFile(req.file.buffer, gdriveFilename, req.file.mimetype);
       
-      fs.writeFileSync(filepath, req.file.buffer);
-
-      const url = `/uploads/temp/${filename}`;
+      // Use the local proxy to render the image properly in img tags
+      const url = `/api/gdrive-img/${result.fileId}`;
       res.json({ url });
+
     } catch (err: any) {
       console.error("Upload Single Error:", err);
       res.status(500).json({ message: "Gagal mengunggah foto: " + (err.message || "Unknown error") });
@@ -1394,42 +1409,38 @@ export async function registerRoutes(
 
   // --- Complaint Routes ---
 
-  // Employee: create complaint with photos
-  app.post("/api/complaints", upload.array('photos', 10), async (req, res) => {
+  // Employee: create complaint with photos (JSON pre-uploaded mode)
+  app.post("/api/complaints", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
 
     try {
-      const { title, description, captions } = req.body;
+      const { title, description, photos } = req.body;
+      if (!title || !description) {
+        return res.status(400).json({ message: "Judul dan deskripsi wajib diisi" });
+      }
+
       const complaint = await storage.createComplaint({
         userId: req.user!.id,
         title,
         description,
       });
 
-      // Handle uploaded photos
-      const files = (req.files as Express.Multer.File[]) || [];
-      const captionList = captions ? (Array.isArray(captions) ? captions : [captions]) : [];
+      // Handle pre-uploaded photo URLs
+      const photoList = photos ? (Array.isArray(photos) ? photos : []) : [];
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const filename = `complaint-${Date.now()}-${i}-${file.originalname}`;
-        const filepath = path.join(uploadsDir, filename);
-
-        // Use async write to avoid blocking event loop
-        await fs.promises.writeFile(filepath, file.buffer);
-        const photoUrl = `/uploads/${filename}`;
-
-        await storage.createComplaintPhoto({
-          complaintId: complaint.id,
-          photoUrl,
-          caption: captionList[i] || null,
-        });
+      for (const p of photoList) {
+        if (p.url) {
+          await storage.createComplaintPhoto({
+            complaintId: complaint.id,
+            photoUrl: p.url,
+            caption: p.caption || null,
+          });
+        }
       }
 
       res.status(201).json(complaint);
     } catch (e) {
       console.error("Complaint Create Error:", e);
-      // Ensure we return JSON, not HTML, even if something weird happens
       if (!res.headersSent) {
         res.status(500).json({ message: "Gagal membuat pengaduan: Server error" });
       }

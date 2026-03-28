@@ -80,9 +80,13 @@ const [uploadedUrls, setUploadedUrls] = useState<{ ktp?: string; profile?: strin
 
       setUploadProgress(prev => ({ ...prev, [type]: 0 }));
       
-      const url = await uploadFileWithProgress(compressedFile, (percent) => {
-        setUploadProgress(prev => ({ ...prev, [type]: percent }));
-      });
+      const url = await uploadFileWithProgress(
+        compressedFile, 
+        (percent) => {
+          setUploadProgress(prev => ({ ...prev, [type]: percent }));
+        },
+        { employeeName: form.getValues('fullName') || 'TanpaNama', type }
+      );
 
       setUploadedUrls(prev => ({ ...prev, [type]: url }));
       

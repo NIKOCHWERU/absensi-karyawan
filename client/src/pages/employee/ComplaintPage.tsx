@@ -13,7 +13,8 @@ import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { motion } from "framer-motion";
 import { useState, useRef } from "react";
-import { compressImage, safeCompressImage } from "@/lib/utils";
+import { safeCompressImage, uploadFileWithProgress } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
 
 interface Complaint {
     id: number;
@@ -37,7 +38,8 @@ export default function ComplaintPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    const [photos, setPhotos] = useState<{ file: File; caption: string; preview: string }[]>([]);
+    const [photos, setPhotos] = useState<{ url: string; caption: string; preview: string; id: string }[]>([]);
+    const [uploadingState, setUploadingState] = useState<{ [key: string]: number }>({});
     const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -54,20 +56,16 @@ export default function ComplaintPage() {
 
     const submitMutation = useMutation({
         mutationFn: async () => {
-            const formData = new FormData();
-            formData.append("title", title);
-            formData.append("description", description);
-            
-            for (let i = 0; i < photos.length; i++) {
-                const p = photos[i];
-                const compressed = await safeCompressImage(p.file, { maxWidth: 1280, quality: 0.7 });
-                formData.append("photos", compressed, `photo_${i}.jpg`);
-                formData.append("captions", p.caption);
-            }
+            const body = {
+                title,
+                description,
+                photos: photos.map(p => ({ url: p.url, caption: p.caption }))
+            };
 
             const res = await fetch("/api/complaints", {
                 method: "POST",
-                body: formData,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
                 credentials: "include",
             });
             if (!res.ok) throw new Error("Gagal mengirim pengaduan");
@@ -90,24 +88,50 @@ export default function ComplaintPage() {
         fileInputRef.current?.click();
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files) return;
-        const newPhotos = Array.from(files).map((file) => ({
-            file,
-            caption: "",
-            preview: URL.createObjectURL(file),
-        }));
-        setPhotos((prev) => [...prev, ...newPhotos]);
+
+        for (const file of Array.from(files)) {
+            const id = Math.random().toString(36).substring(7);
+            const preview = URL.createObjectURL(file);
+            
+            setPhotos(prev => [...prev, { url: "", caption: "", preview, id }]);
+            setUploadingState(prev => ({ ...prev, [id]: 0 }));
+
+            try {
+                const compressed = await safeCompressImage(file, { maxWidth: 1280, quality: 0.8 });
+                const url = await uploadFileWithProgress(
+                    compressed,
+                    (p) => setUploadingState(prev => ({ ...prev, [id]: p })),
+                    { employeeName: user?.fullName || 'User', type: 'complaint' }
+                );
+                
+                setPhotos(prev => prev.map(p => p.id === id ? { ...p, url } : p));
+                setUploadingState(prev => {
+                    const next = { ...prev };
+                    delete next[id];
+                    return next;
+                });
+            } catch (error: any) {
+                toast({ title: "Gagal Upload", description: error.message, variant: "destructive" });
+                setPhotos(prev => prev.filter(p => p.id !== id));
+            }
+        }
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
-    const removePhoto = (index: number) => {
-        setPhotos((prev) => prev.filter((_, i) => i !== index));
+    const removePhoto = (id: string) => {
+        setPhotos((prev) => prev.filter((p) => p.id !== id));
+        setUploadingState(prev => {
+            const next = { ...prev };
+            delete next[id];
+            return next;
+        });
     };
 
-    const updateCaption = (index: number, caption: string) => {
-        setPhotos((prev) => prev.map((p, i) => (i === index ? { ...p, caption } : p)));
+    const updateCaption = (id: string, caption: string) => {
+        setPhotos((prev) => prev.map((p) => (p.id === id ? { ...p, caption } : p)));
     };
 
     const getStatusBadge = (status: string) => {
@@ -240,27 +264,38 @@ export default function ComplaintPage() {
                                 className="hidden"
                                 onChange={handleFileChange}
                             />
-                            {photos.map((p, i) => (
-                                <div key={i} className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                            {photos.map((p) => (
+                                <div key={p.id} className="bg-gray-50 rounded-xl p-3 border border-gray-100 relative overflow-hidden">
                                     <div className="flex items-start gap-3">
-                                        <img src={p.preview} alt="" className="w-20 h-20 object-cover rounded-lg" />
+                                        <div className="relative w-20 h-20 shrink-0">
+                                            <img src={p.preview} alt="" className="w-full h-full object-cover rounded-lg" />
+                                            {uploadingState[p.id] !== undefined && (
+                                                <div className="absolute inset-0 bg-white/60 flex flex-col items-center justify-center rounded-lg">
+                                                    <Loader2 className="w-5 h-5 animate-spin text-primary mb-1" />
+                                                    <span className="text-[10px] font-bold text-primary">{uploadingState[p.id]}%</span>
+                                                </div>
+                                            )}
+                                        </div>
                                         <div className="flex-1 space-y-2">
                                             <Input
                                                 placeholder="Keterangan foto..."
                                                 value={p.caption}
-                                                onChange={(e) => updateCaption(i, e.target.value)}
+                                                onChange={(e) => updateCaption(p.id, e.target.value)}
                                                 className="text-xs rounded-lg"
                                             />
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                onClick={() => removePhoto(i)}
+                                                onClick={() => removePhoto(p.id)}
                                                 className="text-red-500 text-xs h-7"
                                             >
                                                 <X className="w-3 h-3 mr-1" /> Hapus
                                             </Button>
                                         </div>
                                     </div>
+                                    {uploadingState[p.id] !== undefined && (
+                                        <Progress value={uploadingState[p.id]} className="absolute bottom-0 left-0 right-0 h-1 rounded-none" />
+                                    )}
                                 </div>
                             ))}
                         </div>
