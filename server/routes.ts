@@ -69,6 +69,40 @@ export async function registerRoutes(
   const isAdminRole = (req: Request) =>
     req.isAuthenticated() && (req.user!.role === 'admin' || req.user!.role === 'superadmin');
 
+  // Helper: Normalize user data for create/update
+  const normalizeUserData = (data: any) => {
+    const updates = { ...data };
+
+    // Clean up empty strings to null for unique/optional fields
+    const nullableFields = [
+      'email', 'nik', 'username', 'phoneNumber', 'birthDate',
+      'birthPlace', 'gender', 'address', 'npwp', 'bpjs', 'bankAccount',
+      'joinDate', 'employmentStatus', 'religion', 'shift', 'branch', 'position'
+    ];
+    nullableFields.forEach(field => {
+      if (updates[field] === '' || updates[field] === 'undefined' || updates[field] === 'null') {
+        updates[field] = null;
+      }
+    });
+
+    // Normalize isAdmin and is_admin to boolean (handle FormData strings)
+    if (updates.isAdmin === 'true' || updates.is_admin === 'true' || updates.isAdmin === true || updates.is_admin === true) {
+      updates.isAdmin = true;
+    } else if (updates.isAdmin === 'false' || updates.is_admin === 'false' || updates.isAdmin === false || updates.is_admin === false) {
+      updates.isAdmin = false;
+    }
+
+    // Always delete snake_case version to avoid Drizzle conflicts
+    if (updates.is_admin !== undefined) delete updates.is_admin;
+
+    // Auto-set isAdmin based on role
+    if (updates.role === 'admin' || updates.role === 'superadmin') {
+      updates.isAdmin = true;
+    }
+
+    return updates;
+  };
+
   // --- Employee: Edit own profile ---
   app.patch("/api/profile", upload.fields([{ name: 'profilePhoto', maxCount: 1 }, { name: 'bpjsPhoto', maxCount: 1 }, { name: 'npwpPhoto', maxCount: 1 }]), async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
@@ -591,7 +625,7 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Data pendaftaran tidak lengkap." });
       }
 
-      const updates: any = { ...req.body };
+      const updates: any = normalizeUserData(req.body);
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
       let userToLogin;
 
@@ -798,38 +832,23 @@ export async function registerRoutes(
 
   app.post(api.admin.users.create.path, upload.single('photo'), async (req, res) => {
     if (!isAdminRole(req)) return res.sendStatus(401);
-
+ 
     try {
-      const userData = { ...req.body };
-
-      // Clean up empty strings to null for unique/optional fields
-      if (userData.email === "") userData.email = null;
-      if (userData.nik === "") userData.nik = null;
-      if (userData.username === "") userData.username = null;
-      if (userData.phoneNumber === "") userData.phoneNumber = null;
-
-      // Fix is_admin (string "true" from FormData -> boolean)
-      if (userData.isAdmin === 'true') userData.isAdmin = true;
-      if (userData.isAdmin === 'false') userData.isAdmin = false;
-
-      // Auto-set isAdmin based on role if it's admin or superadmin
-      if (userData.role === 'admin' || userData.role === 'superadmin') {
-        userData.isAdmin = true;
-      }
-
+      const userData = normalizeUserData(req.body);
+ 
       // For employee, ensure username matches NIK if not provided
       if (userData.role === 'employee' && !userData.username && userData.nik) {
         userData.username = userData.nik;
       }
-
+ 
       // If still no username, return error as it's required for login
       if (!userData.username) {
         return res.status(400).json({ message: "Username atau NIK wajib diisi" });
       }
-
+ 
       // Hash the password before storing
       const hashedPassword = await hashPassword(userData.password || "password123");
-
+ 
       // Create user
       const user = await storage.createUser({ ...userData, password: hashedPassword });
 
@@ -936,20 +955,15 @@ export async function registerRoutes(
   app.post("/api/admin/users/:id", async (req, res) => {
     if (!isAdminRole(req)) return res.sendStatus(401);
     try {
-      const updateData = { ...req.body };
-      
-      // Normalize isAdmin and is_admin to boolean
-      if (updateData.isAdmin === 'true' || updateData.is_admin === 'true') updateData.isAdmin = true;
-      if (updateData.isAdmin === 'false' || updateData.is_admin === 'false') updateData.isAdmin = false;
-      if (updateData.is_admin !== undefined) delete updateData.is_admin;
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid user ID" });
 
-      if (updateData.role === 'admin' || updateData.role === 'superadmin') {
-        updateData.isAdmin = true;
-      }
+      const updateData = normalizeUserData(req.body);
+      
       const updatedUser = await storage.updateUser(id, updateData);
       res.json(updatedUser);
     } catch (error: any) {
-      console.error("Error updating user:", error);
+      console.error("Error updating user (POST):", error);
       res.status(500).json({ message: error.message });
     }
   });
@@ -1041,27 +1055,7 @@ export async function registerRoutes(
       const id = parseInt(req.params.id as string);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid user ID" });
 
-      const updates = { ...req.body };
-
-      // Clean up empty strings to null for unique/optional fields
-      const nullableFields = ['email', 'nik', 'username', 'phoneNumber', 'birthDate',
-        'birthPlace', 'gender', 'address', 'npwp', 'bpjs', 'bankAccount',
-        'joinDate', 'employmentStatus', 'religion', 'shift', 'branch', 'position'];
-      nullableFields.forEach(field => {
-        if (updates[field] === '' || updates[field] === 'undefined') {
-          updates[field] = null;
-        }
-      });
-
-      // Normalize isAdmin and is_admin to boolean (from FormData strings)
-      if (updates.isAdmin === 'true' || updates.is_admin === 'true') updates.isAdmin = true;
-      if (updates.isAdmin === 'false' || updates.is_admin === 'false') updates.isAdmin = false;
-      if (updates.is_admin !== undefined) delete updates.is_admin;
-      
-      // Auto-set isAdmin based on role if it's admin or superadmin
-      if (updates.role === 'admin' || updates.role === 'superadmin') {
-        updates.isAdmin = true;
-      }
+      const updates = normalizeUserData(req.body);
 
       // Remove fields that shouldn't be directly updated via this endpoint
       delete updates.registrationStatus; // handled by separate endpoint
