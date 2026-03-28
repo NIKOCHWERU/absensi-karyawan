@@ -67,9 +67,25 @@ export function CameraModal({ open, onClose, onCapture, locationAddress }: Camer
   const capturePhoto = async () => {
     if (!videoRef.current) return;
 
+    const maxResolution = 1280;
+    let width = videoRef.current.videoWidth;
+    let height = videoRef.current.videoHeight;
+
+    if (width > height) {
+      if (width > maxResolution) {
+        height = Math.round((height * maxResolution) / width);
+        width = maxResolution;
+      }
+    } else {
+      if (height > maxResolution) {
+        width = Math.round((width * maxResolution) / height);
+        height = maxResolution;
+      }
+    }
+
     const canvas = document.createElement("canvas");
-    canvas.width = videoRef.current.videoWidth;
-    canvas.height = videoRef.current.videoHeight;
+    canvas.width = width;
+    canvas.height = height;
     const ctx = canvas.getContext("2d");
     if (ctx) {
       // Mirror if using front camera
@@ -77,7 +93,7 @@ export function CameraModal({ open, onClose, onCapture, locationAddress }: Camer
         ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
       }
-      ctx.drawImage(videoRef.current, 0, 0);
+      ctx.drawImage(videoRef.current, 0, 0, width, height);
 
       // Reset transform so text/watermark is not mirrored
       ctx.setTransform(1, 0, 0, 1, 0, 0);

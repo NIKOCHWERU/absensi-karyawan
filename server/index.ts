@@ -15,14 +15,14 @@ declare module "http" {
 
 app.use(
   express.json({
-    limit: "50mb",
+    limit: "100mb",
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
   }),
 );
 
-app.use(express.urlencoded({ extended: false, limit: "50mb" }));
+app.use(express.urlencoded({ extended: false, limit: "100mb" }));
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -71,8 +71,11 @@ import { initAutoBackup } from "./backup";
     log("Running auto-migration for late_reason columns...");
     await connection.query("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS late_reason TEXT");
     await connection.query("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS late_reason_photo VARCHAR(255)");
+    await connection.query("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS is_fake_gps BOOLEAN DEFAULT FALSE");
 
-    log("Running auto-migration for user profile photos...");
+    log("Running auto-migration for user profile photos and documents...");
+    await connection.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS npwp VARCHAR(50)");
+    await connection.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS bpjs VARCHAR(50)");
     await connection.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS npwp_photo_url VARCHAR(512)");
     await connection.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS bpjs_photo_url VARCHAR(512)");
 

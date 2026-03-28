@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { motion } from "framer-motion";
 import { useState, useRef } from "react";
+import { compressImage } from "@/lib/utils";
 
 interface Complaint {
     id: number;
@@ -56,10 +57,14 @@ export default function ComplaintPage() {
             const formData = new FormData();
             formData.append("title", title);
             formData.append("description", description);
-            photos.forEach((p, i) => {
-                formData.append("photos", p.file);
+            
+            // Compress all photos before sending
+            for (let i = 0; i < photos.length; i++) {
+                const p = photos[i];
+                const compressed = await compressImage(p.file, { maxWidth: 1280, quality: 0.7 });
+                formData.append("photos", compressed, `photo_${i}.jpg`);
                 formData.append("captions", p.caption);
-            });
+            }
 
             const res = await fetch("/api/complaints", {
                 method: "POST",

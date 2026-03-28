@@ -179,11 +179,13 @@ export default function EmployeeDashboard() {
 
     // ... (Keep existing getCoordinates logic)
     const lastLocationFetch = useRef<number>(0);
-    const getCoordinates = async (force = false): Promise<{ lat: number, lng: number, address: string }> => {
+    const lastFetchResult = useRef<{ lat: number, lng: number, address: string, isFakeGps: boolean } | null>(null);
+
+    const getCoordinates = async (force = false): Promise<{ lat: number, lng: number, address: string, isFakeGps: boolean }> => {
         const now = Date.now();
         // If we have a location fetched in the last 5 mins, reuse it unless forced
-        if (!force && locationAddress && (now - lastLocationFetch.current < 300000)) {
-            return { lat: 0, lng: 0, address: locationAddress };
+        if (!force && lastFetchResult.current && (now - lastLocationFetch.current < 300000)) {
+            return lastFetchResult.current;
         }
 
         if (!navigator.geolocation) {
@@ -213,9 +215,16 @@ export default function EmployeeDashboard() {
                 console.error("Reverse geocoding failed", e);
             }
 
+            // Detection for Mock GPS (Best effort for Web)
+            // 1. Check for 'mocked' property (Android/Chrome non-standard)
+            // 2. Check for exactly 0 or 1 accuracy (standard in many mock apps)
+            const isFakeGps = (position as any).mocked === true || position.coords.accuracy === 0 || position.coords.accuracy === 1;
+
+            const result = { lat: latitude, lng: longitude, address, isFakeGps };
             setLocationAddress(address);
             lastLocationFetch.current = Date.now();
-            return { lat: latitude, lng: longitude, address };
+            lastFetchResult.current = result;
+            return result;
         } catch (err: any) {
             if (err.code === 1) { // PERMISSION_DENIED
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
@@ -345,10 +354,11 @@ export default function EmployeeDashboard() {
         if (!activeAction) return;
 
         try {
-            const { address } = await getCoordinates(false);
+            const { address, isFakeGps } = await getCoordinates(false);
             const payload: any = {
                 location: address,
-                checkInPhoto: photoData
+                checkInPhoto: photoData,
+                isFakeGps: isFakeGps
             };
 
             if (lateReasonData) {

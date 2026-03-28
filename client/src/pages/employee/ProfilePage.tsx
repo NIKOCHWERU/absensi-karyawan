@@ -8,6 +8,7 @@ import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { BottomNav } from "@/components/BottomNav";
+import { compressImage } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,10 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [npwpPreview, setNpwpPreview] = useState<string | null>(null);
+  const [npwpFile, setNpwpFile] = useState<File | null>(null);
+  const [bpjsPreview, setBpjsPreview] = useState<string | null>(null);
+  const [bpjsFile, setBpjsFile] = useState<File | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
   const form = useForm<ProfileFormValues>({
@@ -62,7 +67,18 @@ export default function ProfilePage() {
     mutationFn: async (values: ProfileFormValues) => {
       const formData = new FormData();
       Object.entries(values).forEach(([k, v]) => { if (v !== undefined && v !== null) formData.append(k, v); });
-      if (photoFile) formData.append("profilePhoto", photoFile);
+      if (photoFile) {
+        const compressed = await compressImage(photoFile, { maxWidth: 1024, quality: 0.7 });
+        formData.append("profilePhoto", compressed, "profile.jpg");
+      }
+      if (npwpFile) {
+        const compressed = await compressImage(npwpFile, { maxWidth: 1280, quality: 0.7 });
+        formData.append("npwpPhoto", compressed, "npwp.jpg");
+      }
+      if (bpjsFile) {
+        const compressed = await compressImage(bpjsFile, { maxWidth: 1280, quality: 0.7 });
+        formData.append("bpjsPhoto", compressed, "bpjs.jpg");
+      }
       const res = await fetch("/api/profile", { method: "PATCH", body: formData, credentials: "include" });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ message: "Terjadi kesalahan" }));
@@ -103,6 +119,10 @@ export default function ProfilePage() {
     });
     setPhotoPreview(null);
     setPhotoFile(null);
+    setNpwpPreview(null);
+    setNpwpFile(null);
+    setBpjsPreview(null);
+    setBpjsFile(null);
     setIsEditing(false);
   };
 
@@ -208,6 +228,55 @@ export default function ProfilePage() {
                           <FormMessage />
                         </FormItem>
                       )} />
+                    </div>
+
+                    {/* Photo Uploads for NPWP/BPJS */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <FormLabel className="text-xs">Foto NPWP (Opsional)</FormLabel>
+                        <div className="relative group">
+                          <div className="h-24 w-full rounded-xl bg-slate-50 border-2 border-dashed border-slate-200 overflow-hidden flex items-center justify-center">
+                            {npwpPreview || user?.npwpPhotoUrl ? (
+                              <img src={npwpPreview || user?.npwpPhotoUrl} className="w-full h-full object-cover" />
+                            ) : <Camera className="w-5 h-5 text-slate-300" />}
+                            <label className="absolute inset-0 cursor-pointer flex items-center justify-center bg-black/0 group-hover:bg-black/10 transition-colors">
+                              <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  setNpwpFile(file);
+                                  const reader = new FileReader();
+                                  reader.onloadend = () => setNpwpPreview(reader.result as string);
+                                  reader.readAsDataURL(file);
+                                }
+                              }} />
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <FormLabel className="text-xs">Foto BPJS (Opsional)</FormLabel>
+                        <div className="relative group">
+                          <div className="h-24 w-full rounded-xl bg-slate-50 border-2 border-dashed border-slate-200 overflow-hidden flex items-center justify-center">
+                            {bpjsPreview || user?.bpjsPhotoUrl ? (
+                              <img src={bpjsPreview || user?.bpjsPhotoUrl} className="w-full h-full object-cover" />
+                            ) : <Camera className="w-5 h-5 text-slate-300" />}
+                            <label className="absolute inset-0 cursor-pointer flex items-center justify-center bg-black/0 group-hover:bg-black/10 transition-colors">
+                              <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  setBpjsFile(file);
+                                  const reader = new FileReader();
+                                  reader.onloadend = () => setBpjsPreview(reader.result as string);
+                                  reader.readAsDataURL(file);
+                                }
+                              }} />
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                       <FormField control={form.control} name="religion" render={({ field }) => (
                         <FormItem>
                           <FormLabel>Agama</FormLabel>
@@ -230,7 +299,6 @@ export default function ProfilePage() {
                           <FormMessage />
                         </FormItem>
                       )} />
-                    </div>
                     <Button type="submit" className="w-full h-11 font-bold shadow-md shadow-primary/20" disabled={mutation.isPending}>
                       {mutation.isPending
                         ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Menyimpan...</>

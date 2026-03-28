@@ -72,6 +72,7 @@ export const attendance = mysqlTable("attendance", {
   lateReasonPhoto: varchar("late_reason_photo", { length: 255 }),
   permitExitAt: timestamp("permit_exit_at"), // When they left for permit mid-day
   permitResumeAt: timestamp("permit_resume_at"), // When they resumed work
+  isFakeGps: boolean("is_fake_gps").default(false),
 }, (table) => ({
   userIdIdx: index("idx_attendance_user_id").on(table.userId),
   dateIdx: index("idx_attendance_date").on(table.date),

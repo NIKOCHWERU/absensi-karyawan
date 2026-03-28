@@ -255,6 +255,7 @@ export async function registerRoutes(
 
       const photoFileId = await handlePhotoUpload(req, 'clockIn');
       const location = req.body.location;
+      const isFakeGps = req.body.isFakeGps === true || req.body.isFakeGps === "true";
       const shiftId = req.body.shiftId ? parseInt(req.body.shiftId) : undefined;
       let shiftName = req.body.shift || 'Karyawan';
       const lateReason = req.body.lateReason;
@@ -320,7 +321,8 @@ export async function registerRoutes(
           shiftId: shiftId,
           shift: shiftName,
           lateReason: lateReason,
-          lateReasonPhoto: lateReasonPhotoId
+          lateReasonPhoto: lateReasonPhotoId,
+          isFakeGps: isFakeGps
         });
         await storage.updateUser(userId, { shift: shiftName });
         return res.json(attendance);
@@ -337,7 +339,8 @@ export async function registerRoutes(
         shift: shiftName,
         sessionNumber: nextSessionNumber,
         lateReason: lateReason,
-        lateReasonPhoto: lateReasonPhotoId
+        lateReasonPhoto: lateReasonPhotoId,
+        isFakeGps: isFakeGps
       });
 
       // Update the user's shift in their profile automatically
@@ -371,6 +374,7 @@ export async function registerRoutes(
       checkOut: new Date(),
       checkOutPhoto: photoFileId,
       checkOutLocation: location,
+      isFakeGps: req.body.isFakeGps === true || req.body.isFakeGps === "true"
     });
 
     res.json(attendance);
@@ -396,6 +400,7 @@ export async function registerRoutes(
       breakStart: new Date(),
       breakStartPhoto: photoFileId,
       breakStartLocation: location,
+      isFakeGps: req.body.isFakeGps === true || req.body.isFakeGps === "true"
     });
 
     res.json(attendance);
@@ -421,6 +426,7 @@ export async function registerRoutes(
       breakEnd: new Date(),
       breakEndPhoto: photoFileId,
       breakEndLocation: location,
+      isFakeGps: req.body.isFakeGps === true || req.body.isFakeGps === "true"
     });
 
     res.json(attendance);

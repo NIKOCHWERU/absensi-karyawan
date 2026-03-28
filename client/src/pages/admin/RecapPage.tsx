@@ -449,6 +449,8 @@ export default function RecapPage() {
                 ? `<br><span class="note-late">[Telat: ${(row as any).lateReason}]</span>`
                 : '';
 
+            const fakeGpsNote = (row as any).isFakeGps ? '<br><span style="color:#dc2626; font-weight:800; font-size:9px;">[!] FAKE GPS DETECTED</span>' : '';
+
             return `<tr>
           <td class="col-no">${isSameDayAndUser ? '<span style="color:#cbd5e1;">↳</span>' : (index + 1)}</td>
           <td class="col-date">${isSameDayAndUser ? '' : format(new Date(row.date), 'dd/MM/yyyy')}</td>
@@ -460,7 +462,7 @@ export default function RecapPage() {
           <td class="col-work">${jamKerja}</td>
           <td class="col-brk">${breakMins > 0 ? formatDuration(breakMins) : '-'}</td>
           <td class="col-stat"><span class="${statusClass} ${row.status === 'off' ? 'st-off' : ''}">${statusLabel}</span></td>
-          <td class="col-note">${keterangan}${lateNote}</td>
+          <td class="col-note">${keterangan}${lateNote}${fakeGpsNote}</td>
         </tr>`;
         }).join('')}
     </tbody>
@@ -687,6 +689,11 @@ export default function RecapPage() {
                                                                                 row.status === 'absent' ? 'Alpha' : row.status}
                                                         {(row as any).sessionNumber > 1 && ` (Sesi ${(row as any).sessionNumber})`}
                                                     </span>
+                                                    {(row as any).isFakeGps && (
+                                                        <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black bg-red-600 text-white animate-pulse">
+                                                            FAKE GPS
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td className="px-4 py-3 text-gray-500 italic max-w-xs">
                                                     <div className="flex flex-col gap-1">
@@ -797,7 +804,14 @@ export default function RecapPage() {
                                         </div>
                                         <div className="space-y-1">
                                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</p>
-                                            <p className="text-xs font-bold uppercase">{selectedDetailRecord.status}</p>
+                                            <div className="flex items-center gap-2">
+                                                <p className="text-xs font-bold uppercase">{selectedDetailRecord.status}</p>
+                                                {(selectedDetailRecord as any).isFakeGps && (
+                                                    <span className="px-2 py-0.5 bg-red-600 text-white text-[10px] font-black rounded-full animate-pulse uppercase tracking-tighter">
+                                                        Fake GPS Detected
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

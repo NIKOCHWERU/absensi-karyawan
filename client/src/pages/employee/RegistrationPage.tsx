@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { compressImage } from "@/lib/utils";
 import { Loader2, ChevronRight, ChevronLeft, Check, Camera, Upload, User, Briefcase, FileText, ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -50,9 +51,9 @@ export default function RegistrationPage() {
     }
   });
 
-  const [previews, setPreviews] = useState<{ ktp?: string; profile?: string }>({});
+const [previews, setPreviews] = useState<{ ktp?: string; profile?: string; npwp?: string; bpjs?: string }>({});
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'ktp' | 'profile') => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'ktp' | 'profile' | 'npwp' | 'bpjs') => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -116,8 +117,24 @@ export default function RegistrationPage() {
         return;
       }
 
-      if (ktpInput?.files?.[0]) formData.append('ktpPhoto', ktpInput.files[0]);
-      if (profInput?.files?.[0]) formData.append('profilePhoto', profInput.files[0]);
+      const npwpInput = document.getElementById('npwp-upload') as HTMLInputElement;
+      const bpjsInput = document.getElementById('bpjs-upload') as HTMLInputElement;
+
+      // Compress images before uploading (highly recommended for mobile)
+      const compressedKtp = await compressImage(ktpInput.files[0], { maxWidth: 1600, quality: 0.8 });
+      const compressedProf = await compressImage(profInput.files[0], { maxWidth: 1024, quality: 0.6 });
+
+      formData.append('ktpPhoto', compressedKtp, 'ktp.jpg');
+      formData.append('profilePhoto', compressedProf, 'profile.jpg');
+
+      if (npwpInput?.files?.[0]) {
+        const compressedNpwp = await compressImage(npwpInput.files[0], { maxWidth: 1280, quality: 0.7 });
+        formData.append('npwpPhoto', compressedNpwp, 'npwp.jpg');
+      }
+      if (bpjsInput?.files?.[0]) {
+        const compressedBpjs = await compressImage(bpjsInput.files[0], { maxWidth: 1280, quality: 0.7 });
+        formData.append('bpjsPhoto', compressedBpjs, 'bpjs.jpg');
+      }
 
       const res = await fetch("/api/register-data", {
         method: "POST",
@@ -137,6 +154,7 @@ export default function RegistrationPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       setLocation("/pending");
     } catch (err: any) {
+      console.error("Registration submission error:", err);
       toast({
         title: "Gagal Mengirim data",
         description: err.message || "Terjadi kesalahan saat menyimpan pendaftaran.",
@@ -458,6 +476,42 @@ export default function RegistrationPage() {
                                 </>
                               )}
                               <input id="prof-upload" type="file" className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'profile')} />
+                            </label>
+                          </div>
+
+                          <div className="space-y-3">
+                            <FormLabel>Foto NPWP (Opsional)</FormLabel>
+                            <label 
+                              htmlFor="npwp-upload" 
+                              className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-primary transition-all overflow-hidden"
+                            >
+                              {previews.npwp ? (
+                                <img src={previews.npwp} className="w-full h-full object-cover" />
+                              ) : (
+                                <>
+                                  <FileText className="w-8 h-8 text-slate-400 mb-2" />
+                                  <span className="text-xs text-slate-500 font-medium">Klik untuk upload NPWP</span>
+                                </>
+                              )}
+                              <input id="npwp-upload" type="file" className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'npwp')} />
+                            </label>
+                          </div>
+
+                          <div className="space-y-3">
+                            <FormLabel>Foto BPJS (Opsional)</FormLabel>
+                            <label 
+                              htmlFor="bpjs-upload" 
+                              className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-primary transition-all overflow-hidden"
+                            >
+                              {previews.bpjs ? (
+                                <img src={previews.bpjs} className="w-full h-full object-cover" />
+                              ) : (
+                                <>
+                                  <FileText className="w-8 h-8 text-slate-400 mb-2" />
+                                  <span className="text-xs text-slate-500 font-medium">Klik untuk upload BPJS</span>
+                                </>
+                              )}
+                              <input id="bpjs-upload" type="file" className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'bpjs')} />
                             </label>
                           </div>
                         </div>
