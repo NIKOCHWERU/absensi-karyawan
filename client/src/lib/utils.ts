@@ -65,3 +65,19 @@ export async function compressImage(
     reader.onerror = () => reject(new Error("Failed to read file for compression"));
   });
 }
+
+/**
+ * Safely compresses an image. If the compression fails (e.g., due to canvas limits on older devices),
+ * it gracefully falls back to returning the original file instead of throwing an error.
+ */
+export async function safeCompressImage(
+  file: File,
+  options: { maxWidth?: number; maxHeight?: number; quality?: number } = {}
+): Promise<Blob | File> {
+  try {
+    return await compressImage(file, options);
+  } catch (err) {
+    console.warn("Image compression failed, falling back to original file:", err);
+    return file;
+  }
+}

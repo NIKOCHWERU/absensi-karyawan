@@ -8,7 +8,7 @@ import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { BottomNav } from "@/components/BottomNav";
-import { compressImage } from "@/lib/utils";
+import { compressImage, safeCompressImage } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,13 +68,16 @@ export default function ProfilePage() {
       const formData = new FormData();
       Object.entries(values).forEach(([k, v]) => { if (v !== undefined && v !== null) formData.append(k, v); });
       if (photoFile) {
-        formData.append("profilePhoto", photoFile);
+        const compressed = await safeCompressImage(photoFile, { maxWidth: 1024, quality: 0.7 });
+        formData.append("profilePhoto", compressed, "profile.jpg");
       }
       if (npwpFile) {
-        formData.append("npwpPhoto", npwpFile);
+        const compressed = await safeCompressImage(npwpFile, { maxWidth: 1280, quality: 0.7 });
+        formData.append("npwpPhoto", compressed, "npwp.jpg");
       }
       if (bpjsFile) {
-        formData.append("bpjsPhoto", bpjsFile);
+        const compressed = await safeCompressImage(bpjsFile, { maxWidth: 1280, quality: 0.7 });
+        formData.append("bpjsPhoto", compressed, "bpjs.jpg");
       }
       const res = await fetch("/api/profile", { method: "PATCH", body: formData, credentials: "include" });
       if (!res.ok) {

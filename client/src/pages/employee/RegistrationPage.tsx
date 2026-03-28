@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { compressImage } from "@/lib/utils";
+import { compressImage, safeCompressImage } from "@/lib/utils";
 import { Loader2, ChevronRight, ChevronLeft, Check, Camera, Upload, User, Briefcase, FileText, ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -120,10 +120,22 @@ const [previews, setPreviews] = useState<{ ktp?: string; profile?: string; npwp?
       const npwpInput = document.getElementById('npwp-upload') as HTMLInputElement;
       const bpjsInput = document.getElementById('bpjs-upload') as HTMLInputElement;
 
-      if (ktpInput?.files?.[0]) formData.append('ktpPhoto', ktpInput.files[0]);
-      if (profInput?.files?.[0]) formData.append('profilePhoto', profInput.files[0]);
-      if (bpjsInput?.files?.[0]) formData.append('bpjsPhoto', bpjsInput.files[0]);
-      if (npwpInput?.files?.[0]) formData.append('npwpPhoto', npwpInput.files[0]);
+      if (ktpInput?.files?.[0]) {
+        const compressed = await safeCompressImage(ktpInput.files[0], { maxWidth: 1600, quality: 0.8 });
+        formData.append('ktpPhoto', compressed, 'ktp.jpg');
+      }
+      if (profInput?.files?.[0]) {
+        const compressed = await safeCompressImage(profInput.files[0], { maxWidth: 1024, quality: 0.7 });
+        formData.append('profilePhoto', compressed, 'profile.jpg');
+      }
+      if (bpjsInput?.files?.[0]) {
+        const compressed = await safeCompressImage(bpjsInput.files[0], { maxWidth: 1280, quality: 0.7 });
+        formData.append('bpjsPhoto', compressed, 'bpjs.jpg');
+      }
+      if (npwpInput?.files?.[0]) {
+        const compressed = await safeCompressImage(npwpInput.files[0], { maxWidth: 1280, quality: 0.7 });
+        formData.append('npwpPhoto', compressed, 'npwp.jpg');
+      }
 
       const res = await fetch("/api/register-data", {
         method: "POST",
