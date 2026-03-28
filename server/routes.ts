@@ -623,6 +623,37 @@ export async function registerRoutes(
     res.json(sessions);
   });
 
+  // --- File Upload API ---
+  app.post("/api/upload-single", upload.single('photo'), (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "Tidak ada file yang diunggah" });
+      }
+
+      // Check size (15MB = 15 * 1024 * 1024)
+      if (req.file.size > 15 * 1024 * 1024) {
+        return res.status(400).json({ message: "Ukuran foto maksimal 15MB. Silakan pilih foto lain atau kompres file Anda." });
+      }
+
+      const tempDir = path.join(uploadsDir, 'temp');
+      if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+
+      // Generate a unique identifier to prevent overwrites
+      const uniqueId = req.isAuthenticated() ? req.user!.id : 'anon-reg-' + Date.now();
+      const safeOriginalName = req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const filename = `temp-${uniqueId}-${Date.now()}-${safeOriginalName}`;
+      const filepath = path.join(tempDir, filename);
+      
+      fs.writeFileSync(filepath, req.file.buffer);
+
+      const url = `/uploads/temp/${filename}`;
+      res.json({ url });
+    } catch (err: any) {
+      console.error("Upload Single Error:", err);
+      res.status(500).json({ message: "Gagal mengunggah foto: " + (err.message || "Unknown error") });
+    }
+  });
+
   // --- Registration & Shift Routes ---
 
   app.post("/api/register-data", upload.fields([

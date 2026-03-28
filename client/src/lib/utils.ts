@@ -81,3 +81,48 @@ export async function safeCompressImage(
     return file;
   }
 }
+
+/**
+ * Uploads a file with progress tracking.
+ * Returns the URL of the uploaded file on the server.
+ */
+export function uploadFileWithProgress(
+  file: Blob | File,
+  onProgress: (percent: number) => void
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/upload-single");
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percentComplete = Math.round((event.loaded / event.total) * 100);
+        onProgress(percentComplete);
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const response = JSON.parse(xhr.responseText);
+          resolve(response.url);
+        } catch (err) {
+          reject(new Error("Invalid response from server"));
+        }
+      } else {
+        try {
+          const response = JSON.parse(xhr.responseText);
+          reject(new Error(response.message || "Upload failed"));
+        } catch (err) {
+          reject(new Error("Upload failed"));
+        }
+      }
+    };
+
+    xhr.onerror = () => reject(new Error("Network error occurred during upload"));
+
+    const formData = new FormData();
+    formData.append("photo", file, (file as File).name || "upload.jpg");
+    xhr.send(formData);
+  });
+}

@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { compressImage, safeCompressImage } from "@/lib/utils";
+import { safeCompressImage, uploadFileWithProgress } from "@/lib/utils";
 import { Loader2, ChevronRight, ChevronLeft, Check, Camera, Upload, User, Briefcase, FileText, ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -52,15 +52,53 @@ export default function RegistrationPage() {
   });
 
 const [previews, setPreviews] = useState<{ ktp?: string; profile?: string; npwp?: string; bpjs?: string }>({});
+const [uploadProgress, setUploadProgress] = useState<{ ktp?: number; profile?: number; npwp?: number; bpjs?: number }>({});
+const [uploadedUrls, setUploadedUrls] = useState<{ ktp?: string; profile?: string; npwp?: string; bpjs?: string }>({});
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'ktp' | 'profile' | 'npwp' | 'bpjs') => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'ktp' | 'profile' | 'npwp' | 'bpjs') => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviews(prev => ({ ...prev, [type]: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    if (file.size > 15 * 1024 * 1024) {
+      toast({
+        title: "File Terlalu Besar",
+        description: "Ukuran maksimal file adalah 15MB. Silakan pilih file lain atau kompres file Anda.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviews(prev => ({ ...prev, [type]: reader.result as string }));
+    };
+    reader.readAsDataURL(file);
+
+    try {
+      const maxW = type === 'ktp' ? 1600 : type === 'profile' ? 1024 : 1280;
+      const compressedFile = await safeCompressImage(file, { maxWidth: maxW, quality: 0.8 });
+
+      setUploadProgress(prev => ({ ...prev, [type]: 0 }));
+      
+      const url = await uploadFileWithProgress(compressedFile, (percent) => {
+        setUploadProgress(prev => ({ ...prev, [type]: percent }));
+      });
+
+      setUploadedUrls(prev => ({ ...prev, [type]: url }));
+      
+      toast({
+        title: "Berhasil",
+        description: `Foto berhasil diunggah.`,
+      });
+    } catch (error: any) {
+      console.error(`Upload error for ${type}:`, error);
+      setUploadProgress(prev => ({ ...prev, [type]: undefined }));
+      setPreviews(prev => ({ ...prev, [type]: undefined }));
+      toast({
+        title: "Gagal Mengunggah",
+        description: error.message || "Terjadi kesalahan koneksi saat mengunggah foto.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -103,39 +141,33 @@ const [previews, setPreviews] = useState<{ ktp?: string; profile?: string; npwp?
         if (values[key]) formData.append(key, values[key]);
       });
 
-      const ktpInput = document.getElementById('ktp-upload') as HTMLInputElement;
-      const profInput = document.getElementById('prof-upload') as HTMLInputElement;
-
-      if (!ktpInput?.files?.[0]) {
+      if (!uploadedUrls.ktp) {
         toast({ title: "Peringatan", description: "Foto KTP wajib diunggah.", variant: "destructive" });
         setIsSubmitting(false);
         return;
       }
-      if (!profInput?.files?.[0]) {
+      if (!uploadedUrls.profile) {
         toast({ title: "Peringatan", description: "Foto Profil wajib diunggah.", variant: "destructive" });
         setIsSubmitting(false);
         return;
       }
 
-      const npwpInput = document.getElementById('npwp-upload') as HTMLInputElement;
-      const bpjsInput = document.getElementById('bpjs-upload') as HTMLInputElement;
+      // Check if there's a pending upload
+      if (
+        (uploadProgress.ktp !== undefined && uploadProgress.ktp < 100) ||
+        (uploadProgress.profile !== undefined && uploadProgress.profile < 100) ||
+        (uploadProgress.npwp !== undefined && uploadProgress.npwp < 100) ||
+        (uploadProgress.bpjs !== undefined && uploadProgress.bpjs < 100)
+      ) {
+        toast({ title: "Peringatan", description: "Mohon tunggu hingga semua foto selesai diunggah.", variant: "destructive" });
+        setIsSubmitting(false);
+        return;
+      }
 
-      if (ktpInput?.files?.[0]) {
-        const compressed = await safeCompressImage(ktpInput.files[0], { maxWidth: 1600, quality: 0.8 });
-        formData.append('ktpPhoto', compressed, 'ktp.jpg');
-      }
-      if (profInput?.files?.[0]) {
-        const compressed = await safeCompressImage(profInput.files[0], { maxWidth: 1024, quality: 0.7 });
-        formData.append('profilePhoto', compressed, 'profile.jpg');
-      }
-      if (bpjsInput?.files?.[0]) {
-        const compressed = await safeCompressImage(bpjsInput.files[0], { maxWidth: 1280, quality: 0.7 });
-        formData.append('bpjsPhoto', compressed, 'bpjs.jpg');
-      }
-      if (npwpInput?.files?.[0]) {
-        const compressed = await safeCompressImage(npwpInput.files[0], { maxWidth: 1280, quality: 0.7 });
-        formData.append('npwpPhoto', compressed, 'npwp.jpg');
-      }
+      formData.append('ktpPhotoUrl', uploadedUrls.ktp);
+      formData.append('photoUrl', uploadedUrls.profile);
+      if (uploadedUrls.bpjs) formData.append('bpjsPhotoUrl', uploadedUrls.bpjs);
+      if (uploadedUrls.npwp) formData.append('npwpPhotoUrl', uploadedUrls.npwp);
 
       const res = await fetch("/api/register-data", {
         method: "POST",
@@ -451,9 +483,15 @@ const [previews, setPreviews] = useState<{ ktp?: string; profile?: string; npwp?
                             <FormLabel>Foto KTP</FormLabel>
                             <label 
                               htmlFor="ktp-upload" 
-                              className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-primary transition-all overflow-hidden"
+                              className={`flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-primary transition-all overflow-hidden relative ${uploadProgress.ktp !== undefined && uploadProgress.ktp < 100 ? 'pointer-events-none opacity-80' : ''}`}
                             >
-                              {previews.ktp ? (
+                              {uploadProgress.ktp !== undefined && uploadProgress.ktp < 100 ? (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm z-10 w-full px-6">
+                                  <Loader2 className="w-8 h-8 text-primary animate-spin mb-3" />
+                                  <Progress value={uploadProgress.ktp} className="h-2 w-full" />
+                                  <p className="text-xs text-primary font-bold mt-2">{uploadProgress.ktp}% Mengunggah...</p>
+                                </div>
+                              ) : previews.ktp ? (
                                 <img src={previews.ktp} className="w-full h-full object-cover" />
                               ) : (
                                 <>
@@ -469,9 +507,15 @@ const [previews, setPreviews] = useState<{ ktp?: string; profile?: string; npwp?
                             <FormLabel>Foto Profil</FormLabel>
                             <label 
                               htmlFor="prof-upload" 
-                              className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-primary transition-all overflow-hidden"
+                              className={`flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-primary transition-all overflow-hidden relative ${uploadProgress.profile !== undefined && uploadProgress.profile < 100 ? 'pointer-events-none opacity-80' : ''}`}
                             >
-                              {previews.profile ? (
+                              {uploadProgress.profile !== undefined && uploadProgress.profile < 100 ? (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm z-10 w-full px-6">
+                                  <Loader2 className="w-8 h-8 text-primary animate-spin mb-3" />
+                                  <Progress value={uploadProgress.profile} className="h-2 w-full" />
+                                  <p className="text-xs text-primary font-bold mt-2">{uploadProgress.profile}% Mengunggah...</p>
+                                </div>
+                              ) : previews.profile ? (
                                 <img src={previews.profile} className="w-full h-full object-cover" />
                               ) : (
                                 <>
@@ -487,9 +531,15 @@ const [previews, setPreviews] = useState<{ ktp?: string; profile?: string; npwp?
                             <FormLabel>Foto NPWP (Opsional)</FormLabel>
                             <label 
                               htmlFor="npwp-upload" 
-                              className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-primary transition-all overflow-hidden"
+                              className={`flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-primary transition-all overflow-hidden relative ${uploadProgress.npwp !== undefined && uploadProgress.npwp < 100 ? 'pointer-events-none opacity-80' : ''}`}
                             >
-                              {previews.npwp ? (
+                              {uploadProgress.npwp !== undefined && uploadProgress.npwp < 100 ? (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm z-10 w-full px-6">
+                                  <Loader2 className="w-8 h-8 text-primary animate-spin mb-3" />
+                                  <Progress value={uploadProgress.npwp} className="h-2 w-full" />
+                                  <p className="text-xs text-primary font-bold mt-2">{uploadProgress.npwp}% Mengunggah...</p>
+                                </div>
+                              ) : previews.npwp ? (
                                 <img src={previews.npwp} className="w-full h-full object-cover" />
                               ) : (
                                 <>
@@ -505,9 +555,15 @@ const [previews, setPreviews] = useState<{ ktp?: string; profile?: string; npwp?
                             <FormLabel>Foto BPJS (Opsional)</FormLabel>
                             <label 
                               htmlFor="bpjs-upload" 
-                              className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-primary transition-all overflow-hidden"
+                              className={`flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-slate-300 rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 hover:border-primary transition-all overflow-hidden relative ${uploadProgress.bpjs !== undefined && uploadProgress.bpjs < 100 ? 'pointer-events-none opacity-80' : ''}`}
                             >
-                              {previews.bpjs ? (
+                              {uploadProgress.bpjs !== undefined && uploadProgress.bpjs < 100 ? (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm z-10 w-full px-6">
+                                  <Loader2 className="w-8 h-8 text-primary animate-spin mb-3" />
+                                  <Progress value={uploadProgress.bpjs} className="h-2 w-full" />
+                                  <p className="text-xs text-primary font-bold mt-2">{uploadProgress.bpjs}% Mengunggah...</p>
+                                </div>
+                              ) : previews.bpjs ? (
                                 <img src={previews.bpjs} className="w-full h-full object-cover" />
                               ) : (
                                 <>
