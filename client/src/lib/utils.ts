@@ -42,8 +42,9 @@ export async function compressImage(
         canvas.width = width;
         canvas.height = height;
 
-        const ctx = canvas.getContext('canvas-2d' as any) as CanvasRenderingContext2D;
+        const ctx = canvas.getContext('2d');
         if (!ctx) return reject(new Error("Could not get canvas context"));
+
         
         ctx.drawImage(img, 0, 0, width, height);
 
