@@ -134,12 +134,15 @@ const [previews, setPreviews] = useState<{ ktp?: string; profile?: string; npwp?
         const errData = await res.json().catch(() => ({ message: "Terjadi kesalahan" }));
         throw new Error(errData.message || "Gagal mendaftar");
       }
+      const updatedUser = await res.json();
       
       toast({
         title: "Pendaftaran Berhasil",
         description: "Data Anda telah dikirim dan sedang menunggu verifikasi admin.",
       });
 
+      // Update cache immediately to prevent ProtectedRoute from bouncing back
+      queryClient.setQueryData(["/api/user"], updatedUser);
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       setLocation("/pending");
     } catch (err: any) {
