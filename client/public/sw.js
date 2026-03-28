@@ -1,12 +1,39 @@
+const CACHE_NAME = 'absensi-eja-v5';
+
 self.addEventListener('install', function (event) {
     self.skipWaiting();
 });
 
+self.addEventListener('activate', function (event) {
+    event.waitUntil(
+        caches.keys().then(function (cacheNames) {
+            return Promise.all(
+                cacheNames.filter(function (cacheName) {
+                    return cacheName !== CACHE_NAME;
+                }).map(function (cacheName) {
+                    return caches.delete(cacheName);
+                })
+            );
+        }).then(() => self.clients.claim())
+    );
+});
+
 self.addEventListener('fetch', function (event) {
-    // Basic fetch handler to satisfy PWA requirements
-    event.respondWith(fetch(event.request).catch(() => {
-        return new Response("Koneksi terputus. Mohon periksa internet Anda.");
-    }));
+    // Only intercept navigation (HTML) for offline message
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            fetch(event.request).catch(() => {
+                return new Response(
+                    "<html><body style='font-family:sans-serif;text-align:center;padding:50px;'><h2>Koneksi Terputus</h2><p>Mohon periksa internet Anda.</p><button onclick='window.location.reload()'>Segarkan Halaman</button></body></html>",
+                    { headers: { 'Content-Type': 'text/html' } }
+                );
+            })
+        );
+        return;
+    }
+
+    // For other assets, just network-first
+    event.respondWith(fetch(event.request));
 });
 
 self.addEventListener('push', function (event) {

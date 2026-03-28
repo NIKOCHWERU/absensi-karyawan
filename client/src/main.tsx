@@ -6,7 +6,7 @@ createRoot(document.getElementById("root")!).render(<App />);
 
 if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-        navigator.serviceWorker.register("/sw.js?v=4").then((registration) => {
+        navigator.serviceWorker.register("/sw.js?v=5").then((registration) => {
             console.log("✅ SW registered: ", registration);
             // Ensure SW updates faster
             registration.update();
