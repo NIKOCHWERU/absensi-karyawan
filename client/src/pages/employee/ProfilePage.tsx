@@ -121,23 +121,11 @@ export default function ProfilePage() {
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({ title: "Profil Diperbarui", description: "Data berhasil disimpan." });
       setIsEditing(false);
-      setPhotoFile(null);
-      setPhotoPreview(null);
     },
     onError: (err: any) => {
       toast({ title: "Gagal", description: err.message, variant: "destructive" });
     },
   });
-
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setPhotoFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setPhotoPreview(reader.result as string);
-      reader.readAsDataURL(file);
-    }
-  };
 
   const cancelEdit = () => {
     form.reset({
@@ -154,7 +142,7 @@ export default function ProfilePage() {
     setIsEditing(false);
   };
 
-  const currentPhoto = photoPreview || user?.photoUrl;
+  const currentPhoto = previews.profile || user?.photoUrl;
 
   return (
     <div className="min-h-screen bg-slate-50 pb-64">
