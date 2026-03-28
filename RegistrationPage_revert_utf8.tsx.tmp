@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -55,17 +55,6 @@ export default function RegistrationPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'ktp' | 'profile' | 'bpjs' | 'npwp') => {
     const file = e.target.files?.[0];
     if (file) {
-      // Size Check: 30MB
-      if (file.size > 30 * 1024 * 1024) {
-        toast({
-          title: "File Terlalu Besar",
-          description: "Ukuran file maksimal adalah 30MB.",
-          variant: "destructive"
-        });
-        e.target.value = "";
-        return;
-      }
-
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviews(prev => ({ ...prev, [type]: reader.result as string }));
@@ -139,15 +128,8 @@ export default function RegistrationPage() {
         body: formData,
         credentials: "include",
       });
-      
       if (!res.ok) {
         const errData = await res.json().catch(() => ({ message: "Terjadi kesalahan" }));
-        
-        // Handle Nginx 413 specifically if possible
-        if (res.status === 413) {
-           throw new Error("File terlalu besar (Proxy Server menolak). Pastikan Nginx client_max_body_size sudah diatur.");
-        }
-        
         throw new Error(errData.message || "Gagal mendaftar");
       }
       

@@ -37,7 +37,10 @@ declare global {
   }
 }
 
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 30 * 1024 * 1024 } // 30MB
+});
 
 export async function registerRoutes(
   httpServer: Server,
@@ -630,9 +633,9 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Tidak ada file yang diunggah" });
       }
 
-      // Check size (15MB = 15 * 1024 * 1024)
-      if (req.file.size > 15 * 1024 * 1024) {
-        return res.status(400).json({ message: "Ukuran foto maksimal 15MB. Silakan pilih foto lain atau kompres file Anda." });
+      // Check size (30MB = 30 * 1024 * 1024)
+      if (req.file.size > 30 * 1024 * 1024) {
+        return res.status(400).json({ message: "Ukuran foto maksimal 30MB. Silakan pilih foto lain atau kompres file Anda." });
       }
 
       const { employeeName, type } = req.body;
@@ -696,11 +699,16 @@ export async function registerRoutes(
           return res.status(400).json({ message: "Data sudah terverifikasi dan terkunci." });
         }
 
+        const safeName = updates.fullName ? updates.fullName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : (updates.username || 'UNKNOWN');
+        const dateStr = format(new Date(), "yyyy-MM-dd");
+
         if (files?.ktpPhoto?.[0]) {
-          const ktpFilename = `ktp-${userId}-${Date.now()}-${files.ktpPhoto[0].originalname}`;
-          const ktpPath = path.join(uploadsDir, ktpFilename);
-          fs.writeFileSync(ktpPath, files.ktpPhoto[0].buffer);
-          updates.ktpPhotoUrl = `/uploads/${ktpFilename}`;
+          const ktpUpload = await uploadFile(
+            files.ktpPhoto[0].buffer,
+            `KTP_${safeName}_${dateStr}.jpg`,
+            files.ktpPhoto[0].mimetype
+          );
+          updates.ktpPhotoUrl = ktpUpload.webViewLink || ktpUpload.id;
         }
 
         if (files?.profilePhoto?.[0]) {
@@ -712,21 +720,22 @@ export async function registerRoutes(
           updates.photoUrl = `/uploads/profile/${profFilename}`;
         }
 
-        const empUploadsDir = path.join(uploadsDir, 'employees');
-        if (!fs.existsSync(empUploadsDir)) fs.mkdirSync(empUploadsDir, { recursive: true });
-
         if (files?.bpjsPhoto?.[0]) {
-          const filename = `emp-${userId}-bpjs-${Date.now()}-${files.bpjsPhoto[0].originalname}`;
-          const filepath = path.join(empUploadsDir, filename);
-          fs.writeFileSync(filepath, files.bpjsPhoto[0].buffer);
-          updates.bpjsPhotoUrl = `/uploads/employees/${filename}`;
+          const bpjsUpload = await uploadFile(
+            files.bpjsPhoto[0].buffer,
+            `BPJS_${safeName}_${dateStr}.jpg`,
+            files.bpjsPhoto[0].mimetype
+          );
+          updates.bpjsPhotoUrl = bpjsUpload.webViewLink || bpjsUpload.id;
         }
 
         if (files?.npwpPhoto?.[0]) {
-          const filename = `emp-${userId}-npwp-${Date.now()}-${files.npwpPhoto[0].originalname}`;
-          const filepath = path.join(empUploadsDir, filename);
-          fs.writeFileSync(filepath, files.npwpPhoto[0].buffer);
-          updates.npwpPhotoUrl = `/uploads/employees/${filename}`;
+          const npwpUpload = await uploadFile(
+            files.npwpPhoto[0].buffer,
+            `NPWP_${safeName}_${dateStr}.jpg`,
+            files.npwpPhoto[0].mimetype
+          );
+          updates.npwpPhotoUrl = npwpUpload.webViewLink || npwpUpload.id;
         }
 
         updates.registrationStatus = 'pending';
@@ -745,12 +754,16 @@ export async function registerRoutes(
         }
 
         const hashedPassword = await hashPassword(nik); // Default password same as NIK
-        
+        const safeName = updates.fullName ? updates.fullName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : (updates.username || 'UNKNOWN');
+        const dateStr = format(new Date(), "yyyy-MM-dd");
+
         if (files?.ktpPhoto?.[0]) {
-          const ktpFilename = `ktp-${nik}-${Date.now()}-${files.ktpPhoto[0].originalname}`;
-          const ktpPath = path.join(uploadsDir, ktpFilename);
-          fs.writeFileSync(ktpPath, files.ktpPhoto[0].buffer);
-          updates.ktpPhotoUrl = `/uploads/${ktpFilename}`;
+          const ktpUpload = await uploadFile(
+            files.ktpPhoto[0].buffer,
+            `KTP_${safeName}_${dateStr}.jpg`,
+            files.ktpPhoto[0].mimetype
+          );
+          updates.ktpPhotoUrl = ktpUpload.webViewLink || ktpUpload.id;
         }
 
         if (files?.profilePhoto?.[0]) {
@@ -762,21 +775,22 @@ export async function registerRoutes(
           updates.photoUrl = `/uploads/profile/${profFilename}`;
         }
 
-        const empUploadsDir = path.join(uploadsDir, 'employees');
-        if (!fs.existsSync(empUploadsDir)) fs.mkdirSync(empUploadsDir, { recursive: true });
-
         if (files?.bpjsPhoto?.[0]) {
-          const filename = `emp-${nik}-bpjs-${Date.now()}-${files.bpjsPhoto[0].originalname}`;
-          const filepath = path.join(empUploadsDir, filename);
-          fs.writeFileSync(filepath, files.bpjsPhoto[0].buffer);
-          updates.bpjsPhotoUrl = `/uploads/employees/${filename}`;
+          const bpjsUpload = await uploadFile(
+            files.bpjsPhoto[0].buffer,
+            `BPJS_${safeName}_${dateStr}.jpg`,
+            files.bpjsPhoto[0].mimetype
+          );
+          updates.bpjsPhotoUrl = bpjsUpload.webViewLink || bpjsUpload.id;
         }
 
         if (files?.npwpPhoto?.[0]) {
-          const filename = `emp-${nik}-npwp-${Date.now()}-${files.npwpPhoto[0].originalname}`;
-          const filepath = path.join(empUploadsDir, filename);
-          fs.writeFileSync(filepath, files.npwpPhoto[0].buffer);
-          updates.npwpPhotoUrl = `/uploads/employees/${filename}`;
+          const npwpUpload = await uploadFile(
+            files.npwpPhoto[0].buffer,
+            `NPWP_${safeName}_${dateStr}.jpg`,
+            files.npwpPhoto[0].mimetype
+          );
+          updates.npwpPhotoUrl = npwpUpload.webViewLink || npwpUpload.id;
         }
 
         updates.username = nik;

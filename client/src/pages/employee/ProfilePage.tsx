@@ -53,8 +53,12 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 15 * 1024 * 1024) {
-      toast({ title: "File Terlalu Besar", description: "Maksimal 15MB.", variant: "destructive" });
+    if (file.size > 30 * 1024 * 1024) {
+      toast({
+        title: "File Terlalu Besar",
+        description: "Ukuran file maksimal adalah 30MB.",
+        variant: "destructive"
+      });
       return;
     }
 
