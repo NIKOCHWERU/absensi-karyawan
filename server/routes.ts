@@ -89,10 +89,13 @@ export async function registerRoutes(
     });
 
     // Normalize isAdmin and is_admin to numeric (1/0) for MySQL TINYINT compatibility
-    if (updates.isAdmin === 'true' || updates.is_admin === 'true' || updates.isAdmin === true || updates.is_admin === true) {
-      updates.isAdmin = 1;
-    } else if (updates.isAdmin === 'false' || updates.is_admin === 'false' || updates.isAdmin === false || updates.is_admin === false) {
-      updates.isAdmin = 0;
+    const adminVal = updates.isAdmin !== undefined ? updates.isAdmin : updates.is_admin;
+    if (adminVal !== undefined) {
+      if (adminVal === 'true' || adminVal === true || adminVal === 1 || adminVal === '1') {
+        updates.isAdmin = 1;
+      } else {
+        updates.isAdmin = 0;
+      }
     }
 
     // Always delete snake_case version to avoid Drizzle conflicts
