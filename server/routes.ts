@@ -85,11 +85,11 @@ export async function registerRoutes(
       }
     });
 
-    // Normalize isAdmin and is_admin to boolean (handle FormData strings)
+    // Normalize isAdmin and is_admin to numeric (1/0) for MySQL TINYINT compatibility
     if (updates.isAdmin === 'true' || updates.is_admin === 'true' || updates.isAdmin === true || updates.is_admin === true) {
-      updates.isAdmin = true;
+      updates.isAdmin = 1;
     } else if (updates.isAdmin === 'false' || updates.is_admin === 'false' || updates.isAdmin === false || updates.is_admin === false) {
-      updates.isAdmin = false;
+      updates.isAdmin = 0;
     }
 
     // Always delete snake_case version to avoid Drizzle conflicts
@@ -97,20 +97,26 @@ export async function registerRoutes(
 
     // Auto-set isAdmin based on role
     if (updates.role === 'admin' || updates.role === 'superadmin') {
-      updates.isAdmin = true;
+      updates.isAdmin = 1;
     }
 
     return updates;
   };
+
 
   // --- Employee: Edit own profile ---
   app.patch("/api/profile", upload.fields([{ name: 'profilePhoto', maxCount: 1 }, { name: 'bpjsPhoto', maxCount: 1 }, { name: 'npwpPhoto', maxCount: 1 }]), async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     try {
       const userId = req.user!.id;
-      const allowed = ['phoneNumber', 'email', 'branch', 'npwp', 'bpjs', 'religion'];
-      const updates: any = {};
-      allowed.forEach(k => { if (req.body[k] !== undefined) updates[k] = req.body[k]; });
+      const updates = normalizeUserData(req.body);
+
+      // Only allow these fields to be updated by the employee themselves
+      const allowedFields = ['phoneNumber', 'email', 'branch', 'npwp', 'bpjs', 'religion'];
+      const filteredUpdates: any = {};
+      allowedFields.forEach(f => {
+        if (updates[f] !== undefined) filteredUpdates[f] = updates[f];
+      });
 
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
       if (files?.profilePhoto?.[0]) {
@@ -119,7 +125,7 @@ export async function registerRoutes(
         if (!fs.existsSync(profDir)) fs.mkdirSync(profDir, { recursive: true });
         const profPath = path.join(profDir, profFilename);
         fs.writeFileSync(profPath, files.profilePhoto[0].buffer);
-        updates.photoUrl = `/uploads/profile/${profFilename}`;
+        filteredUpdates.photoUrl = `/uploads/profile/${profFilename}`;
       }
 
       const empUploadsDir = path.join(uploadsDir, 'employees');
@@ -129,23 +135,24 @@ export async function registerRoutes(
         const filename = `emp-${userId}-bpjs-${Date.now()}-${files.bpjsPhoto[0].originalname}`;
         const filepath = path.join(empUploadsDir, filename);
         fs.writeFileSync(filepath, files.bpjsPhoto[0].buffer);
-        updates.bpjsPhotoUrl = `/uploads/employees/${filename}`;
+        filteredUpdates.bpjsPhotoUrl = `/uploads/employees/${filename}`;
       }
 
       if (files?.npwpPhoto?.[0]) {
         const filename = `emp-${userId}-npwp-${Date.now()}-${files.npwpPhoto[0].originalname}`;
         const filepath = path.join(empUploadsDir, filename);
         fs.writeFileSync(filepath, files.npwpPhoto[0].buffer);
-        updates.npwpPhotoUrl = `/uploads/employees/${filename}`;
+        filteredUpdates.npwpPhotoUrl = `/uploads/employees/${filename}`;
       }
 
-      const updatedUser = await storage.updateUser(userId, updates);
+      const updatedUser = await storage.updateUser(userId, filteredUpdates);
       res.json(updatedUser);
     } catch (err: any) {
       console.error("Profile Update Error:", err);
       res.status(500).json({ message: "Gagal memperbarui profil" });
     }
   });
+
 
 
 
@@ -730,7 +737,8 @@ export async function registerRoutes(
         updates.password = hashedPassword;
         updates.role = 'employee';
         updates.registrationStatus = 'pending';
-        updates.isAdmin = false;
+        updates.isAdmin = 0;
+
         
         // Clean up empty strings to null for unique constraints
         if (updates.email === "") updates.email = null;
@@ -941,7 +949,8 @@ export async function registerRoutes(
               shift,
               password: hashedPassword,
               role: 'employee',
-              isAdmin: false,
+              isAdmin: 0,
+
             });
             createdCount++;
           } catch (err: any) {
