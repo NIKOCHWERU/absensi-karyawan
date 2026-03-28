@@ -58,11 +58,9 @@ export default function ComplaintPage() {
             formData.append("title", title);
             formData.append("description", description);
             
-            // Compress all photos before sending
             for (let i = 0; i < photos.length; i++) {
                 const p = photos[i];
-                const compressed = await compressImage(p.file, { maxWidth: 1280, quality: 0.7 });
-                formData.append("photos", compressed, `photo_${i}.jpg`);
+                formData.append("photos", p.file, `photo_${i}.jpg`);
                 formData.append("captions", p.caption);
             }
 

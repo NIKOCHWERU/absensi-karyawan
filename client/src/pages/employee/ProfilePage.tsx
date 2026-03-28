@@ -68,16 +68,13 @@ export default function ProfilePage() {
       const formData = new FormData();
       Object.entries(values).forEach(([k, v]) => { if (v !== undefined && v !== null) formData.append(k, v); });
       if (photoFile) {
-        const compressed = await compressImage(photoFile, { maxWidth: 1024, quality: 0.7 });
-        formData.append("profilePhoto", compressed, "profile.jpg");
+        formData.append("profilePhoto", photoFile, "profile.jpg");
       }
       if (npwpFile) {
-        const compressed = await compressImage(npwpFile, { maxWidth: 1280, quality: 0.7 });
-        formData.append("npwpPhoto", compressed, "npwp.jpg");
+        formData.append("npwpPhoto", npwpFile, "npwp.jpg");
       }
       if (bpjsFile) {
-        const compressed = await compressImage(bpjsFile, { maxWidth: 1280, quality: 0.7 });
-        formData.append("bpjsPhoto", compressed, "bpjs.jpg");
+        formData.append("bpjsPhoto", bpjsFile, "bpjs.jpg");
       }
       const res = await fetch("/api/profile", { method: "PATCH", body: formData, credentials: "include" });
       if (!res.ok) {

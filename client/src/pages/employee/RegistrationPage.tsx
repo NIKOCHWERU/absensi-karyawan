@@ -120,20 +120,14 @@ const [previews, setPreviews] = useState<{ ktp?: string; profile?: string; npwp?
       const npwpInput = document.getElementById('npwp-upload') as HTMLInputElement;
       const bpjsInput = document.getElementById('bpjs-upload') as HTMLInputElement;
 
-      // Compress images before uploading (highly recommended for mobile)
-      const compressedKtp = await compressImage(ktpInput.files[0], { maxWidth: 1600, quality: 0.8 });
-      const compressedProf = await compressImage(profInput.files[0], { maxWidth: 1024, quality: 0.6 });
-
-      formData.append('ktpPhoto', compressedKtp, 'ktp.jpg');
-      formData.append('profilePhoto', compressedProf, 'profile.jpg');
+      formData.append('ktpPhoto', ktpInput.files[0], 'ktp.jpg');
+      formData.append('profilePhoto', profInput.files[0], 'profile.jpg');
 
       if (npwpInput?.files?.[0]) {
-        const compressedNpwp = await compressImage(npwpInput.files[0], { maxWidth: 1280, quality: 0.7 });
-        formData.append('npwpPhoto', compressedNpwp, 'npwp.jpg');
+        formData.append('npwpPhoto', npwpInput.files[0], 'npwp.jpg');
       }
       if (bpjsInput?.files?.[0]) {
-        const compressedBpjs = await compressImage(bpjsInput.files[0], { maxWidth: 1280, quality: 0.7 });
-        formData.append('bpjsPhoto', compressedBpjs, 'bpjs.jpg');
+        formData.append('bpjsPhoto', bpjsInput.files[0], 'bpjs.jpg');
       }
 
       const res = await fetch("/api/register-data", {
