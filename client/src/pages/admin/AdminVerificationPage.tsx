@@ -226,8 +226,11 @@ function DocumentBox({ label, url, isDrive }: { label: string; url?: string | nu
     return `/api/images/${url}`; // Assume it's an ID
   };
 
+  const isLocal = url?.startsWith('/uploads');
   const displayUrl = url ? getImageUrl(url) : null;
-  const openUrl = url && url.startsWith('http') ? url : (url ? `https://drive.google.com/file/d/${url}/view` : undefined);
+  const openUrl = url && (url.startsWith('http') || isLocal) 
+    ? url 
+    : (url ? `https://drive.google.com/file/d/${url}/view` : undefined);
 
   return (
     <div className="space-y-2">
@@ -248,10 +251,13 @@ function DocumentBox({ label, url, isDrive }: { label: string; url?: string | nu
                <ImageIcon className="w-8 h-8 text-primary/40" />
             </div>
             <div 
-              className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer text-white text-[10px] font-bold"
+              className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity cursor-pointer text-white"
               onClick={() => window.open(openUrl || displayUrl || "", '_blank')}
             >
-              LIHAT DATA
+              <Eye className="w-5 h-5 mb-1" />
+              <span className="text-[10px] font-bold uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full">
+                {isLocal ? 'Lihat Foto' : 'Buka Drive'}
+              </span>
             </div>
           </>
         ) : (

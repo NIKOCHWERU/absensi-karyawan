@@ -997,7 +997,10 @@ function DocumentBox({ label, url, isDrive }: { label: string; url?: string | nu
     };
 
     const displayUrl = url ? getImageUrl(url) : null;
-    const openUrl = url && url.startsWith('http') ? url : (url ? `https://drive.google.com/file/d/${url}/view` : undefined);
+    const isLocal = url?.startsWith('/uploads');
+    const openUrl = url && (url.startsWith('http') || isLocal) 
+        ? url 
+        : (url ? `https://drive.google.com/file/d/${url}/view` : undefined);
 
     return (
         <div className="space-y-2 group">
@@ -1023,7 +1026,9 @@ function DocumentBox({ label, url, isDrive }: { label: string; url?: string | nu
                             onClick={() => window.open(openUrl || displayUrl || "", '_blank')}
                         >
                             <Eye className="w-5 h-5 mb-1" />
-                            <span className="text-[9px] font-bold uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full">Buka Drive</span>
+                            <span className="text-[9px] font-bold uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full">
+                                {isLocal ? 'Lihat Foto' : 'Buka Drive'}
+                            </span>
                         </div>
                     </>
                 ) : (

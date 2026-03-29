@@ -123,3 +123,18 @@ export async function uploadFile(
         throw new Error("Failed to upload file to Google Drive");
     }
 }
+
+export async function listFiles(): Promise<{ id: string; name: string; webViewLink?: string }[]> {
+    await ensureValidToken();
+    try {
+        const response = await drive.files.list({
+            q: `'${FOLDER_ID}' in parents and trashed = false`,
+            fields: 'files(id, name, webViewLink)',
+            pageSize: 1000
+        });
+        return (response.data.files || []) as any;
+    } catch (error: any) {
+        console.error("❌ Google Drive List Error:", error.message);
+        throw new Error("Failed to list files from Google Drive");
+    }
+}
