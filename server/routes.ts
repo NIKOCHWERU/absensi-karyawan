@@ -666,7 +666,7 @@ export async function registerRoutes(
       const result = await uploadFile(req.file.buffer, gdriveFilename, req.file.mimetype);
       
       // Use the local proxy to render the image properly in img tags
-      const url = `/api/gdrive-img/${result.fileId}`;
+      const url = `/api/images/${result.fileId}`;
       res.json({ url });
 
     } catch (err: any) {
@@ -711,7 +711,7 @@ export async function registerRoutes(
             `KTP_${safeName}_${dateStr}.jpg`,
             files.ktpPhoto[0].mimetype
           );
-          updates.ktpPhotoUrl = ktpUpload.webViewLink || ktpUpload.id;
+          updates.ktpPhotoUrl = ktpUpload.viewUrl || ktpUpload.fileId;
         }
 
         if (files?.profilePhoto?.[0]) {
@@ -729,7 +729,7 @@ export async function registerRoutes(
             `BPJS_${safeName}_${dateStr}.jpg`,
             files.bpjsPhoto[0].mimetype
           );
-          updates.bpjsPhotoUrl = bpjsUpload.webViewLink || bpjsUpload.id;
+          updates.bpjsPhotoUrl = bpjsUpload.viewUrl || bpjsUpload.fileId;
         }
 
         if (files?.npwpPhoto?.[0]) {
@@ -738,7 +738,7 @@ export async function registerRoutes(
             `NPWP_${safeName}_${dateStr}.jpg`,
             files.npwpPhoto[0].mimetype
           );
-          updates.npwpPhotoUrl = npwpUpload.webViewLink || npwpUpload.id;
+          updates.npwpPhotoUrl = npwpUpload.viewUrl || npwpUpload.fileId;
         }
 
         updates.registrationStatus = 'pending';
@@ -766,7 +766,7 @@ export async function registerRoutes(
             `KTP_${safeName}_${dateStr}.jpg`,
             files.ktpPhoto[0].mimetype
           );
-          updates.ktpPhotoUrl = ktpUpload.webViewLink || ktpUpload.id;
+          updates.ktpPhotoUrl = ktpUpload.viewUrl || ktpUpload.fileId;
         }
 
         if (files?.profilePhoto?.[0]) {
@@ -784,7 +784,7 @@ export async function registerRoutes(
             `BPJS_${safeName}_${dateStr}.jpg`,
             files.bpjsPhoto[0].mimetype
           );
-          updates.bpjsPhotoUrl = bpjsUpload.webViewLink || bpjsUpload.id;
+          updates.bpjsPhotoUrl = bpjsUpload.viewUrl || bpjsUpload.fileId;
         }
 
         if (files?.npwpPhoto?.[0]) {
@@ -793,7 +793,7 @@ export async function registerRoutes(
             `NPWP_${safeName}_${dateStr}.jpg`,
             files.npwpPhoto[0].mimetype
           );
-          updates.npwpPhotoUrl = npwpUpload.webViewLink || npwpUpload.id;
+          updates.npwpPhotoUrl = npwpUpload.viewUrl || npwpUpload.fileId;
         }
 
         updates.username = nik;
@@ -1012,7 +1012,7 @@ export async function registerRoutes(
               shift,
               password: hashedPassword,
               role: 'employee',
-              isAdmin: 0,
+              isAdmin: false,
 
             });
             createdCount++;
@@ -1047,9 +1047,13 @@ export async function registerRoutes(
   });
 
   // Google Drive proxy endpoint (uses native Node.js https - no external deps required)
-  app.get('/api/images/:id', (req, res) => {
-    const { id } = req.params;
-    const driveUrl = `https://drive.google.com/thumbnail?id=${id}&sz=w800`;
+  const gDriveProxy = (req: any, res: any) => {
+    const id = req.params.id || req.params.fileId;
+    if (!id) return res.status(400).send("ID is required");
+    
+    // Support either direct ID or a full URL extract
+    const cleanId = id.includes('/d/') ? id.split('/d/')[1].split('/')[0] : id;
+    const driveUrl = `https://drive.google.com/thumbnail?id=${cleanId}&sz=w800`;
 
     const handleRequest = (url: string, redirectCount = 0) => {
       if (redirectCount > 5) {
@@ -1071,7 +1075,10 @@ export async function registerRoutes(
     };
 
     handleRequest(driveUrl);
-  });
+  };
+
+  app.get('/api/images/:id', gDriveProxy);
+  app.get('/api/gdrive-img/:id', gDriveProxy);
 
   app.delete("/api/admin/users/:id", async (req, res) => {
     if (!isAdminRole(req)) return res.sendStatus(401);

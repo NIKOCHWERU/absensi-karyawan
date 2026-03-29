@@ -156,22 +156,10 @@ export default function AdminVerificationPage() {
 
                   <Section title="Dokumen Upload" icon={<ImageIcon className="w-4 h-4" />}>
                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <p className="text-xs font-medium text-slate-500">KTP</p>
-                          <div className="h-32 bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
-                             {selectedUser.ktpPhotoUrl ? (
-                               <img src={selectedUser.ktpPhotoUrl} className="w-full h-full object-cover cursor-zoom-in" onClick={() => window.open(selectedUser.ktpPhotoUrl!, '_blank')} />
-                             ) : <div className="flex items-center justify-center h-full text-slate-400 text-xs">Kosong</div>}
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <p className="text-xs font-medium text-slate-500">Foto Profil</p>
-                          <div className="h-32 bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
-                             {selectedUser.photoUrl ? (
-                               <img src={selectedUser.photoUrl} className="w-full h-full object-cover cursor-zoom-in" onClick={() => window.open(selectedUser.photoUrl!, '_blank')} />
-                             ) : <div className="flex items-center justify-center h-full text-slate-400 text-xs">Kosong</div>}
-                          </div>
-                        </div>
+                        <DocumentBox label="Foto Profil" url={selectedUser.photoUrl} />
+                        <DocumentBox label="KTP" url={selectedUser.ktpPhotoUrl} isDrive />
+                        <DocumentBox label="BPJS" url={selectedUser.bpjsPhotoUrl} isDrive />
+                        <DocumentBox label="NPWP" url={selectedUser.npwpPhotoUrl} isDrive />
                      </div>
                   </Section>
                 </div>
@@ -221,6 +209,55 @@ function DataRow({ label, value }: { label: string; value?: string | null }) {
     <div className="flex flex-col sm:flex-row sm:justify-between text-sm">
       <span className="text-slate-500">{label}</span>
       <span className="font-semibold text-slate-900">{value || '-'}</span>
+    </div>
+  );
+}
+
+function DocumentBox({ label, url, isDrive }: { label: string; url?: string | null; isDrive?: boolean }) {
+  // Extract ID if it's a Drive URL
+  const getImageUrl = (url: string) => {
+    if (!url) return "";
+    if (url.startsWith("/uploads")) return url;
+    if (url.startsWith("http")) {
+       // If it's a drive URL, extract ID or use proxy
+       const id = url.includes('/d/') ? url.split('/d/')[1].split('/')[0] : url;
+       return `/api/images/${id}`;
+    }
+    return `/api/images/${url}`; // Assume it's an ID
+  };
+
+  const displayUrl = url ? getImageUrl(url) : null;
+  const openUrl = url && url.startsWith('http') ? url : (url ? `https://drive.google.com/file/d/${url}/view` : undefined);
+
+  return (
+    <div className="space-y-2">
+      <p className="text-[10px] font-bold uppercase tracking-tight text-slate-400">{label}</p>
+      <div className="h-32 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 group relative">
+        {url ? (
+          <>
+            <img 
+              src={displayUrl || ""} 
+              className="w-full h-full object-cover transition-transform group-hover:scale-110" 
+              onError={(e) => {
+                // If image fails to load (e.g. proxy error), show an icon
+                (e.target as any).style.display = 'none';
+                (e.target as any).nextSibling.style.display = 'flex';
+              }}
+            />
+            <div className={`hidden absolute inset-0 items-center justify-center bg-slate-50 ${isDrive ? 'flex' : ''}`}>
+               <ImageIcon className="w-8 h-8 text-primary/40" />
+            </div>
+            <div 
+              className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity cursor-pointer text-white text-[10px] font-bold"
+              onClick={() => window.open(openUrl || displayUrl || "", '_blank')}
+            >
+              LIHAT DATA
+            </div>
+          </>
+        ) : (
+          <div className="flex items-center justify-center h-full text-slate-400 text-xs">Kosong</div>
+        )}
+      </div>
     </div>
   );
 }

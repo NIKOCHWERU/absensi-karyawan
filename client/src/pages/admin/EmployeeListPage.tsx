@@ -4,10 +4,10 @@ import { z } from "zod";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
-import { ArrowLeft, UserPlus, Search, Calendar, Phone, Image as ImageIcon, ImageOff, MapPin, Trash2, MessageSquare, Upload } from "lucide-react";
+import { ArrowLeft, UserPlus, Search, Calendar, Phone, Image as ImageIcon, ImageOff, MapPin, Trash2, MessageSquare, Upload, Eye, Briefcase, CreditCard, User as UserIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
@@ -47,6 +47,7 @@ export default function AdminEmployeeList() {
     const { toast } = useToast();
     const [open, setOpen] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
+    const [viewEmployee, setViewEmployee] = useState<User | null>(null);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [attendanceViewDate, setAttendanceViewDate] = useState(new Date());
     const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
@@ -587,6 +588,15 @@ export default function AdminEmployeeList() {
                                             >
                                                 Edit
                                             </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+                                                onClick={() => setViewEmployee(emp)}
+                                            >
+                                                <Eye className="w-4 h-4 mr-1" />
+                                                View
+                                            </Button>
                                             <Dialog>
                                                 <DialogTrigger asChild>
                                                     <Button
@@ -860,6 +870,104 @@ export default function AdminEmployeeList() {
                                                             Ya, Hapus
                                                         </AlertDialogAction>
                                                     </AlertDialogFooter>
+                                                                        <div className="px-4 pb-4 text-xs text-gray-500 flex items-center gap-1">
+                                                                            📍 {(() => {
+                                                                                const loc = att.checkInLocation || 'Lokasi tidak terdeteksi';
+                                                                                // Check if it's coordinates (format: lat,lng)
+                                                                                if (loc.match(/^-?\d+\.?\d*,-?\d+\.?\d*$/)) {
+                                                                                    return (
+                                                                                        <a
+                                                                                            href={`https://www.google.com/maps/search/?api=1&query=${loc}`}
+                                                                                            target="_blank"
+                                                                                            rel="noopener noreferrer"
+                                                                                            className="text-blue-600 hover:underline flex items-center"
+                                                                                        >
+                                                                                            {loc} (Lihat di Peta)
+                                                                                            <MapPin className="ml-1 h-3 w-3" />
+                                                                                        </a>
+                                                                                    );
+                                                                                }
+                                                                                // Otherwise display as address
+                                                                                return <span className="line-clamp-2">{loc}</span>;
+                                                                            })()}
+                                                                        </div>
+                                                                    </div>
+                                                                ));
+                                                            })()}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Default List if no date selected: Last 5 Activities */}
+                                                    {!selectedDate && (
+                                                        <div className="mt-8">
+                                                            <h4 className="font-bold text-gray-800 mb-4">Aktivitas Terakhir</h4>
+                                                            <div className="border rounded-lg overflow-hidden">
+                                                                <table className="w-full text-sm">
+                                                                    <thead className="bg-gray-50 text-gray-500">
+                                                                        <tr>
+                                                                            <th className="px-4 py-2 text-left">Tanggal</th>
+                                                                            <th className="px-4 py-2 text-left">Masuk</th>
+                                                                            <th className="px-4 py-2 text-left">Pulang</th>
+                                                                            <th className="px-4 py-2 text-left">Status</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        {employeeAttendance?.slice(0, 5).map(att => (
+                                                                            <tr key={att.id} className="border-t hover:bg-gray-50 cursor-pointer" onClick={() => setSelectedDate(new Date(att.date))}>
+                                                                                <td className="px-4 py-2">{format(new Date(att.date), "EEEE, d MMM yyyy", { locale: id })}</td>
+                                                                                <td className="px-4 py-2 font-mono text-green-600">
+                                                                                    {att.checkIn ? new Date(att.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                                                                                </td>
+                                                                                <td className="px-4 py-2 font-mono text-red-600">
+                                                                                    {att.checkOut ? new Date(att.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                                                                                </td>
+                                                                                <td className="px-4 py-2">
+                                                                                    <span className={
+                                                                                        att.status === 'present' ? 'text-green-600 font-bold' :
+                                                                                            att.status === 'late' ? 'text-red-600 font-bold' :
+                                                                                                'text-gray-600'
+                                                                                    }>
+                                                                                        {att.status === 'present' ? 'Hadir' :
+                                                                                            att.status === 'late' ? 'Telat' :
+                                                                                                att.status === 'sick' ? 'Sakit' :
+                                                                                                    att.status === 'permission' ? 'Izin' :
+                                                                                                        att.status === 'absent' ? 'Alpha' : att.status}
+                                                                                    </span>
+                                                                                </td>
+                                                                            </tr>
+                                                                        ))}
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                            <p className="text-xs text-gray-400 mt-2 text-center">*Klik tanggal di kalender atau di tabel untuk melihat detail foto.</p>
+                                                        </div>
+                                                    )}
+                                                </DialogContent>
+                                            </Dialog>
+
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50">
+                                                        <Trash2 className="w-4 h-4 mr-1" />
+                                                        Hapus
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Apakah anda yakin?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            Tindakan ini tidak dapat dibatalkan. Data karyawan <strong>{emp.fullName}</strong> akan dihapus permanen beserta data absensinya.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                                                        <AlertDialogAction
+                                                            onClick={() => deleteMutation.mutate(emp.id)}
+                                                            className="bg-red-600 hover:bg-red-700"
+                                                        >
+                                                            Ya, Hapus
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
                                                 </AlertDialogContent>
                                             </AlertDialog>
                                         </div>
@@ -868,7 +976,7 @@ export default function AdminEmployeeList() {
                             ))}
                             {employees.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="text-center text-gray-500 py-12">
+                                    <TableCell colSpan={user?.role === 'superadmin' ? 8 : 7} className="text-center text-gray-500 py-12">
                                         Belum ada data karyawan.
                                     </TableCell>
                                 </TableRow>
@@ -877,6 +985,152 @@ export default function AdminEmployeeList() {
                     </Table>
                 </div>
             </main>
+
+            {/* View Detail Dialog */}
+            <Dialog open={!!viewEmployee} onOpenChange={(open) => !open && setViewEmployee(null)}>
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                    {viewEmployee && (
+                        <>
+                            <DialogHeader>
+                                <DialogTitle className="text-2xl flex items-center gap-2">
+                                    <UserIcon className="w-6 h-6 text-primary" />
+                                    Detail Karyawan: {viewEmployee.fullName}
+                                </DialogTitle>
+                                <DialogDescription>Informasi lengkap data diri dan dokumen karyawan.</DialogDescription>
+                            </DialogHeader>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 my-6">
+                                <div className="space-y-6">
+                                    <Section title="Data Pribadi" icon={<UserIcon className="w-4 h-4" />}>
+                                        <DataRow label="Nama Lengkap" value={viewEmployee.fullName} />
+                                        <DataRow label="NIK" value={viewEmployee.nik} />
+                                        <DataRow label="Tempat, Tgl Lahir" value={`${viewEmployee.birthPlace || '-'}, ${viewEmployee.birthDate ? format(new Date(viewEmployee.birthDate), "d MMMM yyyy", { locale: id }) : '-'}`} />
+                                        <DataRow label="Jenis Kelamin" value={viewEmployee.gender} />
+                                        <DataRow label="Agama" value={(viewEmployee as any).religion} />
+                                        <DataRow label="Alamat" value={viewEmployee.address} />
+                                    </Section>
+
+                                    <Section title="Pekerjaan" icon={<Briefcase className="w-4 h-4" />}>
+                                        <DataRow label="Jabatan" value={(viewEmployee as any).position} />
+                                        <DataRow label="Cabang" value={(viewEmployee as any).branch} />
+                                        <DataRow label="Tahun bergabung" value={(viewEmployee as any).joinDate} />
+                                        <DataRow label="Status Kerja" value={(viewEmployee as any).employmentStatus} />
+                                        <div className="flex justify-between items-center text-sm pt-1">
+                                            <span className="text-slate-500">Status Data:</span>
+                                            <Badge variant={
+                                                viewEmployee.registrationStatus === 'approved' ? 'default' :
+                                                viewEmployee.registrationStatus === 'pending' ? 'secondary' :
+                                                viewEmployee.registrationStatus === 'rejected' ? 'destructive' : 'outline'
+                                            } className="capitalize px-2 py-0">
+                                                {viewEmployee.registrationStatus || 'unregistered'}
+                                            </Badge>
+                                        </div>
+                                    </Section>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <Section title="Administrasi" icon={<CreditCard className="w-4 h-4" />}>
+                                        <DataRow label="NPWP" value={(viewEmployee as any).npwp} />
+                                        <DataRow label="BPJS" value={(viewEmployee as any).bpjs} />
+                                        <DataRow label="No. HP" value={viewEmployee.phoneNumber} />
+                                        <DataRow label="Email" value={viewEmployee.email} />
+                                    </Section>
+
+                                    <Section title="Dokumen Upload" icon={<ImageIcon className="w-4 h-4" />}>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <DocumentBox label="Foto Profil" url={viewEmployee.photoUrl} />
+                                            <DocumentBox label="KTP" url={(viewEmployee as any).ktpPhotoUrl} isDrive />
+                                            <DocumentBox label="BPJS" url={(viewEmployee as any).bpjsPhotoUrl} isDrive />
+                                            <DocumentBox label="NPWP" url={(viewEmployee as any).npwpPhotoUrl} isDrive />
+                                        </div>
+                                    </Section>
+                                </div>
+                            </div>
+
+                            <DialogFooter>
+                                <Button variant="outline" className="w-full sm:w-auto" onClick={() => setViewEmployee(null)}>Tutup</Button>
+                            </DialogFooter>
+                        </>
+                    )}
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
+}
+
+// Helper Components for the Detail View
+function Section({ title, icon, children }: any) {
+    return (
+        <div className="space-y-3 animate-in fade-in slide-in-from-left-4 duration-500">
+            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider border-b border-primary/10 pb-1">
+                {icon}
+                {title}
+            </div>
+            <div className="bg-slate-50/50 rounded-xl p-4 border border-slate-100 space-y-2.5 shadow-sm">
+                {children}
+            </div>
+        </div>
+    );
+}
+
+function DataRow({ label, value }: { label: string; value?: string | null }) {
+    return (
+        <div className="flex flex-col sm:flex-row sm:justify-between text-sm py-0.5 border-b border-slate-100/50 last:border-0">
+            <span className="text-slate-400 text-xs">{label}</span>
+            <span className="font-semibold text-slate-800 tracking-tight">{value || '-'}</span>
+        </div>
+    );
+}
+
+function DocumentBox({ label, url, isDrive }: { label: string; url?: string | null; isDrive?: boolean }) {
+    // Extract ID if it's a Drive URL or use proxy
+    const getImageUrl = (url: string) => {
+        if (!url) return "";
+        if (url.startsWith("/uploads")) return url;
+        if (url.startsWith("http")) {
+            const id = url.includes('/d/') ? url.split('/d/')[1].split('/')[0] : url;
+            return `/api/images/${id}`;
+        }
+        return `/api/images/${url}`; 
+    };
+
+    const displayUrl = url ? getImageUrl(url) : null;
+    const openUrl = url && url.startsWith('http') ? url : (url ? `https://drive.google.com/file/d/${url}/view` : undefined);
+
+    return (
+        <div className="space-y-2 group">
+            <p className="text-[10px] font-bold uppercase tracking-tight text-slate-400 flex justify-between items-center px-1">
+                {label}
+            </p>
+            <div className="h-32 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 group relative shadow-sm ring-primary/0 group-hover:ring-primary/20 transition-all group-hover:shadow-md">
+                {url ? (
+                    <>
+                        <img 
+                            src={displayUrl || ""} 
+                            className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-500" 
+                            onError={(e) => {
+                                (e.target as any).style.display = 'none';
+                                if ((e.target as any).nextSibling) (e.target as any).nextSibling.style.display = 'flex';
+                            }}
+                        />
+                        <div className={`hidden absolute inset-0 items-center justify-center bg-slate-50 ${isDrive ? 'flex' : ''}`}>
+                            <ImageIcon className="w-8 h-8 text-primary/30" />
+                        </div>
+                        <div 
+                            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-all duration-300 cursor-pointer text-white p-2 scale-95 group-hover:scale-100"
+                            onClick={() => window.open(openUrl || displayUrl || "", '_blank')}
+                        >
+                            <Eye className="w-5 h-5 mb-1" />
+                            <span className="text-[9px] font-bold uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full">Buka Drive</span>
+                        </div>
+                    </>
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-slate-300 gap-1">
+                        <ImageOff className="w-6 h-6 opacity-30" />
+                        <span className="text-[10px] font-bold uppercase tracking-widest">Kosong</span>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
