@@ -33,6 +33,8 @@ function getPhotoUrl(value: string): string {
 function ShiftModal({
     open,
     shifts,
+    isLoading,
+    userShift,
     onSelect,
     onClose
 }: {
