@@ -188,6 +188,7 @@ export default function AttendanceHistoryPage() {
                             </DialogContent>
                         </Dialog>
                     </div>
+                    </div>
                 </header>
 
                 <Card className="border shadow-sm rounded-xl overflow-hidden bg-white">
