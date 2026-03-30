@@ -105,7 +105,8 @@ function ShiftModal({
                                     <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-primary" />
                                 </div>
                             </Button>
-                        ))
+                        ))}
+                        </>
                     )}
                 </div>
             </DialogContent>
