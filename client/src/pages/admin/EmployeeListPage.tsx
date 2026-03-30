@@ -42,6 +42,40 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+const toTitleCase = (str: string | null | undefined) => {
+    if (!str) return "-";
+    return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+};
+
+const handleExportCSV = (employees: User[]) => {
+    const headers = ["NIK", "Nama Lengkap", "Nomor HP", "Email", "Cabang", "Jabatan", "Agama", "NPWP", "BPJS"];
+    const rows = employees.map(emp => [
+        emp.nik || "",
+        emp.fullName || "",
+        emp.phoneNumber || "",
+        emp.email || "",
+        emp.branch || "",
+        emp.position || "",
+        (emp as any).religion || "",
+        (emp as any).npwp || "",
+        (emp as any).bpjs || ""
+    ]);
+
+    const csvContent = [
+        headers.join(","),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Data_Karyawan_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+
 export default function AdminEmployeeList() {
     const [, setLocation] = useLocation();
     const { toast } = useToast();
@@ -293,6 +327,15 @@ export default function AdminEmployeeList() {
                         </DialogContent>
                     </Dialog>
 
+                    <Button 
+                        variant="outline" 
+                        className="border-green-200 text-green-700 hover:bg-green-50 bg-white"
+                        onClick={() => handleExportCSV(employees)}
+                    >
+                        <Upload className="mr-2 h-4 w-4 rotate-180" />
+                        Export CSV
+                    </Button>
+
                     <Dialog open={open} onOpenChange={setOpen}>
                         <DialogTrigger asChild>
                             <Button
@@ -541,7 +584,7 @@ export default function AdminEmployeeList() {
                                                 )}
                                             </div>
                                             <div className="flex flex-col">
-                                                <span className="font-medium text-gray-900">{emp.fullName}</span>
+                                                <span className="font-medium text-gray-900">{toTitleCase(emp.fullName)}</span>
                                                 {emp.phoneNumber && (
                                                     <span className="text-xs text-gray-500 flex items-center gap-1">
                                                         <Phone className="w-3 h-3" /> {emp.phoneNumber}
@@ -551,8 +594,8 @@ export default function AdminEmployeeList() {
                                         </div>
                                     </TableCell>
                                     <TableCell className="font-mono text-gray-600">{emp.nik}</TableCell>
-                                    <TableCell>{emp.position}</TableCell>
-                                    <TableCell>{emp.branch}</TableCell>
+                                    <TableCell>{toTitleCase(emp.position)}</TableCell>
+                                    <TableCell>{toTitleCase(emp.branch)}</TableCell>
                                     <TableCell>
                                         <Badge variant={
                                             emp.registrationStatus === 'approved' ? 'default' :
@@ -904,19 +947,19 @@ export default function AdminEmployeeList() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 my-6">
                                 <div className="space-y-6">
                                     <Section title="Data Pribadi" icon={<UserIcon className="w-4 h-4" />}>
-                                        <DataRow label="Nama Lengkap" value={viewEmployee.fullName} />
+                                        <DataRow label="Nama Lengkap" value={toTitleCase(viewEmployee.fullName)} />
                                         <DataRow label="NIK" value={viewEmployee.nik} />
-                                        <DataRow label="Tempat, Tgl Lahir" value={`${viewEmployee.birthPlace || '-'}, ${viewEmployee.birthDate ? format(new Date(viewEmployee.birthDate), "d MMMM yyyy", { locale: id }) : '-'}`} />
+                                        <DataRow label="Tempat, Tgl Lahir" value={`${toTitleCase(viewEmployee.birthPlace) || '-'}, ${viewEmployee.birthDate ? format(new Date(viewEmployee.birthDate), "d MMMM yyyy", { locale: id }) : '-'}`} />
                                         <DataRow label="Jenis Kelamin" value={viewEmployee.gender} />
-                                        <DataRow label="Agama" value={(viewEmployee as any).religion} />
+                                        <DataRow label="Agama" value={toTitleCase((viewEmployee as any).religion)} />
                                         <DataRow label="Alamat" value={viewEmployee.address} />
                                     </Section>
 
                                     <Section title="Pekerjaan" icon={<Briefcase className="w-4 h-4" />}>
-                                        <DataRow label="Jabatan" value={(viewEmployee as any).position} />
-                                        <DataRow label="Cabang" value={(viewEmployee as any).branch} />
+                                        <DataRow label="Jabatan" value={toTitleCase((viewEmployee as any).position)} />
+                                        <DataRow label="Cabang" value={toTitleCase((viewEmployee as any).branch)} />
                                         <DataRow label="Tahun bergabung" value={(viewEmployee as any).joinDate} />
-                                        <DataRow label="Status Kerja" value={(viewEmployee as any).employmentStatus} />
+                                        <DataRow label="Status Kerja" value={toTitleCase((viewEmployee as any).employmentStatus)} />
                                         <div className="flex justify-between items-center text-sm pt-1">
                                             <span className="text-slate-500">Status Data:</span>
                                             <Badge variant={
