@@ -38,6 +38,8 @@ function ShiftModal({
 }: {
     open: boolean,
     shifts: any[],
+    isLoading?: boolean,
+    userShift?: string | null,
     onSelect: (shiftId: number, name: string) => void,
     onClose: () => void
 }) {
@@ -51,13 +53,44 @@ function ShiftModal({
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid grid-cols-1 gap-3 py-4">
-                    {!shifts || shifts.length === 0 ? (
+                    {isLoading ? (
                         <div className="text-center py-8 text-slate-400">
                            <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
                            Memuat daftar shift...
                         </div>
+                    ) : shifts.length === 0 ? (
+                        <div className="text-center py-8 text-slate-400">
+                           <p className="font-bold text-red-500 mb-2">Belum ada shift</p>
+                           <p className="text-sm">Silakan hubungi Admin untuk mengatur jadwal shift.</p>
+                        </div>
                     ) : (
-                        shifts.map(s => (
+                        <>
+                            {userShift && (
+                                <Button
+                                    key="previous"
+                                    variant="default"
+                                    className="h-16 justify-between px-6 text-base bg-emerald-600 hover:bg-emerald-700 text-white transition-all group mb-2 shadow-md shadow-emerald-500/20"
+                                    onClick={() => {
+                                        // Attempt to find the previous shift in the list
+                                        const prevShift = shifts.find(s => s.name?.toLowerCase() === userShift.toLowerCase());
+                                        if (prevShift) {
+                                            onSelect(prevShift.id, prevShift.name);
+                                        } else {
+                                            // Fallback if shift was deleted/modified by Admin
+                                            onSelect(-99, userShift);
+                                        }
+                                    }}
+                                >
+                                    <div className="flex flex-col items-start text-left">
+                                        <span className="font-bold">Ikuti Shift Sebelumnya</span>
+                                        <span className="text-xs font-white/90 font-mono opacity-90">{userShift}</span>
+                                    </div>
+                                    <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                                        <Check className="w-4 h-4 text-white" />
+                                    </div>
+                                </Button>
+                            )}
+                            {shifts.map(s => (
                             <Button
                                 key={s.id}
                                 variant="outline"
@@ -95,9 +128,18 @@ export default function EmployeeDashboard() {
     const [isOffDayOpen, setIsOffDayOpen] = useState(false);
     const [selectedShiftId, setSelectedShiftId] = useState<number | null>(null);
 
-    const { data: shiftList } = useQuery<any[]>({
+    const { data: backendShiftList, isLoading: isShiftsLoading } = useQuery<any[]>({
         queryKey: ["/api/shifts"],
     });
+
+    const defaultShifts = [
+        { id: -1, name: "Shift 1", checkInTime: "07:00", checkOutTime: "17:00" },
+        { id: -2, name: "Shift 2", checkInTime: "12:00", checkOutTime: "23:00" },
+        { id: -3, name: "Shift 3", checkInTime: "15:00", checkOutTime: "23:00" },
+        { id: -4, name: "longshift", checkInTime: "07:00", checkOutTime: "23:00" }
+    ];
+
+    const shiftList = backendShiftList && backendShiftList.length > 0 ? backendShiftList : defaultShifts;
 
     // Push Notifications State
     const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unavailable'>(
@@ -269,7 +311,7 @@ export default function EmployeeDashboard() {
         setSelectedShiftId(shiftId);
         setIsShiftModalOpen(false);
 
-        const shiftData = shiftList?.find(s => s.id === shiftId);
+        const shiftData = shiftId === -99 ? { id: -99, name: shiftName, checkInTime: '00:00', checkOutTime: '00:00' } : shiftList?.find(s => s.id === shiftId);
         if (!shiftData) return;
 
         const now = new Date();
@@ -277,8 +319,15 @@ export default function EmployeeDashboard() {
         const minute = now.getMinutes();
         const timeInMinutes = hour * 60 + minute;
 
-        const [sHour, sMinute] = shiftData.checkInTime.split(':').map(Number);
-        const thresholdMinutes = sHour * 60 + sMinute;
+        const [sHour, sMinute] = (shiftData?.checkInTime || "07:00").split(':').map(Number);
+        let thresholdMinutes = sHour * 60 + sMinute;
+
+        if (shiftId < 0) {
+             if (shiftName === 'Shift 2') thresholdMinutes = 12 * 60; // 12:00
+             else if (shiftName === 'Shift 3') thresholdMinutes = 15 * 60; // 15:00
+             else if (shiftName?.toLowerCase() === 'longshift') thresholdMinutes = 7 * 60; // 07:00
+             else if (shiftName === 'Shift 1') thresholdMinutes = 7 * 60; // 07:00
+        }
 
         const isLate = timeInMinutes > thresholdMinutes;
 
@@ -646,6 +695,8 @@ export default function EmployeeDashboard() {
             <ShiftModal
                 open={isShiftModalOpen}
                 shifts={shiftList || []}
+                isLoading={isShiftsLoading}
+                userShift={user?.shift}
                 onSelect={handleShiftSelect}
                 onClose={() => setIsShiftModalOpen(false)}
             />
