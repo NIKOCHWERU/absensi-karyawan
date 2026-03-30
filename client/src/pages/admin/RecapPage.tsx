@@ -858,7 +858,7 @@ export default function RecapPage() {
                                     <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                                         <div>
                                             <p className="text-[9px] font-black text-gray-400 uppercase">Telepon</p>
-                                            <p className="text-xs font-bold text-gray-700">{employee?.phone || '-'}</p>
+                                            <p className="text-xs font-bold text-gray-700">{employee?.phoneNumber || '-'}</p>
                                         </div>
                                         <div>
                                             <p className="text-[9px] font-black text-gray-400 uppercase">Agama</p>
@@ -866,7 +866,7 @@ export default function RecapPage() {
                                         </div>
                                         <div>
                                             <p className="text-[9px] font-black text-gray-400 uppercase">Input Tahun</p>
-                                            <p className="text-xs font-bold text-gray-700">{employee?.joinYear || '-'}</p>
+                                            <p className="text-xs font-bold text-gray-700">{(employee as any)?.joinDate || '-'}</p>
                                         </div>
                                         <div>
                                             <p className="text-[9px] font-black text-gray-400 uppercase">Username</p>

@@ -67,7 +67,7 @@ export function AttendanceReport({ date, records, users }: AttendanceReportProps
                 <tbody>
                     {records.map((record, index) => {
                         const emp = getEmployee(record.userId);
-                        const duration = calculateDuration(record.checkIn, record.checkOut);
+                        const duration = calculateDuration(record.checkIn as unknown as string ?? null, record.checkOut as unknown as string ?? null);
                         const isComplete = record.checkIn && record.checkOut && record.breakStart && record.breakEnd;
 
                         return (

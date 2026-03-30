@@ -73,8 +73,7 @@ export default function ProfilePage() {
       
       const url = await uploadFileWithProgress(
         compressed, 
-        (p) => setUploadProgress(prev => ({ ...prev, [type]: p })),
-        { employeeName: user?.fullName || 'User', type }
+        (p) => setUploadProgress(prev => ({ ...prev, [type]: p }))
       );
 
       setUploadedUrls(prev => ({ ...prev, [type]: url }));
@@ -270,7 +269,7 @@ export default function ProfilePage() {
                                   <span className="text-[10px] font-bold text-primary">{uploadProgress.npwp}%</span>
                                </div>
                             ) : (previews.npwp || user?.npwpPhotoUrl) ? (
-                              <img src={previews.npwp || user?.npwpPhotoUrl} className="w-full h-full object-cover" />
+                              <img src={previews.npwp || user?.npwpPhotoUrl || undefined} className="w-full h-full object-cover" />
                             ) : <Camera className="w-5 h-5 text-slate-300" />}
                             <label className="absolute inset-0 cursor-pointer flex items-center justify-center bg-black/0 group-hover:bg-black/10 transition-colors">
                               <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileChange(e, 'npwp')} />
@@ -289,7 +288,7 @@ export default function ProfilePage() {
                                   <span className="text-[10px] font-bold text-primary">{uploadProgress.bpjs}%</span>
                                </div>
                             ) : (previews.bpjs || user?.bpjsPhotoUrl) ? (
-                              <img src={previews.bpjs || user?.bpjsPhotoUrl} className="w-full h-full object-cover" />
+                              <img src={previews.bpjs || user?.bpjsPhotoUrl || undefined} className="w-full h-full object-cover" />
                             ) : <Camera className="w-5 h-5 text-slate-300" />}
                             <label className="absolute inset-0 cursor-pointer flex items-center justify-center bg-black/0 group-hover:bg-black/10 transition-colors">
                               <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileChange(e, 'bpjs')} />

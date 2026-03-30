@@ -103,8 +103,7 @@ export default function ComplaintPage() {
                 const compressed = await safeCompressImage(file, { maxWidth: 1280, quality: 0.8 });
                 const url = await uploadFileWithProgress(
                     compressed,
-                    (p) => setUploadingState(prev => ({ ...prev, [id]: p })),
-                    { employeeName: user?.fullName || 'User', type: 'complaint' }
+                    (p) => setUploadingState(prev => ({ ...prev, [id]: p }))
                 );
                 
                 setPhotos(prev => prev.map(p => p.id === id ? { ...p, url } : p));

@@ -95,12 +95,9 @@ export default function EmployeeDashboard() {
     const [isOffDayOpen, setIsOffDayOpen] = useState(false);
     const [selectedShiftId, setSelectedShiftId] = useState<number | null>(null);
 
-    const shiftList = [
-        { id: 1, name: 'Shift 1', checkInTime: '07:00', checkOutTime: '17:00' },
-        { id: 2, name: 'Shift 2', checkInTime: '12:00', checkOutTime: '23:00' },
-        { id: 3, name: 'Shift 3', checkInTime: '15:00', checkOutTime: '23:00' },
-        { id: 4, name: 'longshift', checkInTime: '07:00', checkOutTime: '23:00' }
-    ];
+    const { data: shiftList } = useQuery<any[]>({
+        queryKey: ["/api/shifts"],
+    });
 
     // Push Notifications State
     const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unavailable'>(

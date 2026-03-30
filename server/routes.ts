@@ -319,10 +319,13 @@ export async function registerRoutes(
             const [sHour, sMinute] = shiftData.checkInTime.split(':').map(Number);
             thresholdMinutes = sHour * 60 + sMinute;
           }
-        } else {
-          // Legacy/Hardcoded rules for backward compatibility
-          if (shiftName === 'Shift 2') thresholdMinutes = 720;
-          else if (shiftName === 'Shift 3') thresholdMinutes = 900;
+        }
+        
+        // If thresholdMinutes wasn't changed by shiftData, use legacy/hardcoded rules
+        // Legacy/Hardcoded rules for backward compatibility
+        if (!shiftId || thresholdMinutes === 420) {
+          if (shiftName === 'Shift 2') thresholdMinutes = 720; // 12:00
+          else if (shiftName === 'Shift 3') thresholdMinutes = 900; // 15:00
         }
 
         if (timeInMinutes > thresholdMinutes) {

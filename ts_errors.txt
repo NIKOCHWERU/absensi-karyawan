@@ -1,0 +1,11 @@
+﻿client/src/components/AttendanceReport.tsx(70,60): error TS2345: Argument of type 'Date | null' is not assignable to parameter of type 'string | null'.
+  Type 'Date' is not assignable to type 'string'.
+client/src/pages/admin/AttendanceHistoryPage.tsx(11,105): error TS2724: '"lucide-react"' has no exported member named 'NavigationUrl'. Did you mean 'Navigation'?
+client/src/pages/admin/RecapPage.tsx(861,103): error TS2339: Property 'phone' does not exist on type '{ address: string | null; id: number; role: "admin" | "employee" | "superadmin"; email: string | null; shift: string | null; position: string | null; password: string; username: string | null; ... 18 more ...; employmentStatus: string | null; }'.
+client/src/pages/admin/RecapPage.tsx(869,103): error TS2339: Property 'joinYear' does not exist on type '{ address: string | null; id: number; role: "admin" | "employee" | "superadmin"; email: string | null; shift: string | null; position: string | null; password: string; username: string | null; ... 18 more ...; employmentStatus: string | null; }'.
+client/src/pages/employee/ComplaintPage.tsx(107,21): error TS2554: Expected 2 arguments, but got 3.
+client/src/pages/employee/ProfilePage.tsx(77,9): error TS2554: Expected 2 arguments, but got 3.
+client/src/pages/employee/ProfilePage.tsx(273,36): error TS2322: Type 'string | null | undefined' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.
+client/src/pages/employee/ProfilePage.tsx(292,36): error TS2322: Type 'string | null | undefined' is not assignable to type 'string | undefined'.
+  Type 'null' is not assignable to type 'string | undefined'.

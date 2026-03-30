@@ -8,7 +8,7 @@ import { id } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { MapPin, ChevronLeft, ChevronRight, History, FileText, Printer, X, Search, AlertTriangle, Info, NavigationUrl } from "lucide-react";
+import { MapPin, ChevronLeft, ChevronRight, History, FileText, Printer, X, Search, AlertTriangle, Info } from "lucide-react";
 import { AttendanceReport } from "@/components/AttendanceReport";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
