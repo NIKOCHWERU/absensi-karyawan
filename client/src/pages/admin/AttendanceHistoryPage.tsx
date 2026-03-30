@@ -8,7 +8,9 @@ import { id } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { MapPin, ChevronLeft, ChevronRight, History } from "lucide-react";
+import { MapPin, ChevronLeft, ChevronRight, History, FileText, Printer, X } from "lucide-react";
+import { AttendanceReport } from "@/components/AttendanceReport";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 // Helper: resolve photo URL — handles both local uploads and Google Drive File IDs
 function getPhotoUrl(value: string | null): string {
@@ -35,10 +37,12 @@ export default function AttendanceHistoryPage() {
         refetchInterval: 5000,
     });
 
-    const { data: users } = useQuery<User[]>({
+    const { data: users = [] } = useQuery<User[]>({
         queryKey: ["/api/admin/users"],
         refetchInterval: 5000,
     });
+
+    const [showReport, setShowReport] = useState(false);
 
     // Filter by selected date
     const filteredRecords = attendanceHistory?.filter(
@@ -122,6 +126,50 @@ export default function AttendanceHistoryPage() {
                         <Button variant="ghost" size="icon" onClick={handleNext} className="h-8 w-8">
                             <ChevronRight className="h-4 w-4" />
                         </Button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <Dialog open={showReport} onOpenChange={setShowReport}>
+                            <DialogTrigger asChild>
+                                <Button 
+                                    className="bg-green-600 hover:bg-green-700 text-white shadow-sm"
+                                    onClick={() => setShowReport(true)}
+                                    disabled={filteredRecords.length === 0}
+                                >
+                                    <FileText className="mr-2 h-4 w-4" />
+                                    Export Laporan Foto
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto p-0 border-none bg-gray-100">
+                                <div className="sticky top-0 z-50 bg-white border-b p-4 flex justify-between items-center shadow-sm no-print">
+                                    <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                                        <Printer className="h-5 w-5 text-green-600" />
+                                        Pratinjau Laporan
+                                    </h3>
+                                    <div className="flex items-center gap-2">
+                                        <Button 
+                                            onClick={() => window.print()} 
+                                            className="bg-green-600 hover:bg-green-700 text-white"
+                                        >
+                                            <Printer className="mr-2 h-4 w-4" />
+                                            Cetak / Simpan PDF
+                                        </Button>
+                                        <Button variant="outline" size="icon" onClick={() => setShowReport(false)}>
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                                <div className="p-4 md:p-8 flex justify-center bg-gray-100 min-h-screen">
+                                    <div className="shadow-2xl w-full max-w-[210mm] bg-white rounded-lg overflow-hidden">
+                                        <AttendanceReport 
+                                            date={selectedDate} 
+                                            records={filteredRecords} 
+                                            users={users} 
+                                        />
+                                    </div>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
                     </div>
                 </header>
 
