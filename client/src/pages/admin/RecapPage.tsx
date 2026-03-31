@@ -605,6 +605,14 @@ export default function RecapPage() {
                                             format(new Date(prevRow.date), "yyyy-MM-dd") === dateStr &&
                                             prevRow.userId === row.userId;
 
+                                        const inTime = row.checkIn ? 'yes' : '-';
+                                        const outTime = row.checkOut ? 'yes' : '-';
+                                        const brkStart = row.breakStart ? 'yes' : '-';
+                                        const brkEnd = row.breakEnd ? 'yes' : '-';
+                                        const isSequenceIncomplete = (inTime !== '-' && outTime === '-') ||
+                                            (inTime !== '-' && outTime !== '-' && ((brkStart !== '-' && brkEnd === '-') || (brkStart === '-' && brkEnd !== '-')));
+
+
                                         return (
                                             <tr key={row.id} className="hover:bg-gray-50/50">
                                                 <td className="px-4 py-3 text-gray-900 font-medium relative">
@@ -632,13 +640,6 @@ export default function RecapPage() {
                                                 <td className="px-4 py-3">
                                                     {!isSameDayAndUser && (() => {
                                                         const daily = dailyTotals.get(key);
-                                                        const inTime = row.checkIn ? 'yes' : '-';
-                                                        const outTime = row.checkOut ? 'yes' : '-';
-                                                        const brkStart = row.breakStart ? 'yes' : '-';
-                                                        const brkEnd = row.breakEnd ? 'yes' : '-';
-                                                        const isSequenceIncomplete = (inTime !== '-' && !row.checkOut) ||
-                                                            (inTime !== '-' && outTime !== '-' && ((brkStart !== '-' && brkEnd === '-') || (brkStart === '-' && brkEnd !== '-')));
-
                                                         const showTotal = daily?.complete && (daily?.mins ?? 0) > 0 && !isSequenceIncomplete;
 
                                                         return (
@@ -656,11 +657,8 @@ export default function RecapPage() {
                                                     })()}
                                                     <div className="text-xs text-gray-500 mt-1">
                                                         {(() => {
-                                                            const brkS = row.breakStart ? 'yes' : '-';
-                                                            const brkE = row.breakEnd ? 'yes' : '-';
-                                                            const isSeqIncomplete = (!row.checkOut) || (row.checkIn && row.checkOut && ((brkS !== '-' && brkE === '-') || (brkS === '-' && brkE !== '-')));
                                                             if (!row.checkOut) return <span className="text-yellow-600 font-semibold">Belum Absen Pulang</span>;
-                                                            if (isSeqIncomplete) return <span className="text-orange-600 font-semibold text-[10px]">Urutan Absen Terputus</span>;
+                                                            if (isSequenceIncomplete) return <span className="text-orange-600 font-semibold text-[10px]">Urutan Absen Terputus</span>;
                                                             return <>Sesi: {formatDuration(sessionNetMins)}</>;
                                                         })()}
                                                     </div>
@@ -698,8 +696,8 @@ export default function RecapPage() {
                                                 <td className="px-4 py-3 text-gray-500 italic max-w-xs">
                                                     <div className="flex flex-col gap-1">
                                                         <div className="flex items-center gap-1">
-                                                            <span className={(!row.checkOut || isSeqIncomplete) ? "text-yellow-600 font-semibold" : ""}>
-                                                                {row.notes ? row.notes : (!row.checkOut ? "Belum Absen Pulang" : (isSeqIncomplete ? "Urutan Absen Terputus" : "-"))}
+                                                            <span className={(!row.checkOut || isSequenceIncomplete) ? "text-yellow-600 font-semibold" : ""}>
+                                                                {row.notes ? row.notes : (!row.checkOut ? "Belum Absen Pulang" : (isSequenceIncomplete ? "Urutan Absen Terputus" : "-"))}
                                                             </span>
                                                              <Button
                                                                 variant="ghost"
