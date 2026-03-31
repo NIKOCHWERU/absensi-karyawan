@@ -248,7 +248,7 @@ export default function AttendanceHistoryPage() {
                                     <tbody className="divide-y divide-gray-100 bg-white">
                                         {filteredRecords.map((record) => {
                                             const emp = getEmployee(record.userId);
-                                            const isComplete = record.checkIn && record.checkOut && record.breakStart && record.breakEnd;
+                                            const isComplete = record.checkIn && record.checkOut && (!record.breakStart || (record.breakStart && record.breakEnd));
                                             
                                             // Handle fake GPS warning
                                             const showGpsWarning = record.isFakeGps;

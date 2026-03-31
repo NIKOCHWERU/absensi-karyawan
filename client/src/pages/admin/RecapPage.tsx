@@ -431,7 +431,7 @@ export default function RecapPage() {
             // Validation for incomplete sequences (e.g. checkIn and checkOut exist but no breakStart/End)
             // Also if not checked out at all
             const isSequenceIncomplete = (row.checkIn && !row.checkOut) ||
-                (inTime !== '-' && outTime !== '-' && ((brkTime !== '-' && brkEnd === '-') || (brkTime === '-' && brkEnd !== '-') || (brkTime === '-' && brkEnd === '-')));
+                (inTime !== '-' && outTime !== '-' && ((brkTime !== '-' && brkEnd === '-') || (brkTime === '-' && brkEnd !== '-')));
 
             const jamKerja = !isSameDayAndUser
                 ? (isSequenceIncomplete
@@ -637,7 +637,7 @@ export default function RecapPage() {
                                                         const brkStart = row.breakStart ? 'yes' : '-';
                                                         const brkEnd = row.breakEnd ? 'yes' : '-';
                                                         const isSequenceIncomplete = (inTime !== '-' && !row.checkOut) ||
-                                                            (inTime !== '-' && outTime !== '-' && ((brkStart !== '-' && brkEnd === '-') || (brkStart === '-' && brkEnd !== '-') || (brkStart === '-' && brkEnd === '-')));
+                                                            (inTime !== '-' && outTime !== '-' && ((brkStart !== '-' && brkEnd === '-') || (brkStart === '-' && brkEnd !== '-')));
 
                                                         const showTotal = daily?.complete && (daily?.mins ?? 0) > 0 && !isSequenceIncomplete;
 
@@ -658,7 +658,7 @@ export default function RecapPage() {
                                                         {(() => {
                                                             const brkS = row.breakStart ? 'yes' : '-';
                                                             const brkE = row.breakEnd ? 'yes' : '-';
-                                                            const isSeqIncomplete = (!row.checkOut) || (row.checkIn && row.checkOut && ((brkS !== '-' && brkE === '-') || (brkS === '-' && brkE !== '-') || (brkS === '-' && brkE === '-')));
+                                                            const isSeqIncomplete = (!row.checkOut) || (row.checkIn && row.checkOut && ((brkS !== '-' && brkE === '-') || (brkS === '-' && brkE !== '-')));
                                                             if (!row.checkOut) return <span className="text-yellow-600 font-semibold">Belum Absen Pulang</span>;
                                                             if (isSeqIncomplete) return <span className="text-orange-600 font-semibold text-[10px]">Urutan Absen Terputus</span>;
                                                             return <>Sesi: {formatDuration(sessionNetMins)}</>;
@@ -698,8 +698,8 @@ export default function RecapPage() {
                                                 <td className="px-4 py-3 text-gray-500 italic max-w-xs">
                                                     <div className="flex flex-col gap-1">
                                                         <div className="flex items-center gap-1">
-                                                            <span className={!row.checkOut ? "text-yellow-600 font-semibold" : ""}>
-                                                                {row.notes ? row.notes : (!row.checkOut ? "Belum Absen Pulang" : "-")}
+                                                            <span className={(!row.checkOut || isSeqIncomplete) ? "text-yellow-600 font-semibold" : ""}>
+                                                                {row.notes ? row.notes : (!row.checkOut ? "Belum Absen Pulang" : (isSeqIncomplete ? "Urutan Absen Terputus" : "-"))}
                                                             </span>
                                                              <Button
                                                                 variant="ghost"
