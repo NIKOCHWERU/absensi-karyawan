@@ -8,6 +8,7 @@ import { id } from "date-fns/locale";
 import { Loader2, Check, X, ArrowLeft, Calendar, User as UserIcon, MessageSquare, Info, Image as ImageIcon } from "lucide-react";
 import { api } from "@shared/routes";
 import { useLocation } from "wouter";
+import { toTitleCase } from "@/lib/utils";
 
 export default function AdminLeavePage() {
     const [, setLocation] = useLocation();
@@ -52,7 +53,8 @@ export default function AdminLeavePage() {
     });
 
     const getUserName = (userId: number) => {
-        return users?.find(u => u.id === userId)?.fullName || `User #${userId}`;
+        const name = users?.find(u => u.id === userId)?.fullName || `User #${userId}`;
+        return toTitleCase(name);
     };
 
     return (

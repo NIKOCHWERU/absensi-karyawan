@@ -1,6 +1,7 @@
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { User, Attendance } from "@shared/schema";
+import { toTitleCase } from "@/lib/utils";
 
 interface AttendanceReportProps {
     date: string;
@@ -77,7 +78,7 @@ export function AttendanceReport({ date, records, users }: AttendanceReportProps
                                     {format(new Date(record.date), "dd/MM/yyyy")}
                                 </td>
                                 <td className="border border-gray-300 px-3 py-4">
-                                    <p className="font-black text-blue-700 mb-0.5">{emp?.fullName || 'Unknown'}</p>
+                                    <p className="font-black text-blue-700 mb-0.5">{toTitleCase(emp?.fullName || 'Unknown')}</p>
                                     <p className="text-[10px] text-gray-400 font-medium">Sesi {(record as any).sessionNumber || 1}</p>
                                 </td>
                                 <td className="border border-gray-300 px-3 py-4">
@@ -109,7 +110,7 @@ export function AttendanceReport({ date, records, users }: AttendanceReportProps
                                     <span className={`inline-block px-3 py-1 rounded text-[10px] font-black uppercase mb-2 ${
                                         record.status === 'present' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                                     }`}>
-                                        {record.status === 'present' ? 'Hadir' : record.status}
+                                        {record.status === 'present' ? 'Hadir' : toTitleCase(record.status)}
                                     </span>
                                     {record.notes && (
                                         <p className="text-[10px] text-gray-500 text-left leading-snug font-medium italic">

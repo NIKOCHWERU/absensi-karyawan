@@ -10,6 +10,7 @@ import { api } from "@shared/routes";
 import { useLocation } from "wouter";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
+import { toTitleCase } from "@/lib/utils";
 
 export default function AdminLeaveHistoryPage() {
     const [, setLocation] = useLocation();
@@ -26,7 +27,8 @@ export default function AdminLeaveHistoryPage() {
     });
 
     const getUserName = (userId: number) => {
-        return users?.find(u => u.id === userId)?.fullName || `User #${userId}`;
+        const name = users?.find(u => u.id === userId)?.fullName || `User #${userId}`;
+        return toTitleCase(name);
     };
 
     const getStatusColor = (status: string) => {

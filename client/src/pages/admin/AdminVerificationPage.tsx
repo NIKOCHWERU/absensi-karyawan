@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { toTitleCase, formatAddress } from "@/lib/utils";
 
 export default function AdminVerificationPage() {
   const { toast } = useToast();
@@ -73,7 +74,7 @@ export default function AdminVerificationPage() {
                     )}
                   </div>
                   <div>
-                    <CardTitle className="text-lg">{emp.fullName}</CardTitle>
+                    <CardTitle className="text-lg">{toTitleCase(emp.fullName)}</CardTitle>
                     <CardDescription>{emp.nik || "Tanpa NIK"}</CardDescription>
                   </div>
                 </div>
@@ -83,7 +84,7 @@ export default function AdminVerificationPage() {
                    <Badge variant={emp.registrationStatus === 'rejected' ? 'destructive' : 'secondary'} className="uppercase text-[10px]">
                      {emp.registrationStatus}
                    </Badge>
-                   <span className="text-xs text-slate-400">• {(emp as any).position || 'Staff'}</span>
+                   <span className="text-xs text-slate-400">• {toTitleCase((emp as any).position) || 'Staff'}</span>
                 </div>
                 <div className="flex items-center text-sm gap-2">
                   <Calendar className="w-4 h-4 text-slate-400" />
@@ -123,26 +124,26 @@ export default function AdminVerificationPage() {
           {selectedUser && (
             <>
               <DialogHeader>
-                <DialogTitle className="text-2xl">Detail Pendaftaran: {selectedUser.fullName}</DialogTitle>
+                <DialogTitle className="text-2xl">Detail Pendaftaran: {toTitleCase(selectedUser.fullName)}</DialogTitle>
                 <DialogDescription>Tinjau kelengkapan data sebelum melakukan verifikasi.</DialogDescription>
               </DialogHeader>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 my-6">
                 <div className="space-y-6">
                   <Section title="Data Pribadi" icon={<UserIcon className="w-4 h-4" />}>
-                    <DataRow label="Nama Lengkap" value={selectedUser.fullName} />
+                    <DataRow label="Nama Lengkap" value={toTitleCase(selectedUser.fullName)} />
                     <DataRow label="NIK" value={selectedUser.nik} />
-                    <DataRow label="Tempat, Tgl Lahir" value={`${selectedUser.birthPlace || '-'}, ${selectedUser.birthDate ? format(new Date(selectedUser.birthDate), "d MMMM yyyy", { locale: id }) : '-'}`} />
-                    <DataRow label="Jenis Kelamin" value={selectedUser.gender} />
-                    <DataRow label="Agama" value={selectedUser.religion} />
-                    <DataRow label="Alamat" value={selectedUser.address} />
+                    <DataRow label="Tempat, Tgl Lahir" value={`${toTitleCase(selectedUser.birthPlace) || '-'}, ${selectedUser.birthDate ? format(new Date(selectedUser.birthDate), "d MMMM yyyy", { locale: id }) : '-'}`} />
+                    <DataRow label="Jenis Kelamin" value={toTitleCase(selectedUser.gender)} />
+                    <DataRow label="Agama" value={toTitleCase(selectedUser.religion)} />
+                    <DataRow label="Alamat" value={formatAddress(selectedUser.address)} />
                   </Section>
 
                   <Section title="Pekerjaan" icon={<Briefcase className="w-4 h-4" />}>
-                    <DataRow label="Jabatan" value={(selectedUser as any).position} />
-                    <DataRow label="Cabang" value={(selectedUser as any).branch} />
+                    <DataRow label="Jabatan" value={toTitleCase((selectedUser as any).position)} />
+                    <DataRow label="Cabang" value={toTitleCase((selectedUser as any).branch)} />
                     <DataRow label="Tahun bergabung ke elok" value={(selectedUser as any).joinDate} />
-                    <DataRow label="Status" value={(selectedUser as any).employmentStatus} />
+                    <DataRow label="Status" value={toTitleCase((selectedUser as any).employmentStatus)} />
                   </Section>
                 </div>
 

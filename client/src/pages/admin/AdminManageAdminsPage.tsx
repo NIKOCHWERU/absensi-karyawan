@@ -31,6 +31,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { UserCog, Plus, Pencil, Trash2, ShieldCheck, Loader2 } from "lucide-react";
+import { toTitleCase } from "@/lib/utils";
 
 const adminFormSchema = z.object({
   fullName: z.string().min(2, "Nama minimal 2 karakter"),
@@ -181,7 +182,7 @@ export default function AdminManageAdminsPage() {
                         {admin.fullName.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-900">{admin.fullName}</p>
+                        <p className="font-semibold text-gray-900">{toTitleCase(admin.fullName)}</p>
                         {admin.id === currentUser?.id && (
                           <span className="text-[10px] text-blue-600 font-semibold bg-blue-50 px-1.5 py-0.5 rounded">
                             Anda

@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CameraModal } from "@/components/CameraModal";
 import { LateReasonModal } from "@/components/LateReasonModal";
 import { WorkTimer } from "@/components/WorkTimer";
+import { toTitleCase } from "@/lib/utils";
 
 // Helper: resolve photo URL — handles both local uploads and Google Drive File IDs
 function getPhotoUrl(value: string): string {
@@ -130,6 +131,16 @@ export default function EmployeeDashboard() {
     const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
     const [isOffDayOpen, setIsOffDayOpen] = useState(false);
     const [selectedShiftId, setSelectedShiftId] = useState<number | null>(null);
+
+    // Generic Confirm Dialog (replaces native window.confirm to avoid PWA blank screen)
+    const [confirmDialog, setConfirmDialog] = useState<{
+        open: boolean;
+        title: string;
+        description: string;
+        confirmLabel: string;
+        confirmClass?: string;
+        onConfirm: () => void;
+    } | null>(null);
 
     const { data: backendShiftList, isLoading: isShiftsLoading } = useQuery<any[]>({
         queryKey: ["/api/shifts"],
@@ -475,11 +486,18 @@ export default function EmployeeDashboard() {
         }
 
         if (isEarly) {
-            if (confirm("Belum waktunya pulang. Apakah Anda ingin mengajukan IZIN Pulang Cepat? \n\nKlik OK untuk Form Izin.\nKlik Cancel untuk membatalkan.")) {
-                setPermitType('permission');
-                setPermitNote("Pulang Cepat (Early Leave)");
-                setPermitOpen(true);
-            }
+            setConfirmDialog({
+                open: true,
+                title: "Belum Waktunya Pulang",
+                description: "Anda mau pulang lebih awal dari jadwal shift. Apakah Anda ingin mengajukan Izin Pulang Cepat?",
+                confirmLabel: "Ajukan Izin",
+                confirmClass: "bg-orange-600 hover:bg-orange-700 text-white",
+                onConfirm: () => {
+                    setPermitType('permission');
+                    setPermitNote("Pulang Cepat (Early Leave)");
+                    setPermitOpen(true);
+                }
+            });
             return;
         }
 
@@ -506,15 +524,22 @@ export default function EmployeeDashboard() {
         return "Sedang Bekerja";
     };
 
-    const handleResumeWork = async () => {
-        if (confirm("Mau lanjut kerja hari ini?")) {
-            try {
-                await resume();
-                toast({ title: "Selamat Bekerja Kembali", description: "Sesi Anda telah diaktifkan kembali." });
-            } catch (err: any) {
-                handleError(err);
+    const handleResumeWork = () => {
+        setConfirmDialog({
+            open: true,
+            title: "Lanjut Bekerja?",
+            description: "Sistem akan membuka sesi absen masuk baru untuk hari ini.",
+            confirmLabel: "Ya, Lanjut Kerja",
+            confirmClass: "bg-blue-600 hover:bg-blue-700 text-white",
+            onConfirm: async () => {
+                try {
+                    await resume();
+                    toast({ title: "Selamat Bekerja Kembali", description: "Sesi Anda telah diaktifkan kembali." });
+                } catch (err: any) {
+                    handleError(err);
+                }
             }
-        }
+        });
     };
 
     const renderMainButton = () => {
@@ -737,16 +762,17 @@ export default function EmployeeDashboard() {
                     className="bg-white rounded-3xl p-5 shadow-xl shadow-black/5 border border-orange-100 flex items-center justify-between relative overflow-hidden"
                 >
                     <div className="space-y-1.5 z-10">
-                        <h2 className="text-lg font-bold text-gray-800">{user?.fullName}</h2>
+                        <h2 className="text-lg font-bold text-gray-800">{toTitleCase(user?.fullName)}</h2>
                         <div className="text-xs text-gray-500 space-y-0.5">
                             <p>NIK: <span className="font-semibold text-gray-700">{user?.username}</span></p>
-                            <p>Cabang: <span className="font-semibold text-gray-700">{user?.branch || '-'}</span></p>
-                            <p>Jabatan: <span className="font-semibold text-gray-700">{user?.position || '-'}</span></p>
+                            <p>Cabang: <span className="font-semibold text-gray-700">{toTitleCase(user?.branch) || '-'}</span></p>
+                            <p>Jabatan: <span className="font-semibold text-gray-700">{toTitleCase(user?.position) || '-'}</span></p>
                             <p>Shift: <span className="font-bold text-orange-600">
                                 {(() => {
                                     const baseShift = (todaySessions && todaySessions.length > 0) ? (todaySessions[0] as any).shift : (shiftList?.find(s => s.id === selectedShiftId)?.name);
                                     if (!baseShift) return 'Belum Absen Masuk';
-                                    return sessionCount > 1 ? `${baseShift} ( Sesi ${sessionCount} )` : baseShift;
+                                    const formattedShift = toTitleCase(baseShift);
+                                    return sessionCount > 1 ? `${formattedShift} ( Sesi ${sessionCount} )` : formattedShift;
                                 })()}
                             </span></p>
                         </div>
@@ -999,6 +1025,45 @@ export default function EmployeeDashboard() {
                             onClick={() => setSelectedPhoto(null)}
                         >
                             <X className="h-5 w-5" />
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Generic Confirm Dialog — replaces window.confirm() for PWA safety */}
+            <Dialog
+                open={!!confirmDialog?.open}
+                onOpenChange={(val) => !val && setConfirmDialog(null)}
+            >
+                <DialogContent className="rounded-3xl max-w-xs md:max-w-sm p-6">
+                    <DialogHeader>
+                        <div className="mx-auto w-14 h-14 bg-orange-100 rounded-full flex items-center justify-center mb-3">
+                            <X className="w-7 h-7 text-orange-600" />
+                        </div>
+                        <DialogTitle className="text-center text-lg font-bold">
+                            {confirmDialog?.title}
+                        </DialogTitle>
+                        <DialogDescription className="text-center text-sm text-muted-foreground pt-1">
+                            {confirmDialog?.description}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid grid-cols-1 gap-3 mt-4">
+                        <Button
+                            className={`w-full h-12 rounded-2xl font-bold ${confirmDialog?.confirmClass || 'bg-primary hover:bg-primary/90 text-white'}`}
+                            onClick={() => {
+                                const cb = confirmDialog?.onConfirm;
+                                setConfirmDialog(null);
+                                cb?.();
+                            }}
+                        >
+                            {confirmDialog?.confirmLabel || "Ya"}
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            className="w-full h-12 text-gray-400"
+                            onClick={() => setConfirmDialog(null)}
+                        >
+                            Batalkan
                         </Button>
                     </div>
                 </DialogContent>

@@ -14,6 +14,7 @@ import { calculateDailyTotal, formatDuration, calculateDurationSeconds, formatDu
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Camera, Image as ImageIcon } from "lucide-react";
 import { api } from "@shared/routes";
+import { toTitleCase } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -94,7 +95,8 @@ export default function RecapPage() {
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
     const getUserName = (userId: number) => {
-        return users?.find(u => u.id === userId)?.fullName || null;
+        const name = users?.find(u => u.id === userId)?.fullName || null;
+        return name ? toTitleCase(name) : null;
     };
 
     // Filter Data by Date Period — exclude records for deleted employees

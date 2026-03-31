@@ -1,6 +1,40 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
+export const toTitleCase = (str: string | null | undefined) => {
+  if (!str) return "-";
+  return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+};
+
+export const formatAddress = (addr: string | null | undefined) => {
+  if (!addr) return "-";
+
+  // Standardize to Title Case first
+  let result = addr.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+
+  // Administrative abbreviations optimization
+  const fixes = [
+    { reg: /\bkp\.?\b/gi, res: "Kp." },
+    { reg: /\brt\.?\b/gi, res: "RT" },
+    { reg: /\brw\.?\b/gi, res: "RW" },
+    { reg: /\brt\/rw\.?\b/gi, res: "RT/RW" },
+    { reg: /\bdesa\.?\b/gi, res: "Desa" },
+    { reg: /\bdes\.?\b/gi, res: "Desa" },
+    { reg: /\bkecamatan\.?\b/gi, res: "Kecamatan" },
+    { reg: /\bkec\.?\b/gi, res: "Kec." },
+    { reg: /\bkabupaten\.?\b/gi, res: "Kabupaten" },
+    { reg: /\bkab\.?\b/gi, res: "Kab." },
+    { reg: /RT\/RW\.?(\d+)/gi, res: "RT/RW $1" },
+    { reg: /Kab\.(\w+)/gi, res: "Kab. $1" }
+  ];
+
+  fixes.forEach(f => {
+    result = result.replace(f.reg, f.res);
+  });
+
+  return result;
+};
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }

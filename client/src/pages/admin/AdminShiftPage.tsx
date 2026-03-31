@@ -13,6 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertShiftSchema } from "@shared/schema";
+import { toTitleCase } from "@/lib/utils";
 
 export default function AdminShiftPage() {
   const { toast } = useToast();
@@ -116,7 +117,7 @@ export default function AdminShiftPage() {
             <TableBody>
               {shifts?.map((shift) => (
                 <TableRow key={shift.id}>
-                  <TableCell className="font-medium">{shift.name}</TableCell>
+                  <TableCell className="font-medium">{toTitleCase(shift.name)}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                        <Clock className="w-3 h-3 text-red-500" />

@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { AttendanceCalendar } from "@/components/AttendanceCalendar";
+import { toTitleCase, formatAddress } from "@/lib/utils";
 import { addMonths, subMonths, format, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, addDays, getWeek, getYear, addWeeks, subWeeks } from "date-fns";
 import { id } from "date-fns/locale";
 import {
@@ -42,11 +43,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-const toTitleCase = (str: string | null | undefined) => {
-    if (!str) return "-";
-    return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-};
-
+// Helper for CSV export
 const handleExportCSV = (employees: User[]) => {
     const headers = ["NIK", "Nama Lengkap", "Nomor HP", "Email", "Cabang", "Jabatan", "Agama", "NPWP", "BPJS"];
     const rows = employees.map(emp => [
@@ -939,7 +936,7 @@ export default function AdminEmployeeList() {
                             <DialogHeader>
                                 <DialogTitle className="text-2xl flex items-center gap-2">
                                     <UserIcon className="w-6 h-6 text-primary" />
-                                    Detail Karyawan: {viewEmployee.fullName}
+                                    Detail Karyawan: {toTitleCase(viewEmployee.fullName)}
                                 </DialogTitle>
                                 <DialogDescription>Informasi lengkap data diri dan dokumen karyawan.</DialogDescription>
                             </DialogHeader>
@@ -950,9 +947,9 @@ export default function AdminEmployeeList() {
                                         <DataRow label="Nama Lengkap" value={toTitleCase(viewEmployee.fullName)} />
                                         <DataRow label="NIK" value={viewEmployee.nik} />
                                         <DataRow label="Tempat, Tgl Lahir" value={`${toTitleCase(viewEmployee.birthPlace) || '-'}, ${viewEmployee.birthDate ? format(new Date(viewEmployee.birthDate), "d MMMM yyyy", { locale: id }) : '-'}`} />
-                                        <DataRow label="Jenis Kelamin" value={viewEmployee.gender} />
+                                        <DataRow label="Jenis Kelamin" value={toTitleCase(viewEmployee.gender)} />
                                         <DataRow label="Agama" value={toTitleCase((viewEmployee as any).religion)} />
-                                        <DataRow label="Alamat" value={viewEmployee.address} />
+                                        <DataRow label="Alamat" value={formatAddress(viewEmployee.address)} />
                                     </Section>
 
                                     <Section title="Pekerjaan" icon={<Briefcase className="w-4 h-4" />}>

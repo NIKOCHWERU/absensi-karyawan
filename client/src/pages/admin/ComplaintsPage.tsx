@@ -10,6 +10,7 @@ import { id as idLocale } from "date-fns/locale";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { Link } from "wouter";
+import { toTitleCase } from "@/lib/utils";
 
 interface Complaint {
     id: number;
@@ -79,7 +80,8 @@ export default function AdminComplaintsPage() {
 
     const getUserName = (userId: number) => {
         const u = allUsers.find((u) => u.id === userId);
-        return u ? u.fullName : `User #${userId}`;
+        const name = u ? u.fullName : `User #${userId}`;
+        return toTitleCase(name);
     };
 
     const getStatusBadge = (status: string) => {

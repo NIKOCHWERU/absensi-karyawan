@@ -8,7 +8,7 @@ import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { BottomNav } from "@/components/BottomNav";
-import { safeCompressImage, uploadFileWithProgress } from "@/lib/utils";
+import { safeCompressImage, uploadFileWithProgress, toTitleCase, formatAddress } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -191,8 +191,8 @@ export default function ProfilePage() {
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="font-bold text-gray-900 text-lg leading-tight truncate">{user?.fullName}</h2>
-            <p className="text-sm text-gray-500">{user?.position || "Karyawan"} • {user?.branch || "-"}</p>
+            <h2 className="font-bold text-gray-900 text-lg leading-tight truncate">{toTitleCase(user?.fullName)}</h2>
+            <p className="text-sm text-gray-500">{toTitleCase(user?.position) || "Karyawan"} • {toTitleCase(user?.branch) || "-"}</p>
             <p className="text-xs text-gray-400 font-mono mt-0.5">NIK: {user?.nik || "-"}</p>
           </div>
           <Button
@@ -331,8 +331,8 @@ export default function ProfilePage() {
                 <div className="space-y-0 text-sm">
                   <ReadOnlyField label="No. HP" value={user?.phoneNumber} />
                   <ReadOnlyField label="Email" value={user?.email} />
-                  <ReadOnlyField label="Cabang" value={user?.branch} />
-                  <ReadOnlyField label="Shift" value={(user as any)?.shift} />
+                  <ReadOnlyField label="Cabang" value={toTitleCase(user?.branch)} />
+                  <ReadOnlyField label="Shift" value={toTitleCase((user as any)?.shift)} />
                   <ReadOnlyField label="NPWP" value={user?.npwp} />
                   <ReadOnlyField label="BPJS" value={user?.bpjs} />
                 </div>
@@ -354,17 +354,17 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-0 text-sm">
-                <ReadOnlyField label="Nama Lengkap" value={user?.fullName} />
+                <ReadOnlyField label="Nama Lengkap" value={toTitleCase(user?.fullName)} />
                 <ReadOnlyField label="NIK" value={user?.nik} />
                 <ReadOnlyField label="Tempat, Tgl Lahir" value={[
-                  user?.birthPlace, 
+                  toTitleCase(user?.birthPlace), 
                   user?.birthDate ? format(new Date(user.birthDate), "d MMMM yyyy", { locale: id }) : null
                 ].filter(Boolean).join(", ")} />
-                <ReadOnlyField label="Jenis Kelamin" value={user?.gender} />
-                <ReadOnlyField label="Agama" value={user?.religion} />
-                <ReadOnlyField label="Alamat" value={user?.address} />
-                <ReadOnlyField label="Jabatan" value={user?.position} />
-                <ReadOnlyField label="Status Karyawan" value={(user as any)?.employmentStatus} />
+                <ReadOnlyField label="Jenis Kelamin" value={toTitleCase(user?.gender)} />
+                <ReadOnlyField label="Agama" value={toTitleCase(user?.religion)} />
+                <ReadOnlyField label="Alamat" value={formatAddress(user?.address)} />
+                <ReadOnlyField label="Jabatan" value={toTitleCase(user?.position)} />
+                <ReadOnlyField label="Status Karyawan" value={toTitleCase((user as any)?.employmentStatus)} />
                 <ReadOnlyField label="Tahun bergabung ke elok" value={(user as any)?.joinDate} />
               </div>
 

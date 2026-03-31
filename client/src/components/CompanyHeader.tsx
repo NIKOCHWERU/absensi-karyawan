@@ -1,4 +1,5 @@
 import { Building2 } from "lucide-react";
+import { toTitleCase } from "@/lib/utils";
 
 interface CompanyHeaderProps {
   name?: string;
@@ -6,12 +7,13 @@ interface CompanyHeaderProps {
 }
 
 export function CompanyHeader({ name = "PT ELOK JAYA ABADHI (KARYAWAN)", logoUrl = "/logo_elok_buah.jpg" }: CompanyHeaderProps) {
+  const formattedName = toTitleCase(name);
   return (
     <header className="bg-green-600 text-white shadow-lg pb-12 pt-6 px-6 rounded-b-[2.5rem]">
       <div className="flex items-center justify-between max-w-4xl mx-auto">
         <div>
           <h1 className="text-xl md:text-2xl font-bold font-display tracking-tight text-shadow-sm">
-            {name}
+            {formattedName}
           </h1>
           <p className="text-white/80 text-xs md:text-sm font-medium tracking-wide">
             Absensi Karyawan PT ELOK JAYA ABADHI

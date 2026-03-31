@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { MapPin, ChevronLeft, ChevronRight, History, FileText, Printer, X, Search, AlertTriangle, Info } from "lucide-react";
 import { AttendanceReport } from "@/components/AttendanceReport";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { toTitleCase, formatAddress } from "@/lib/utils";
 
 // Helper: resolve photo URL — handles both local uploads and Google Drive File IDs
 function getPhotoUrl(value: string | null): string {
@@ -253,11 +254,7 @@ export default function AttendanceHistoryPage() {
                                             // Handle fake GPS warning
                                             const showGpsWarning = record.isFakeGps;
 
-                                            // Helper to toTitleCase (if not available globally)
-                                            const toTitleCase = (str: string | undefined | null) => {
-                                                if (!str) return '-';
-                                                return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-                                            };
+                                            const toTitleCaseLoc = (str: string | undefined | null) => toTitleCase(str);
 
                                             return (
                                                 <tr key={record.id} className="hover:bg-gray-50/30 transition-colors group">
