@@ -504,7 +504,7 @@ export default function RecapPage() {
             </header>
 
             <main className="p-4 md:p-8 flex-1 overflow-auto">
-                <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm mb-6">
+                <div className="bg-white rounded-2xl overflow-hidden mb-6">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-gray-100 bg-white py-4 px-6">
                         <div className="space-y-1">
                             <div className="text-lg font-bold">Laporan Kehadiran</div>

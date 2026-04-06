@@ -550,7 +550,7 @@ export default function AttendanceHistoryPage() {
                     </div>
                 </header>
 
-                <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm mb-6">
+                <div className="bg-white rounded-2xl overflow-hidden mb-6">
                     <div className="p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4 border-b border-gray-50 bg-white">
                         <div className="flex flex-col md:flex-row gap-2 md:items-center">
                             <span>Data Periode: {format(startDate, 'dd MMM yyyy', { locale: id })} - {format(endDate, 'dd MMM yyyy', { locale: id })}</span>
