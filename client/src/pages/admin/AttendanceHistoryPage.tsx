@@ -550,9 +550,9 @@ export default function AttendanceHistoryPage() {
                     </div>
                 </header>
 
-                <Card className="border shadow-sm rounded-xl overflow-hidden">
-                    <CardHeader className="bg-white border-b border-gray-100 flex flex-row items-center justify-between">
-                        <CardTitle className="text-lg text-gray-800 flex flex-col md:flex-row gap-2 md:items-center">
+                <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm mb-6">
+                    <div className="p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4 border-b border-gray-50 bg-white">
+                        <div className="flex flex-col md:flex-row gap-2 md:items-center">
                             <span>Data Periode: {format(startDate, 'dd MMM yyyy', { locale: id })} - {format(endDate, 'dd MMM yyyy', { locale: id })}</span>
                             <div className="relative md:ml-4">
                                 <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
@@ -563,12 +563,14 @@ export default function AttendanceHistoryPage() {
                                     className="h-8 text-xs pl-9 w-full md:w-64"
                                 />
                             </div>
-                        </CardTitle>
+                        </div>
                         <div className="text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full border border-green-100">
                             {filteredRecords.length} Data Absensi
                         </div>
-                    </CardHeader>
-                    <CardContent className="p-0">
+                        </div>
+                    </div>
+
+                    <div className="p-0">
                         {isLoadingAttendance ? (
                             <div className="p-12 text-center text-gray-400">Memuat data...</div>
                         ) : filteredRecords.length === 0 ? (
@@ -764,8 +766,8 @@ export default function AttendanceHistoryPage() {
                                 </table>
                             </div>
                         )}
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </main>
         </div>
     );
