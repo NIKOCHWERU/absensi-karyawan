@@ -313,7 +313,7 @@ export default function EmployeeDashboard() {
 
         let finalActionFn = actionFn;
         if (isClockIn && sessionCount > 0) {
-            const initialShift = todaySessions && todaySessions.length > 0 ? (todaySessions[0] as any).shift : 'Karyawan';
+            const initialShift = todaySessions && todaySessions.length > 0 ? (todaySessions[0] as any).shift : '-';
             finalActionFn = async (data: any) => actionFn({ ...data, shift: initialShift });
         }
 

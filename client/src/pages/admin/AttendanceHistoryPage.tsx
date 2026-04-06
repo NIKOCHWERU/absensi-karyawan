@@ -189,7 +189,7 @@ export default function AttendanceHistoryPage() {
             periodStr = format(targetDate, "MMMM yyyy", { locale: id }).toUpperCase();
         }
 
-        const fileName = `LAPORAN RIWAYAT ABSENSI & FOTO PT EJA - ${periodStr}.html`;
+        const fileName = `LAPORAN RIWAYAT ABSENSI FOTO TENAGA KERJA PT EJA - ${periodStr}.html`;
 
         const imageCache: Record<string, string> = {};
         const fetchImageBase64 = async (url: string) => {
@@ -272,8 +272,8 @@ export default function AttendanceHistoryPage() {
     tbody tr:nth-child(even) { background-color: #f8fafc; }
 
     .photo-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-    .photo-item { width: 75px; text-align: center; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px; background: white; }
-    .photo-img { width: 100%; height: 65px; object-fit: cover; border-radius: 2px; }
+    .photo-item { width: 100px; text-align: center; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px; background: white; }
+    .photo-img { width: 100%; height: 90px; object-fit: cover; border-radius: 2px; }
     .photo-label { font-size: 8px; font-weight: bold; color: #64748b; margin-top: 2px; text-transform: uppercase; }
     
     .status-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 9px; text-transform: uppercase; margin-bottom: 4px; }
@@ -318,7 +318,7 @@ export default function AttendanceHistoryPage() {
         <th class="c" style="width:24px;">No</th>
         <th style="width:65px;">Tanggal</th>
         <th style="width:110px;">Nama Karyawan</th>
-        <th style="width:95px;">Waktu Absen</th>
+        <th style="width:140px;">Waktu Absen</th>
         <th style="width:120px;">Status & Keterangan</th>
         <th>Bukti Foto (Visual)</th>
       </tr>

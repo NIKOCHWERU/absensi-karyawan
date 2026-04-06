@@ -36,7 +36,7 @@ export default function RecapPage() {
         breakEnd: "",
         status: "present",
         notes: "",
-        shift: "Management"
+        shift: "-"
     });
 
     const { data: users } = useQuery<User[]>({
@@ -212,7 +212,7 @@ export default function RecapPage() {
                 breakEnd: toTime(existing.breakEnd),
                 status: existing.status || "present",
                 notes: existing.notes || "",
-                shift: existing.shift || "Management"
+                shift: existing.shift || "-"
             });
         } else {
             setEditingAttendance(null);
@@ -225,7 +225,7 @@ export default function RecapPage() {
                 breakEnd: "",
                 status: "present",
                 notes: "",
-                shift: "Management"
+                shift: "-"
             });
         }
         setIsManualModalOpen(true);
@@ -243,7 +243,7 @@ export default function RecapPage() {
             periodStr = format(targetDate, "MMMM yyyy", { locale: id }).toUpperCase();
         }
 
-        const fileName = `LAPORAN ABSENSI PT EJA - ${periodStr}.html`;
+        const fileName = `LAPORAN ABSENSI TENAGA KERJA PT EJA - ${periodStr}.html`;
         let logoDataUrl = '';
         try {
             const logoRes = await fetch('/logo_elok_buah.jpg');
@@ -332,10 +332,10 @@ export default function RecapPage() {
         <th class="c" style="width:28px;">No</th>
         <th style="width:76px;">Tanggal</th>
         <th style="width:130px;">Nama Karyawan</th>
-        <th class="c" style="width:52px;">Masuk</th>
-        <th class="c" style="width:52px;">Istirahat</th>
-        <th class="c" style="width:52px;">Selesai</th>
-        <th class="c" style="width:52px;">Pulang</th>
+        <th class="c" style="width:62px;">Masuk</th>
+        <th class="c" style="width:62px;">Istirahat</th>
+        <th class="c" style="width:62px;">Selesai</th>
+        <th class="c" style="width:62px;">Pulang</th>
         <th style="width:80px;">Jam Kerja</th>
         <th class="c" style="width:80px;">Total Istirahat</th>
         <th class="c" style="width:62px;">Status</th>
@@ -477,7 +477,7 @@ export default function RecapPage() {
         <div className="w-full">
             <header className="bg-white border-b border-gray-200 p-4 px-8 flex items-center justify-between sticky top-0 z-10">
                 <div className="flex items-center gap-4">
-                    <h1 className="text-xl font-bold text-gray-800 uppercase tracking-tight">Rekap Absensi Management PT ELOK JAYA ABADHI</h1>
+                    <h1 className="text-xl font-bold text-gray-800 uppercase tracking-tight">Rekap Absensi Tenaga Kerja PT ELOK JAYA ABADHI</h1>
                 </div>
                 <div className="flex items-center gap-2 bg-white border rounded-md p-1">
                     <Select value={reportType} onValueChange={(v: any) => setReportType(v)}>

@@ -161,7 +161,7 @@ export default function AdminEmployeeList() {
             joinDate: "",
             employmentStatus: "Kontrak",
             registrationStatus: "approved",
-            shift: "Management"
+            shift: "-"
         }
     });
 
@@ -411,7 +411,7 @@ export default function AdminEmployeeList() {
                                         joinDate: "",
                                         employmentStatus: "Kontrak",
                                         registrationStatus: "approved",
-                                        shift: "Management"
+                                        shift: "-"
                                     });
                                     setSelectedBpjsPhoto(null);
                                     setSelectedNpwpPhoto(null);
@@ -620,10 +620,10 @@ export default function AdminEmployeeList() {
                                         <FormField control={form.control} name="shift" render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Shift Kerja</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value || "Management"}>
+                                                <Select onValueChange={field.onChange} value={field.value || "-"}>
                                                     <FormControl><SelectTrigger><SelectValue placeholder="Pilih Shift" /></SelectTrigger></FormControl>
                                                     <SelectContent>
-                                                        <SelectItem value="Management">Management (Default)</SelectItem>
+                                                        <SelectItem value="-">- (Default)</SelectItem>
                                                         {shifts?.map(s => (
                                                             <SelectItem key={s.id} value={s.name}>{s.name} ({s.checkInTime}-{s.checkOutTime})</SelectItem>
                                                         ))}
@@ -853,7 +853,7 @@ export default function AdminEmployeeList() {
                                                         joinDate: (emp as any).joinDate || "",
                                                         employmentStatus: (emp as any).employmentStatus || "Kontrak",
                                                         registrationStatus: (emp as any).registrationStatus || "approved",
-                                                        shift: emp.shift || "Management",
+                                                        shift: emp.shift || "-",
                                                         email: emp.email || ""
                                                     });
                                                     setOpen(true);

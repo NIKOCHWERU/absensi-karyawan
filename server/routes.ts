@@ -1133,12 +1133,14 @@ export async function registerRoutes(
           shift: shift || existing.shift
         });
       } else {
+        // Fallback to employee's default shift if not provided
+        const user = await storage.getUser(userId);
         record = await storage.createAttendance({
           userId,
           date: new Date(date),
           status,
           notes: notes || "",
-          shift: shift || 'Karyawan',
+          shift: shift || user?.shift || '-',
           sessionNumber: 1
         });
       }
