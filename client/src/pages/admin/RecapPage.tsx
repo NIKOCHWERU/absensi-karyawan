@@ -504,10 +504,10 @@ export default function RecapPage() {
             </header>
 
             <main className="p-4 md:p-8 flex-1 overflow-auto">
-                <Card className="border shadow-sm rounded-xl overflow-hidden">
-                    <CardHeader className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-gray-100 bg-white py-4 px-6">
+                <div className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm mb-6">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-gray-100 bg-white py-4 px-6">
                         <div className="space-y-1">
-                            <CardTitle className="text-lg">Laporan Kehadiran</CardTitle>
+                            <div className="text-lg font-bold">Laporan Kehadiran</div>
                             <p className="text-sm text-gray-500">
                                 Periode: {format(startDate, "EEEE, d MMM yyyy", { locale: id })} - {format(endDate, "EEEE, d MMM yyyy", { locale: id })}
                             </p>
@@ -524,8 +524,8 @@ export default function RecapPage() {
                                 <FileDown className="h-4 w-4" /> Export HTML
                             </Button>
                         </div>
-                    </CardHeader>
-                    <CardContent className="p-0">
+                    </div>
+                    <div className="p-0">
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm text-left whitespace-nowrap">
                                 <thead className="bg-gray-50/50 text-gray-500 font-bold uppercase text-[10px] tracking-widest border-b">
@@ -609,8 +609,8 @@ export default function RecapPage() {
                                 </tbody>
                             </table>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </main>
 
             <Dialog open={!!selectedPhotoRecord} onOpenChange={(open) => !open && setSelectedPhotoRecord(null)}>
