@@ -40,6 +40,17 @@ interface UserInfo {
 export default function AdminComplaintsPage() {
     const { toast } = useToast();
     const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
+    const [sortField, setSortField] = useState<string>('createdAt');
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+    const toggleSort = (field: string) => {
+        if (sortField === field) {
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortOrder('asc');
+        }
+    };
 
     const { data: complaints = [], isLoading } = useQuery<Complaint[]>({
         queryKey: ["/api/admin/complaints"],
@@ -84,6 +95,27 @@ export default function AdminComplaintsPage() {
         return toTitleCase(name);
     };
 
+    const sortedComplaints = [...complaints].sort((a, b) => {
+        let valA: any, valB: any;
+        if (sortField === 'name') {
+            valA = getUserName(a.userId).toLowerCase();
+            valB = getUserName(b.userId).toLowerCase();
+        } else if (sortField === 'createdAt') {
+            valA = new Date(a.createdAt).getTime();
+            valB = new Date(b.createdAt).getTime();
+        } else if (sortField === 'status') {
+            valA = a.status || '';
+            valB = b.status || '';
+        } else {
+            valA = (a as any)[sortField] || '';
+            valB = (b as any)[sortField] || '';
+        }
+
+        if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+        if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+    });
+
     const getStatusBadge = (status: string) => {
         switch (status) {
             case "pending":
@@ -119,23 +151,46 @@ export default function AdminComplaintsPage() {
                         </Button>
                     </Link>
                     <h1 className="text-2xl font-bold text-gray-800">Pengaduan Karyawan</h1>
-                    <span className="bg-orange-100 text-orange-700 text-xs font-bold px-3 py-1 rounded-full">
-                        {complaints.filter((c) => c.status === "pending").length} Baru
-                    </span>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant={sortField === 'createdAt' ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => toggleSort('createdAt')}
+                            className="text-xs rounded-full h-8 px-3"
+                        >
+                            Urutan: Terbaru {sortField === 'createdAt' && (sortOrder === 'asc' ? '↑' : '↓')}
+                        </Button>
+                        <Button
+                            variant={sortField === 'name' ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => toggleSort('name')}
+                            className="text-xs rounded-full h-8 px-3"
+                        >
+                            Berdasarkan Nama {sortField === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                        </Button>
+                        <Button
+                            variant={sortField === 'status' ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => toggleSort('status')}
+                            className="text-xs rounded-full h-8 px-3"
+                        >
+                            Berdasarkan Status {sortField === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}
+                        </Button>
+                    </div>
                 </div>
 
                 {isLoading ? (
                     <div className="flex justify-center py-12">
                         <Loader2 className="w-6 h-6 animate-spin text-primary" />
                     </div>
-                ) : complaints.length === 0 ? (
+                ) : sortedComplaints.length === 0 ? (
                     <div className="text-center py-12 bg-white rounded-2xl shadow-sm border border-gray-100">
                         <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                         <p className="text-gray-400 text-sm">Belum ada pengaduan</p>
                     </div>
                 ) : (
                     <div className="grid gap-4 md:grid-cols-2">
-                        {complaints.map((c, i) => (
+                        {sortedComplaints.map((c, i) => (
                             <motion.div
                                 key={c.id}
                                 initial={{ y: 20, opacity: 0 }}

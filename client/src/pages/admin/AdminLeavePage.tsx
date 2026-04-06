@@ -25,6 +25,39 @@ export default function AdminLeavePage() {
         refetchInterval: 5000,
     });
 
+    const [sortField, setSortField] = useState<string>('createdAt');
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+    const toggleSort = (field: string) => {
+        if (sortField === field) {
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortOrder('asc');
+        }
+    };
+
+    const sortedRequests = [...(requests || [])].sort((a, b) => {
+        let valA: any, valB: any;
+        if (sortField === 'name') {
+            valA = getUserName(a.userId).toLowerCase();
+            valB = getUserName(b.userId).toLowerCase();
+        } else if (sortField === 'createdAt') {
+            valA = new Date(a.createdAt!).getTime();
+            valB = new Date(b.createdAt!).getTime();
+        } else if (sortField === 'status') {
+            valA = a.status || '';
+            valB = b.status || '';
+        } else {
+            valA = (a as any)[sortField] || '';
+            valB = (b as any)[sortField] || '';
+        }
+
+        if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+        if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+    });
+
     const mutation = useMutation({
         mutationFn: async ({ id, status }: { id: number, status: string }) => {
             const res = await fetch(api.admin.attendance.leave.update.path.replace(':id', id.toString()), {
@@ -69,10 +102,35 @@ export default function AdminLeavePage() {
             </header>
 
             <main className="p-8 max-w-6xl mx-auto space-y-6">
-                <div className="flex items-center justify-between">
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900">Permohonan Cuti</h2>
                         <p className="text-sm text-gray-500">Setujui atau tolak permohonan cuti dari karyawan.</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant={sortField === 'createdAt' ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => toggleSort('createdAt')}
+                            className="text-xs rounded-full h-8 px-3"
+                        >
+                            Terbaru {sortField === 'createdAt' && (sortOrder === 'asc' ? '↑' : '↓')}
+                        </Button>
+                        <Button
+                            variant={sortField === 'name' ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => toggleSort('name')}
+                            className="text-xs rounded-full h-8 px-3"
+                        >
+                            Nama {sortField === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                        </Button>
+                        <Button
+                            variant={sortField === 'status' ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => toggleSort('status')}
+                            className="text-xs rounded-full h-8 px-3"
+                        >
+                            Status {sortField === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}
+                        </Button>
                     </div>
                 </div>
 
@@ -88,7 +146,7 @@ export default function AdminLeavePage() {
                             <p className="font-medium text-lg">Belum ada permohonan cuti.</p>
                         </Card>
                     ) : (
-                        requests?.map((req) => (
+                        sortedRequests?.map((req) => (
                             <Card key={req.id} className="rounded-3xl border-none shadow-sm overflow-hidden hover:shadow-md transition-shadow">
                                 <CardHeader className="bg-white pb-2 flex flex-row items-center justify-between">
                                     <div className="flex items-center gap-3">

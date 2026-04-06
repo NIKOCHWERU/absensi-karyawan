@@ -128,35 +128,37 @@ export default function RecapPage() {
             return name.includes(searchName.toLowerCase());
         })
         .sort((a, b) => {
+            let valA: any, valB: any;
+            
             if (sortField === 'date') {
-                const dateA = new Date(a.date).setHours(0, 0, 0, 0);
-                const dateB = new Date(b.date).setHours(0, 0, 0, 0);
-
-                if (dateA !== dateB) return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
-
-                // Secondary sort: Group by User
-                const nameA = (getUserName(a.userId) || '').toLowerCase();
-                const nameB = (getUserName(b.userId) || '').toLowerCase();
-                if (nameA < nameB) return -1;
-                if (nameA > nameB) return 1;
-
-                // Tertiary sort: Latest session first (DESC) or Earliest (ASC)
-                const checkInA = a.checkIn ? new Date(a.checkIn).getTime() : 0;
-                const checkInB = b.checkIn ? new Date(b.checkIn).getTime() : 0;
-                return sortOrder === 'desc' ? checkInB - checkInA : checkInA - checkInB;
+                valA = new Date(a.date).getTime();
+                valB = new Date(b.date).getTime();
+            } else if (sortField === 'name') {
+                valA = (getUserName(a.userId) || '').toLowerCase();
+                valB = (getUserName(b.userId) || '').toLowerCase();
+            } else if (sortField === 'checkIn') {
+                valA = a.checkIn ? new Date(a.checkIn).getTime() : 0;
+                valB = b.checkIn ? new Date(b.checkIn).getTime() : 0;
+            } else if (sortField === 'checkOut') {
+                valA = a.checkOut ? new Date(a.checkOut).getTime() : 0;
+                valB = b.checkOut ? new Date(b.checkOut).getTime() : 0;
+            } else if (sortField === 'status') {
+                valA = a.status || '';
+                valB = b.status || '';
+            } else if (sortField === 'workHours') {
+                valA = a.checkIn && a.checkOut ? new Date(a.checkOut).getTime() - new Date(a.checkIn).getTime() : 0;
+                valB = b.checkIn && b.checkOut ? new Date(b.checkOut).getTime() - new Date(b.checkIn).getTime() : 0;
             } else {
-                const nameA = (getUserName(a.userId) || '').toLowerCase();
-                const nameB = (getUserName(b.userId) || '').toLowerCase();
-                if (nameA < nameB) return sortOrder === 'asc' ? -1 : 1;
-                if (nameA > nameB) return sortOrder === 'asc' ? 1 : -1;
-
-                const timeA = new Date(a.date).getTime();
-                const timeB = new Date(b.date).getTime();
-                return timeB - timeA;
+                valA = (a as any)[sortField] || '';
+                valB = (b as any)[sortField] || '';
             }
+
+            if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+            if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+            return 0;
         });
 
-    const toggleSort = (field: 'date' | 'name') => {
+    const toggleSort = (field: string) => {
         if (sortField === field) {
             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
         } else {
@@ -604,19 +606,27 @@ export default function RecapPage() {
                             <table className="w-full text-sm text-left">
                                 <thead className="bg-gray-50 text-gray-700 font-semibold uppercase text-xs">
                                     <tr>
-                                        <th className="px-4 py-3 cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('date')}>
-                                            <div className="flex items-center gap-1">Tanggal <ArrowUpDown className="h-3 w-3" /></div>
+                                        <th className="px-4 py-3 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('date')}>
+                                            <div className="flex items-center gap-1 whitespace-nowrap">Tanggal {sortField === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}</div>
                                         </th>
-                                        <th className="px-4 py-3 cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('name')}>
-                                            <div className="flex items-center gap-1">Nama Karyawan <ArrowUpDown className="h-3 w-3" /></div>
+                                        <th className="px-4 py-3 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('name')}>
+                                            <div className="flex items-center gap-1 whitespace-nowrap">Nama Karyawan {sortField === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}</div>
                                         </th>
-                                        <th className="px-4 py-3">Masuk</th>
+                                        <th className="px-4 py-3 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('checkIn')}>
+                                            <div className="flex items-center gap-1 whitespace-nowrap">Masuk {sortField === 'checkIn' && (sortOrder === 'asc' ? '↑' : '↓')}</div>
+                                        </th>
                                         <th className="px-4 py-3">Istirahat</th>
                                         <th className="px-4 py-3">Selesai</th>
-                                        <th className="px-4 py-3">Pulang</th>
-                                        <th className="px-4 py-3">Jam Kerja</th>
+                                        <th className="px-4 py-3 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('checkOut')}>
+                                            <div className="flex items-center gap-1 whitespace-nowrap">Pulang {sortField === 'checkOut' && (sortOrder === 'asc' ? '↑' : '↓')}</div>
+                                        </th>
+                                        <th className="px-4 py-3 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('workHours')}>
+                                            <div className="flex items-center gap-1 whitespace-nowrap">Jam Kerja {sortField === 'workHours' && (sortOrder === 'asc' ? '↑' : '↓')}</div>
+                                        </th>
                                         <th className="px-4 py-3">Total Istirahat</th>
-                                        <th className="px-4 py-3">Status</th>
+                                        <th className="px-4 py-3 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('status')}>
+                                            <div className="flex items-center gap-1 whitespace-nowrap">Status {sortField === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}</div>
+                                        </th>
                                         <th className="px-4 py-3">Keterangan</th>
                                     </tr>
                                 </thead>

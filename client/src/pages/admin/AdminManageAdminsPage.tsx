@@ -45,15 +45,37 @@ type AdminFormValues = z.infer<typeof adminFormSchema>;
 export default function AdminManageAdminsPage() {
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
-  const [open, setOpen] = useState(false);
   const [selectedAdmin, setSelectedAdmin] = useState<User | null>(null);
+  const [sortField, setSortField] = useState<string>('fullName');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const toggleSort = (field: string) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
 
   const { data: allUsers = [], isLoading } = useQuery<User[]>({
     queryKey: ["/api/admin/users"],
     refetchInterval: 10000,
   });
 
-  const admins = allUsers.filter((u) => u.role === "admin" || u.role === "superadmin");
+  const admins = allUsers
+    .filter((u) => u.role === "admin" || u.role === "superadmin")
+    .sort((a, b) => {
+      let valA: any = (a as any)[sortField] || '';
+      let valB: any = (b as any)[sortField] || '';
+      
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
+
+      if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+      if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
 
   const form = useForm<AdminFormValues>({
     resolver: zodResolver(adminFormSchema),
@@ -163,9 +185,15 @@ export default function AdminManageAdminsPage() {
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide">
               <tr>
                 <th className="px-5 py-3 text-left">No</th>
-                <th className="px-5 py-3 text-left">Nama</th>
-                <th className="px-5 py-3 text-left">Username</th>
-                <th className="px-5 py-3 text-left">Role</th>
+                <th className="px-5 py-3 text-left cursor-pointer hover:text-blue-600 transition-colors" onClick={() => toggleSort('fullName')}>
+                    Nama {sortField === 'fullName' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </th>
+                <th className="px-5 py-3 text-left cursor-pointer hover:text-blue-600 transition-colors" onClick={() => toggleSort('username')}>
+                    Username {sortField === 'username' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </th>
+                <th className="px-5 py-3 text-left cursor-pointer hover:text-blue-600 transition-colors" onClick={() => toggleSort('role')}>
+                    Role {sortField === 'role' && (sortOrder === 'asc' ? '↑' : '↓')}
+                </th>
                 <th className="px-5 py-3 text-right">Aksi</th>
               </tr>
             </thead>

@@ -48,9 +48,20 @@ export default function AttendanceHistoryPage() {
 
     const [showReport, setShowReport] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
+    const [sortField, setSortField] = useState<string>('date');
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+    const toggleSort = (field: string) => {
+        if (sortField === field) {
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortOrder('asc');
+        }
+    };
 
     // Filter by selected date & search query
-    const filteredRecords = attendanceHistory?.filter(a => {
+    const rawFiltered = attendanceHistory?.filter(a => {
         const d = new Date(a.date).getTime();
         const sDate = new Date(startDate);
         sDate.setHours(0, 0, 0, 0);
@@ -71,6 +82,33 @@ export default function AttendanceHistoryPage() {
             emp?.username?.toLowerCase().includes(searchLower)
         );
     }) || [];
+
+    const filteredRecords = [...rawFiltered].sort((a, b) => {
+        let valA: any, valB: any;
+        
+        if (sortField === 'name') {
+            const empA = users?.find(u => u.id === a.userId);
+            const empB = users?.find(u => u.id === b.userId);
+            valA = empA?.fullName?.toLowerCase() || '';
+            valB = empB?.fullName?.toLowerCase() || '';
+        } else if (sortField === 'date') {
+            valA = new Date(a.date).getTime();
+            valB = new Date(b.date).getTime();
+        } else if (sortField === 'checkIn') {
+            valA = a.checkIn ? new Date(a.checkIn).getTime() : 0;
+            valB = b.checkIn ? new Date(b.checkIn).getTime() : 0;
+        } else if (sortField === 'status') {
+            valA = a.status || '';
+            valB = b.status || '';
+        } else {
+            valA = (a as any)[sortField] || '';
+            valB = (b as any)[sortField] || '';
+        }
+
+        if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+        if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+    });
 
     // Helper to get Employee Data
     const getEmployee = (userId: number) => {
@@ -272,9 +310,11 @@ export default function AttendanceHistoryPage() {
                                         <tr>
                                             <th className="px-6 py-4 w-32">Tanggal</th>
                                             <th className="px-6 py-4">Nama Karyawan</th>
-                                            <th className="px-6 py-4 text-center">Waktu Absen</th>
+                                            <th className="px-6 py-4 w-32 cursor-pointer hover:text-gray-800" onClick={() => toggleSort('date')}>Tanggal {sortField === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
+                                            <th className="px-6 py-4 cursor-pointer hover:text-gray-800" onClick={() => toggleSort('name')}>Nama Karyawan {sortField === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
+                                            <th className="px-6 py-4 text-center cursor-pointer hover:text-gray-800" onClick={() => toggleSort('checkIn')}>Waktu Absen {sortField === 'checkIn' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
                                             <th className="px-6 py-4 text-center">Foto Bukti</th>
-                                            <th className="px-6 py-4">Status & Keterangan</th>
+                                            <th className="px-6 py-4 cursor-pointer hover:text-gray-800" onClick={() => toggleSort('status')}>Status & Keterangan {sortField === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100 bg-white">

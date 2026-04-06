@@ -15,6 +15,31 @@ import { toTitleCase, formatAddress } from "@/lib/utils";
 export default function AdminVerificationPage() {
   const { toast } = useToast();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [sortField, setSortField] = useState<string>('id');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  const toggleSort = (field: string) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const filteredEmployees = (employees || []).sort((a, b) => {
+    let valA: any, valB: any;
+    if (sortField === 'name') {
+      valA = a.fullName.toLowerCase();
+      valB = b.fullName.toLowerCase();
+    } else {
+      valA = a.id;
+      valB = b.id;
+    }
+    if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+    if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
+  });
 
   const { data: employees, isLoading } = useQuery<User[]>({
     queryKey: ["/api/admin/unverified-employees"],
@@ -50,9 +75,27 @@ export default function AdminVerificationPage() {
           <h1 className="text-3xl font-bold tracking-tight">Verifikasi Karyawan</h1>
           <p className="text-muted-foreground">Tinjau dan setujui pendaftaran karyawan baru.</p>
         </div>
+        <div className="flex gap-2">
+            <Button 
+                variant={sortField === 'id' ? "default" : "outline"} 
+                size="sm" 
+                onClick={() => toggleSort('id')}
+                className="text-xs h-8"
+            >
+                Urutkan: Terbaru {sortField === 'id' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </Button>
+            <Button 
+                variant={sortField === 'name' ? "default" : "outline"} 
+                size="sm" 
+                onClick={() => toggleSort('name')}
+                className="text-xs h-8"
+            >
+                Berdasarkan Nama {sortField === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </Button>
+        </div>
       </div>
 
-      {!employees || employees.length === 0 ? (
+      {!filteredEmployees || filteredEmployees.length === 0 ? (
         <Card className="border-dashed flex flex-col items-center justify-center p-12 text-center">
           <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 text-slate-300">
             <UserIcon className="w-8 h-8" />
@@ -61,8 +104,8 @@ export default function AdminVerificationPage() {
           <CardDescription>Semua pendaftaran telah diproses.</CardDescription>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {employees.map((emp) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
+          {filteredEmployees.map((emp) => (
             <Card key={emp.id} className="overflow-hidden hover:shadow-lg transition-shadow border-none shadow-md">
               <CardHeader className="bg-slate-50/50 pb-4">
                 <div className="flex gap-4 items-center">

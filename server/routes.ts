@@ -80,7 +80,8 @@ export async function registerRoutes(
     const nullableFields = [
       'email', 'nik', 'username', 'phoneNumber', 'birthDate',
       'birthPlace', 'gender', 'address', 'npwp', 'bpjs', 'bankAccount',
-      'joinDate', 'employmentStatus', 'religion', 'shift', 'branch', 'position'
+      'joinDate', 'employmentStatus', 'religion', 'shift', 'branch', 'position',
+      'registrationStatus'
     ];
     nullableFields.forEach(field => {
       if (updates[field] === '' || updates[field] === 'undefined' || updates[field] === 'null') {
@@ -1158,8 +1159,8 @@ export async function registerRoutes(
 
       const updates = normalizeUserData(req.body);
 
-      // Remove fields that shouldn't be directly updated via this endpoint
-      delete updates.registrationStatus; // handled by separate endpoint
+      // registrationStatus is now allowed to be updated by admin via this endpoint
+      // delete updates.registrationStatus; // handled by separate endpoint (DISABLED)
 
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
       const safeName = updates.fullName ? updates.fullName.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() : (updates.username || 'UNKNOWN');

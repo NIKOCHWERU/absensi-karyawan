@@ -24,6 +24,30 @@ export default function AdminShiftPage() {
     queryKey: ["/api/shifts"],
   });
 
+  const [sortField, setSortField] = useState<string>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const toggleSort = (field: string) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const sortedShifts = [...(shifts || [])].sort((a, b) => {
+    let valA: any = (a as any)[sortField] || '';
+    let valB: any = (b as any)[sortField] || '';
+    
+    if (typeof valA === 'string') valA = valA.toLowerCase();
+    if (typeof valB === 'string') valB = valB.toLowerCase();
+
+    if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+    if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
+  });
+
   const createMutation = useMutation({
     mutationFn: async (newShift: InsertShift) => {
       const res = await apiRequest("POST", "/api/admin/shifts", newShift);
@@ -107,15 +131,21 @@ export default function AdminShiftPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-50/50">
-                <TableHead className="font-bold">Nama Shift</TableHead>
-                <TableHead className="font-bold">Jam Masuk (Late Threshold)</TableHead>
-                <TableHead className="font-bold">Jam Pulang (Normal)</TableHead>
+                <TableHead className="font-bold cursor-pointer hover:text-primary" onClick={() => toggleSort('name')}>
+                    <div className="flex items-center gap-1">Nama Shift {sortField === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}</div>
+                </TableHead>
+                <TableHead className="font-bold cursor-pointer hover:text-primary" onClick={() => toggleSort('checkInTime')}>
+                    <div className="flex items-center gap-1">Jam Masuk {sortField === 'checkInTime' && (sortOrder === 'asc' ? '↑' : '↓')}</div>
+                </TableHead>
+                <TableHead className="font-bold cursor-pointer hover:text-primary" onClick={() => toggleSort('checkOutTime')}>
+                    <div className="flex items-center gap-1">Jam Pulang {sortField === 'checkOutTime' && (sortOrder === 'asc' ? '↑' : '↓')}</div>
+                </TableHead>
                 <TableHead className="font-bold">Keterangan</TableHead>
                 <TableHead className="text-right font-bold">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {shifts?.map((shift) => (
+              {sortedShifts.map((shift) => (
                 <TableRow key={shift.id}>
                   <TableCell className="font-medium">{toTitleCase(shift.name)}</TableCell>
                   <TableCell>

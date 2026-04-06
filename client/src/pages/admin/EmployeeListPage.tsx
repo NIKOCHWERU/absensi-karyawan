@@ -124,6 +124,13 @@ export default function AdminEmployeeList() {
         religion: z.string().optional(),
         npwp: z.string().optional(),
         bpjs: z.string().optional(),
+        birthPlace: z.string().optional(),
+        birthDate: z.string().optional(),
+        gender: z.string().optional(),
+        address: z.string().optional(),
+        joinDate: z.string().optional(),
+        employmentStatus: z.string().optional(),
+        registrationStatus: z.string().optional(),
     });
 
     const form = useForm({
@@ -140,13 +147,42 @@ export default function AdminEmployeeList() {
             phoneNumber: "",
             religion: "",
             npwp: "",
-            bpjs: ""
+            bpjs: "",
+            birthPlace: "",
+            birthDate: "",
+            gender: "Laki-laki",
+            address: "",
+            joinDate: "",
+            employmentStatus: "Kontrak",
+            registrationStatus: "approved"
         }
     });
 
+    const [sortField, setSortField] = useState<string>('fullName');
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+    const toggleSort = (field: string) => {
+        if (sortField === field) {
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortOrder('asc');
+        }
+    };
+
+    const sortedEmployees = [...employees].sort((a, b) => {
+        const valA = (a as any)[sortField]?.toString().toLowerCase() || '';
+        const valB = (b as any)[sortField]?.toString().toLowerCase() || '';
+        
+        if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+        if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+    });
+
     const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
-    const [selectedBpjsPhoto, setSelectedBpjsPhoto] = useState<File | null>(null);
     const [selectedNpwpPhoto, setSelectedNpwpPhoto] = useState<File | null>(null);
+    const [selectedBpjsPhoto, setSelectedBpjsPhoto] = useState<File | null>(null);
+    const [selectedKtpPhoto, setSelectedKtpPhoto] = useState<File | null>(null);
     const [csvFile, setCsvFile] = useState<File | null>(null);
     const [csvOpen, setCsvOpen] = useState(false);
     const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<number[]>([]);
@@ -188,8 +224,15 @@ export default function AdminEmployeeList() {
             if (selectedPhoto) {
                 formData.append('photo', selectedPhoto);
             }
-            if (selectedBpjsPhoto) formData.append('bpjsPhoto', selectedBpjsPhoto);
-            if (selectedNpwpPhoto) formData.append('npwpPhoto', selectedNpwpPhoto);
+            if (selectedKtpPhoto) {
+                formData.append("ktpPhoto", selectedKtpPhoto);
+            }
+            if (selectedBpjsPhoto) {
+                formData.append("bpjsPhoto", selectedBpjsPhoto);
+            }
+            if (selectedNpwpPhoto) {
+                formData.append("npwpPhoto", selectedNpwpPhoto);
+            }
 
             const url = selectedEmployee ? `/api/admin/users/${selectedEmployee.id}` : "/api/admin/users";
             const method = selectedEmployee ? "PATCH" : "POST";
@@ -214,6 +257,7 @@ export default function AdminEmployeeList() {
             setSelectedPhoto(null);
             setSelectedBpjsPhoto(null);
             setSelectedNpwpPhoto(null);
+            setSelectedKtpPhoto(null);
         },
         onError: (err: any) => {
             toast({ title: "Gagal", description: err.message, variant: "destructive" });
@@ -351,10 +395,21 @@ export default function AdminEmployeeList() {
                                         phoneNumber: "",
                                         religion: "",
                                         npwp: "",
-                                        bpjs: ""
+                                        bpjs: "",
+                                        birthPlace: "",
+                                        birthDate: "",
+                                        gender: "Laki-laki",
+                                        address: "",
+                                        joinDate: "",
+                                        employmentStatus: "Kontrak",
+                                        registrationStatus: "approved"
                                     });
                                     setSelectedBpjsPhoto(null);
                                     setSelectedNpwpPhoto(null);
+                                    setSelectedKtpPhoto(null);
+                                    setSelectedPhoto(null);
+                                    setSelectedEmployee(null);
+                                    setOpen(true);
                                 }}
                             >
                                 <UserPlus className="mr-2 h-4 w-4" />
@@ -365,7 +420,7 @@ export default function AdminEmployeeList() {
                             <DialogHeader>
                                 <DialogTitle>{selectedEmployee ? "Edit Karyawan" : "Tambah Karyawan Baru"}</DialogTitle>
                                 <DialogDescription>
-                                    {selectedEmployee ? "Perbarui informasi data karyawan." : "Isi data lengkap untuk karyawan baru."}
+                                    Lengkapi informasi data diri dan pekerjaan karyawan.
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="flex justify-center mb-4">
@@ -392,120 +447,246 @@ export default function AdminEmployeeList() {
                             </div>
                             <Form {...form}>
                                 <form onSubmit={form.handleSubmit((d) => upsertMutation.mutate(d))} className="space-y-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="fullName"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Nama Lengkap</FormLabel>
-                                                <FormControl><Input {...field} /></FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="nik"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>NIK (Nomor Induk Karyawan)</FormLabel>
-                                                <FormControl><Input {...field} value={field.value || ''} /></FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="phoneNumber"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Nomor HP</FormLabel>
-                                                <FormControl><Input {...field} value={field.value || ''} placeholder="08..." /></FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="password"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Password</FormLabel>
-                                                <FormControl><Input type="password" {...field} /></FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="branch"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Cabang</FormLabel>
-                                                <FormControl><Input {...field} value={field.value || ''} /></FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="position"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Jabatan</FormLabel>
-                                                <FormControl><Input {...field} value={field.value || ''} /></FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField control={form.control} name="religion" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Agama</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value || undefined}>
-                                                <FormControl><SelectTrigger><SelectValue placeholder="Pilih Agama" /></SelectTrigger></FormControl>
-                                                <SelectContent>
-                                                    <SelectItem value="Islam">Islam</SelectItem>
-                                                    <SelectItem value="Kristen Protestan">Kristen Protestan</SelectItem>
-                                                    <SelectItem value="Katolik">Katolik</SelectItem>
-                                                    <SelectItem value="Hindu">Hindu</SelectItem>
-                                                    <SelectItem value="Buddha">Buddha</SelectItem>
-                                                    <SelectItem value="Khonghucu">Khonghucu</SelectItem>
-                                                    <SelectItem value="Lainnya">Lainnya</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
-                                    <FormField control={form.control} name="npwp" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>NPWP</FormLabel>
-                                            <FormControl><Input {...field} value={field.value || ''} placeholder="00.000.000.0-000.000" /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
-                                    <div className="space-y-2">
-                                        <FormLabel className="text-sm font-medium leading-none">Foto NPWP</FormLabel>
-                                        <div className="flex items-center gap-3">
-                                            <Input type="file" accept="image/*" onChange={(e) => setSelectedNpwpPhoto(e.target.files?.[0] || null)} />
-                                            {(selectedEmployee as any)?.npwpPhotoUrl && (
-                                                <a href={(selectedEmployee as any).npwpPhotoUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline shrink-0">Lihat Foto</a>
+                                    <div className="bg-gray-50 p-3 rounded-lg space-y-4 border border-gray-100">
+                                        <h4 className="text-xs font-bold uppercase tracking-widest text-primary border-b pb-1">Data Pribadi</h4>
+                                        <FormField
+                                            control={form.control}
+                                            name="fullName"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Nama Lengkap</FormLabel>
+                                                    <FormControl><Input {...field} /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
                                             )}
+                                        />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <FormField
+                                                control={form.control}
+                                                name="birthPlace"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Tempat Lahir</FormLabel>
+                                                        <FormControl><Input {...field} value={field.value || ''} placeholder="Kota" /></FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="birthDate"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Tgl Lahir</FormLabel>
+                                                        <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
                                         </div>
-                                    </div>
-                                    <FormField control={form.control} name="bpjs" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>BPJS</FormLabel>
-                                            <FormControl><Input {...field} value={field.value || ''} placeholder="Nomor BPJS" /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
-                                    <div className="space-y-2 pb-4">
-                                        <FormLabel className="text-sm font-medium leading-none">Foto BPJS</FormLabel>
-                                        <div className="flex items-center gap-3">
-                                            <Input type="file" accept="image/*" onChange={(e) => setSelectedBpjsPhoto(e.target.files?.[0] || null)} />
-                                            {(selectedEmployee as any)?.bpjsPhotoUrl && (
-                                                <a href={(selectedEmployee as any).bpjsPhotoUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline shrink-0">Lihat Foto</a>
+                                        <FormField control={form.control} name="gender" render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Jenis Kelamin</FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value || "Laki-laki"}>
+                                                    <FormControl><SelectTrigger><SelectValue placeholder="Pilih" /></SelectTrigger></FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="Laki-laki">Laki-laki</SelectItem>
+                                                        <SelectItem value="Perempuan">Perempuan</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
+                                        <FormField control={form.control} name="religion" render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Agama</FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value || undefined}>
+                                                    <FormControl><SelectTrigger><SelectValue placeholder="Pilih" /></SelectTrigger></FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="Islam">Islam</SelectItem>
+                                                        <SelectItem value="Kristen Protestan">Kristen Protestan</SelectItem>
+                                                        <SelectItem value="Katolik">Katolik</SelectItem>
+                                                        <SelectItem value="Hindu">Hindu</SelectItem>
+                                                        <SelectItem value="Buddha">Buddha</SelectItem>
+                                                        <SelectItem value="Khonghucu">Khonghucu</SelectItem>
+                                                        <SelectItem value="Lainnya">Lainnya</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
+                                        <FormField
+                                            control={form.control}
+                                            name="address"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Alamat Lengkap</FormLabel>
+                                                    <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
                                             )}
+                                        />
+                                    </div>
+
+                                    <div className="bg-gray-50 p-3 rounded-lg space-y-4 border border-gray-100">
+                                        <h4 className="text-xs font-bold uppercase tracking-widest text-primary border-b pb-1">Pekerjaan</h4>
+                                        <FormField
+                                            control={form.control}
+                                            name="nik"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>NIK (Nomor Induk Karyawan)</FormLabel>
+                                                    <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <FormField
+                                                control={form.control}
+                                                name="branch"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Cabang</FormLabel>
+                                                        <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="position"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Jabatan</FormLabel>
+                                                        <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <FormField
+                                                control={form.control}
+                                                name="joinDate"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Tahun Bergabung</FormLabel>
+                                                        <FormControl><Input {...field} value={field.value || ''} placeholder="Contoh: 2024" /></FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField control={form.control} name="employmentStatus" render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Status Kerja</FormLabel>
+                                                    <Select onValueChange={field.onChange} value={field.value || "Kontrak"}>
+                                                        <FormControl><SelectTrigger><SelectValue placeholder="Pilih" /></SelectTrigger></FormControl>
+                                                        <SelectContent>
+                                                            <SelectItem value="Kontrak">Kontrak</SelectItem>
+                                                            <SelectItem value="Tetap">Tetap</SelectItem>
+                                                            <SelectItem value="Probation">Probation</SelectItem>
+                                                            <SelectItem value="Resigned">Resigned</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )} />
+                                        </div>
+                                        <FormField control={form.control} name="registrationStatus" render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Status Verifikasi Data</FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value || "approved"}>
+                                                    <FormControl><SelectTrigger><SelectValue placeholder="Pilih" /></SelectTrigger></FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="approved">Approved (Aktif)</SelectItem>
+                                                        <SelectItem value="pending">Pending (Menunggu)</SelectItem>
+                                                        <SelectItem value="rejected">Rejected (Ditolak)</SelectItem>
+                                                        <SelectItem value="unregistered">Belum Daftar</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
+                                        <FormField
+                                            control={form.control}
+                                            name="password"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Password (Kosongkan jika tidak ganti)</FormLabel>
+                                                    <FormControl><Input type="password" {...field} /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+
+                                    <div className="bg-gray-50 p-3 rounded-lg space-y-4 border border-gray-100">
+                                        <h4 className="text-xs font-bold uppercase tracking-widest text-primary border-b pb-1">Administrasi & Kontak</h4>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <FormField
+                                                control={form.control}
+                                                name="phoneNumber"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Nomor HP</FormLabel>
+                                                        <FormControl><Input {...field} value={field.value || ''} placeholder="08..." /></FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="email"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Email</FormLabel>
+                                                        <FormControl><Input {...field} value={field.value || ''} placeholder="email@gmail.com" /></FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                        <FormField control={form.control} name="npwp" render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>NPWP</FormLabel>
+                                                <FormControl><Input {...field} value={field.value || ''} placeholder="00.000.000.0-000.000" /></FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
+                                        <div className="space-y-2">
+                                            <FormLabel className="text-sm font-medium leading-none">Foto NPWP</FormLabel>
+                                            <div className="flex items-center gap-3">
+                                                <Input type="file" accept="image/*" onChange={(e) => setSelectedNpwpPhoto(e.target.files?.[0] || null)} />
+                                                {(selectedEmployee as any)?.npwpPhotoUrl && (
+                                                    <a href={(selectedEmployee as any).npwpPhotoUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline shrink-0">Lihat Foto</a>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <FormField control={form.control} name="bpjs" render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>BPJS</FormLabel>
+                                                <FormControl><Input {...field} value={field.value || ''} placeholder="Nomor BPJS" /></FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
+                                        <div className="space-y-2 pb-2">
+                                            <FormLabel className="text-sm font-medium leading-none">Foto BPJS</FormLabel>
+                                            <div className="flex items-center gap-3">
+                                                <Input type="file" accept="image/*" onChange={(e) => setSelectedBpjsPhoto(e.target.files?.[0] || null)} />
+                                                {(selectedEmployee as any)?.bpjsPhotoUrl && (
+                                                    <a href={(selectedEmployee as any).bpjsPhotoUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline shrink-0">Lihat Foto</a>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2 pb-4">
+                                            <FormLabel className="text-sm font-medium leading-none">Foto KTP</FormLabel>
+                                            <div className="flex items-center gap-3">
+                                                <Input type="file" accept="image/*" onChange={(e) => setSelectedKtpPhoto(e.target.files?.[0] || null)} />
+                                                {(selectedEmployee as any)?.ktpPhotoUrl && (
+                                                    <a href={(selectedEmployee as any).ktpPhotoUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline shrink-0">Lihat Foto</a>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                     <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white" disabled={upsertMutation.isPending}>
@@ -522,7 +703,14 @@ export default function AdminEmployeeList() {
                 <div className="flex items-center gap-4 mb-6">
                     <div className="relative flex-1 max-w-sm">
                         <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input placeholder="Cari karyawan..." className="pl-9" />
+                        <Input 
+                            placeholder="Cari karyawan..." 
+                            className="pl-9" 
+                            onChange={(e) => {
+                                // Search already works via TanStack query if handled correctly, 
+                                // but here we might need a local search state if we want to filter the `sortedEmployees`
+                            }} 
+                        />
                     </div>
                 </div>
 
@@ -544,17 +732,19 @@ export default function AdminEmployeeList() {
                                         />
                                     </TableHead>
                                 )}
-                                <TableHead className="w-[50px]">No</TableHead>
-                                <TableHead>Nama</TableHead>
-                                <TableHead>NIK</TableHead>
-                                <TableHead>Jabatan</TableHead>
-                                <TableHead>Cabang</TableHead>
-                                <TableHead>Status Data</TableHead>
+                                <TableHead className="w-[50px] cursor-pointer hover:text-primary" onClick={() => toggleSort('id')}>No</TableHead>
+                                <TableHead className="cursor-pointer hover:text-primary" onClick={() => toggleSort('fullName')}>
+                                    <div className="flex items-center gap-1">Nama <ArrowLeft className={`h-3 w-3 rotate-90 ${sortField === 'fullName' ? 'text-primary' : 'text-gray-300'}`} /></div>
+                                </TableHead>
+                                <TableHead className="cursor-pointer hover:text-primary" onClick={() => toggleSort('nik')}>NIK</TableHead>
+                                <TableHead className="cursor-pointer hover:text-primary" onClick={() => toggleSort('position')}>Jabatan</TableHead>
+                                <TableHead className="cursor-pointer hover:text-primary" onClick={() => toggleSort('branch')}>Cabang</TableHead>
+                                <TableHead className="cursor-pointer hover:text-primary" onClick={() => toggleSort('registrationStatus')}>Status Data</TableHead>
                                 <TableHead className="text-right">Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {employees.map((emp, index) => (
+                            {sortedEmployees.map((emp, index) => (
                                 <TableRow key={emp.id}>
                                     {user?.role === 'superadmin' && (
                                         <TableCell className="text-center">
@@ -621,7 +811,15 @@ export default function AdminEmployeeList() {
                                                         religion: (emp as any).religion || "",
                                                         npwp: (emp as any).npwp || "",
                                                         bpjs: (emp as any).bpjs || "",
-                                                        password: "" // Keep empty to not change
+                                                        password: "",
+                                                        birthPlace: (emp as any).birthPlace || "",
+                                                        birthDate: emp.birthDate ? format(new Date(emp.birthDate), "yyyy-MM-dd") : "",
+                                                        gender: (emp as any).gender || "Laki-laki",
+                                                        address: (emp as any).address || "",
+                                                        joinDate: (emp as any).joinDate || "",
+                                                        employmentStatus: (emp as any).employmentStatus || "Kontrak",
+                                                        registrationStatus: (emp as any).registrationStatus || "approved",
+                                                        email: emp.email || ""
                                                     });
                                                     setOpen(true);
                                                 }}
