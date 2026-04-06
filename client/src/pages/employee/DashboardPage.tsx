@@ -148,8 +148,8 @@ export default function EmployeeDashboard() {
 
     const defaultShifts = [
         { id: -1, name: "Shift 1", checkInTime: "07:00", checkOutTime: "17:00" },
-        { id: -2, name: "Shift 2", checkInTime: "12:00", checkOutTime: "23:00" },
-        { id: -3, name: "Shift 3", checkInTime: "15:00", checkOutTime: "23:00" },
+        { id: -2, name: "Shift 2", checkInTime: "13:00", checkOutTime: "23:00" },
+        { id: -3, name: "Shift 3", checkInTime: "11:00", checkOutTime: "21:00" },
         { id: -4, name: "longshift", checkInTime: "07:00", checkOutTime: "23:00" }
     ];
 
@@ -337,8 +337,8 @@ export default function EmployeeDashboard() {
         let thresholdMinutes = sHour * 60 + sMinute;
 
         if (shiftId < 0) {
-             if (shiftName === 'Shift 2') thresholdMinutes = 12 * 60; // 12:00
-             else if (shiftName === 'Shift 3') thresholdMinutes = 15 * 60; // 15:00
+             if (shiftName === 'Shift 2') thresholdMinutes = 13 * 60; // 13:00
+             else if (shiftName === 'Shift 3') thresholdMinutes = 11 * 60; // 11:00
              else if (shiftName?.toLowerCase() === 'longshift') thresholdMinutes = 7 * 60; // 07:00
              else if (shiftName === 'Shift 1') thresholdMinutes = 7 * 60; // 07:00
         }

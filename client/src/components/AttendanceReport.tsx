@@ -50,7 +50,13 @@ export function AttendanceReport({ date, records, users }: AttendanceReportProps
             <div className="text-center mb-8">
                 <h2 className="text-xl font-bold uppercase tracking-widest text-gray-800">Laporan Riwayat & Foto Absensi</h2>
                 <p className="text-sm text-gray-600 mt-1">Tipe: Kustom</p>
-                <p className="text-sm text-gray-600 font-bold">Periode: {format(new Date(date), "EEEE, d MMM yyyy", { locale: id })}</p>
+                <p className="text-sm text-gray-600 font-bold">
+                    Periode: {
+                        date.includes('|') 
+                            ? `${format(new Date(date.split('|')[0]), "EEEE, d MMM yyyy", { locale: id })} - ${format(new Date(date.split('|')[1]), "EEEE, d MMM yyyy", { locale: id })}`
+                            : format(new Date(date), "EEEE, d MMM yyyy", { locale: id })
+                    }
+                </p>
             </div>
 
             {/* Table */}
@@ -118,22 +124,45 @@ export function AttendanceReport({ date, records, users }: AttendanceReportProps
                                         </p>
                                     )}
                                 </td>
-                                <td className="border border-gray-300 px-2 py-4 text-center">
-                                    <div className="flex flex-col items-center gap-1">
-                                        <div className="w-20 h-20 border-2 border-gray-200 rounded overflow-hidden shadow-sm">
-                                            {record.checkInPhoto ? (
-                                                <img 
-                                                    src={getPhotoUrl(record.checkInPhoto)} 
-                                                    alt="Bukti Masuk" 
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full bg-gray-50 flex items-center justify-center text-[9px] text-gray-300 font-bold uppercase tracking-tighter">
-                                                    No Image
+                                <td className="border border-gray-300 px-2 py-4">
+                                    <div className="flex gap-2 justify-center flex-wrap">
+                                        {record.checkInPhoto && (
+                                            <div className="flex flex-col items-center gap-1">
+                                                <div className="w-16 h-16 border border-gray-200 rounded overflow-hidden shadow-sm">
+                                                    <img src={getPhotoUrl(record.checkInPhoto)} alt="Masuk" className="w-full h-full object-cover" />
                                                 </div>
-                                            )}
-                                        </div>
-                                        <span className="text-[8px] font-black uppercase tracking-widest text-gray-400">Masuk</span>
+                                                <span className="text-[8px] font-black uppercase tracking-widest text-gray-500">Masuk</span>
+                                            </div>
+                                        )}
+                                        {record.breakStartPhoto && (
+                                            <div className="flex flex-col items-center gap-1">
+                                                <div className="w-16 h-16 border border-gray-200 rounded overflow-hidden shadow-sm">
+                                                    <img src={getPhotoUrl(record.breakStartPhoto)} alt="Istirahat" className="w-full h-full object-cover" />
+                                                </div>
+                                                <span className="text-[8px] font-black uppercase tracking-widest text-gray-500">Istirahat</span>
+                                            </div>
+                                        )}
+                                        {record.breakEndPhoto && (
+                                            <div className="flex flex-col items-center gap-1">
+                                                <div className="w-16 h-16 border border-gray-200 rounded overflow-hidden shadow-sm">
+                                                    <img src={getPhotoUrl(record.breakEndPhoto)} alt="Selesai" className="w-full h-full object-cover" />
+                                                </div>
+                                                <span className="text-[8px] font-black uppercase tracking-widest text-gray-500">Selesai</span>
+                                            </div>
+                                        )}
+                                        {record.checkOutPhoto && (
+                                            <div className="flex flex-col items-center gap-1">
+                                                <div className="w-16 h-16 border border-gray-200 rounded overflow-hidden shadow-sm">
+                                                    <img src={getPhotoUrl(record.checkOutPhoto)} alt="Pulang" className="w-full h-full object-cover" />
+                                                </div>
+                                                <span className="text-[8px] font-black uppercase tracking-widest text-gray-500">Pulang</span>
+                                            </div>
+                                        )}
+                                        {!record.checkInPhoto && !record.checkOutPhoto && !record.breakStartPhoto && !record.breakEndPhoto && (
+                                            <div className="w-full h-16 flex items-center justify-center text-[9px] text-gray-300 font-bold uppercase tracking-tighter">
+                                                No Image
+                                            </div>
+                                        )}
                                     </div>
                                 </td>
                             </tr>

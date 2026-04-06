@@ -60,7 +60,9 @@ export default function RecapPage() {
         refetchInterval: 5000,
     });
 
-    const [reportType, setReportType] = useState<"daily" | "weekly" | "monthly">("daily");
+    const [reportType, setReportType] = useState<"daily" | "weekly" | "monthly" | "custom">("monthly");
+    const [customStartDate, setCustomStartDate] = useState<string>(format(subDays(new Date(), 7), 'yyyy-MM-dd'));
+    const [customEndDate, setCustomEndDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
 
     // Calculate Period Range
     let startDate: Date;
@@ -72,10 +74,15 @@ export default function RecapPage() {
     } else if (reportType === "weekly") {
         startDate = startOfWeek(targetDate, { weekStartsOn: 1 }); // Monday
         endDate = endOfWeek(targetDate, { weekStartsOn: 1 });
+    } else if (reportType === "custom") {
+        startDate = new Date(customStartDate);
+        endDate = new Date(customEndDate);
+        endDate.setHours(23, 59, 59, 999);
     } else {
         // Default: 26th of previous month to 25th of current month
         startDate = new Date(targetDate.getFullYear(), targetDate.getMonth() - 1, 26);
         endDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 25);
+        endDate.setHours(23, 59, 59, 999);
     }
 
     const handlePrev = () => {
@@ -275,13 +282,11 @@ export default function RecapPage() {
         let periodStr = '';
         if (reportType === 'daily') {
             periodStr = format(targetDate, "dd MMMM yyyy", { locale: id }).toUpperCase();
-        } else if (reportType === 'weekly') {
-            periodStr = `${format(startDate, "dd MMM")} - ${format(endDate, "dd MMM yyyy", { locale: id })}`.toUpperCase();
         } else {
-            periodStr = format(targetDate, "MMMM yyyy", { locale: id }).toUpperCase();
+            periodStr = `${format(startDate, "dd MMMM yyyy", { locale: id })} - ${format(endDate, "dd MMMM yyyy", { locale: id })}`.toUpperCase();
         }
 
-        const fileName = `LAPORAN ABSENSI PT EJA - ${periodStr}.html`;
+        const fileName = `LAPORAN ABSENSI NON MANAJEMEN PT EJA - ${periodStr}`;
         // Embed logo as base64 so it works from blob URL pages
         let logoDataUrl = '';
         try {
@@ -377,7 +382,7 @@ export default function RecapPage() {
 
   <div class="report-meta">
     <h2>Laporan Rekapitulasi Absensi</h2>
-    <p class="sub">Tipe: ${reportType === 'daily' ? 'Harian' : reportType === 'weekly' ? 'Mingguan' : 'Bulanan'}</p>
+    <p class="sub">Tipe: ${reportType === 'daily' ? 'Harian' : reportType === 'weekly' ? 'Mingguan' : reportType === 'custom' ? 'Kustom' : 'Bulanan'}</p>
     <p class="sub">Periode: ${format(startDate, "EEEE, d MMM yyyy", { locale: id })} - ${format(endDate, "EEEE, d MMM yyyy", { locale: id })}</p>
   </div>
 
@@ -521,27 +526,49 @@ export default function RecapPage() {
                 </div>
                 <div className="flex items-center gap-2 bg-white border rounded-md p-1">
                     <Select value={reportType} onValueChange={(v: any) => setReportType(v)}>
-                        <SelectTrigger className="w-[120px] h-8 border-none bg-transparent">
+                        <SelectTrigger className="w-[120px] h-8 border-none bg-transparent text-sm">
                             <SelectValue placeholder="Tipe Laporan" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="daily">Harian</SelectItem>
                             <SelectItem value="weekly">Mingguan</SelectItem>
                             <SelectItem value="monthly">Bulanan</SelectItem>
+                            <SelectItem value="custom">Kustom...</SelectItem>
                         </SelectContent>
                     </Select>
                     <div className="h-4 w-[1px] bg-gray-200 mx-1"></div>
-                    <Button variant="ghost" size="icon" onClick={handlePrev} className="h-8 w-8">
-                        <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <span className="text-sm font-medium min-w-[120px] text-center">
-                        {reportType === 'daily' ? format(targetDate, "d MMM yyyy", { locale: id }) :
-                            reportType === 'weekly' ? `${format(startDate, "d MMM")} - ${format(endDate, "d MMM yyyy", { locale: id })}` :
-                                format(targetDate, "MMMM yyyy", { locale: id })}
-                    </span>
-                    <Button variant="ghost" size="icon" onClick={handleNext} className="h-8 w-8">
-                        <ChevronRight className="h-4 w-4" />
-                    </Button>
+                    
+                    {reportType === "custom" ? (
+                        <div className="flex items-center gap-2">
+                            <input 
+                                type="date" 
+                                value={customStartDate} 
+                                onChange={(e) => setCustomStartDate(e.target.value)}
+                                className="h-8 px-2 text-sm border rounded-md outline-none"
+                            />
+                            <span>-</span>
+                            <input 
+                                type="date" 
+                                value={customEndDate} 
+                                onChange={(e) => setCustomEndDate(e.target.value)}
+                                className="h-8 px-2 text-sm border rounded-md outline-none"
+                            />
+                        </div>
+                    ) : (
+                        <>
+                            <Button variant="ghost" size="icon" onClick={handlePrev} className="h-8 w-8">
+                                <ChevronLeft className="h-4 w-4" />
+                            </Button>
+                            <span className="text-sm font-medium min-w-[120px] text-center">
+                                {reportType === 'daily' ? format(targetDate, "d MMM yyyy", { locale: id }) :
+                                    reportType === 'weekly' ? `${format(startDate, "d MMM")} - ${format(endDate, "d MMM yyyy", { locale: id })}` :
+                                        format(targetDate, "MMMM yyyy", { locale: id })}
+                            </span>
+                            <Button variant="ghost" size="icon" onClick={handleNext} className="h-8 w-8">
+                                <ChevronRight className="h-4 w-4" />
+                            </Button>
+                        </>
+                    )}
                 </div>
             </header>
 
@@ -549,7 +576,7 @@ export default function RecapPage() {
                 <Card className="border-none shadow-sm">
                     <CardHeader className="flex flex-col md:flex-row items-center justify-between gap-4">
                         <div className="space-y-1">
-                            <CardTitle>Laporan Bulanan</CardTitle>
+                            <CardTitle>Laporan {reportType === 'daily' ? 'Harian' : reportType === 'weekly' ? 'Mingguan' : reportType === 'custom' ? 'Kustom' : 'Bulanan'}</CardTitle>
                             <p className="text-sm text-gray-500">
                                 Periode: {format(startDate, "EEEE, d MMM yyyy", { locale: id })} - {format(endDate, "EEEE, d MMM yyyy", { locale: id })}
                             </p>

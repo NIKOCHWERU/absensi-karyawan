@@ -31,7 +31,10 @@ function getPhotoUrl(value: string | null): string {
 export default function AttendanceHistoryPage() {
     const [, setLocation] = useLocation();
     const { logout } = useAuth();
-    const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+    
+    // Instead of single selectedDate, we'll maintain start and end date for filtering
+    const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+    const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
     const { data: attendanceHistory, isLoading: isLoadingAttendance } = useQuery<Attendance[]>({
         queryKey: ["/api/attendance"],
@@ -48,8 +51,14 @@ export default function AttendanceHistoryPage() {
 
     // Filter by selected date & search query
     const filteredRecords = attendanceHistory?.filter(a => {
-        const isSameDate = format(new Date(a.date), 'yyyy-MM-dd') === selectedDate;
-        if (!isSameDate) return false;
+        const d = new Date(a.date).getTime();
+        const sDate = new Date(startDate);
+        sDate.setHours(0, 0, 0, 0);
+        const eDate = new Date(endDate);
+        eDate.setHours(23, 59, 59, 999);
+
+        const isInRange = d >= sDate.getTime() && d <= eDate.getTime();
+        if (!isInRange) return false;
         
         if (!searchQuery.trim()) return true;
         
@@ -79,11 +88,13 @@ export default function AttendanceHistoryPage() {
     };
 
     const handlePrev = () => {
-        setSelectedDate(prev => format(subDays(new Date(prev), 1), 'yyyy-MM-dd'));
+        setStartDate(prev => format(subDays(new Date(prev), 1), 'yyyy-MM-dd'));
+        setEndDate(prev => format(subDays(new Date(prev), 1), 'yyyy-MM-dd'));
     };
 
     const handleNext = () => {
-        setSelectedDate(prev => format(addDays(new Date(prev), 1), 'yyyy-MM-dd'));
+        setStartDate(prev => format(addDays(new Date(prev), 1), 'yyyy-MM-dd'));
+        setEndDate(prev => format(addDays(new Date(prev), 1), 'yyyy-MM-dd'));
     };
 
 
@@ -137,9 +148,21 @@ export default function AttendanceHistoryPage() {
                                 <Button variant="ghost" size="icon" onClick={handlePrev} className="h-8 w-8 rounded-none">
                                     <ChevronLeft className="h-4 w-4" />
                                 </Button>
-                                <span className="text-sm font-bold min-w-[110px] text-center text-gray-800">
-                                    {format(new Date(selectedDate), "d MMM yyyy", { locale: id })}
-                                </span>
+                                <div className="flex items-center gap-2 px-2">
+                                    <input 
+                                        type="date" 
+                                        value={startDate} 
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                        className="h-8 text-sm outline-none px-1 py-1 font-bold bg-transparent text-gray-800"
+                                    />
+                                    <span className="font-bold text-gray-400">-</span>
+                                    <input 
+                                        type="date" 
+                                        value={endDate} 
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                        className="h-8 text-sm outline-none px-1 py-1 font-bold bg-transparent text-gray-800"
+                                    />
+                                </div>
                                 <Button variant="ghost" size="icon" onClick={handleNext} className="h-8 w-8 rounded-none">
                                     <ChevronRight className="h-4 w-4" />
                                 </Button>
@@ -166,7 +189,15 @@ export default function AttendanceHistoryPage() {
                                     </h3>
                                     <div className="flex items-center gap-2">
                                         <Button 
-                                            onClick={() => window.print()} 
+                                            onClick={() => {
+                                                const originalTitle = document.title;
+                                                const periodStr = startDate === endDate 
+                                                    ? format(new Date(startDate), "dd MMMM yyyy", { locale: id }).toUpperCase()
+                                                    : `${format(new Date(startDate), "dd MMMM yyyy", { locale: id })} - ${format(new Date(endDate), "dd MMMM yyyy", { locale: id })}`.toUpperCase();
+                                                document.title = `LAPORAN ABSENSI FOTO NON MANAJEMEN PT EJA - ${periodStr}`;
+                                                window.print();
+                                                document.title = originalTitle;
+                                            }} 
                                             className="bg-green-600 hover:bg-green-700 text-white"
                                         >
                                             <Printer className="mr-2 h-4 w-4" />
@@ -180,7 +211,7 @@ export default function AttendanceHistoryPage() {
                                 <div className="p-4 md:p-8 flex justify-center bg-gray-100 min-h-screen">
                                     <div className="shadow-2xl w-full max-w-[210mm] bg-white rounded-lg overflow-hidden">
                                         <AttendanceReport 
-                                            date={selectedDate} 
+                                            date={startDate === endDate ? startDate : `${startDate}|${endDate}`} 
                                             records={filteredRecords} 
                                             users={users} 
                                         />
@@ -196,7 +227,7 @@ export default function AttendanceHistoryPage() {
                     <CardHeader className="bg-white border-b border-gray-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 py-4 px-6">
                         <div className="flex items-center gap-4 w-full md:w-auto">
                             <CardTitle className="text-sm font-medium text-gray-600 mt-1.5 whitespace-nowrap">
-                                Data Periode: {format(new Date(selectedDate), 'd MMM yyyy', { locale: id })} - {format(new Date(selectedDate), 'd MMM yyyy', { locale: id })}
+                                Data Periode: {format(new Date(startDate), 'd MMM yyyy', { locale: id })} - {format(new Date(endDate), 'd MMM yyyy', { locale: id })}
                             </CardTitle>
                             <div className="relative flex-1 min-w-[200px] max-w-xs hidden md:block">
                                 <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
