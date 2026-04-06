@@ -136,6 +136,7 @@ export default function AdminEmployeeList() {
         joinDate: z.string().optional(),
         employmentStatus: z.string().optional(),
         registrationStatus: z.string().optional(),
+        shift: z.string().optional(),
     });
 
     const form = useForm({
