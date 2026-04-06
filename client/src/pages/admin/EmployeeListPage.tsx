@@ -107,6 +107,11 @@ export default function AdminEmployeeList() {
         enabled: !!selectedEmployee
     });
 
+    // Add shifts query
+    const { data: shifts = [] } = useQuery<Shift[]>({
+        queryKey: ["/api/shifts"],
+    });
+
     const employees = users?.filter(u => u.role === 'employee') || [];
     const { user } = useAuth();
 
@@ -154,7 +159,8 @@ export default function AdminEmployeeList() {
             address: "",
             joinDate: "",
             employmentStatus: "Kontrak",
-            registrationStatus: "approved"
+            registrationStatus: "approved",
+            shift: "Management"
         }
     });
 
@@ -402,7 +408,8 @@ export default function AdminEmployeeList() {
                                         address: "",
                                         joinDate: "",
                                         employmentStatus: "Kontrak",
-                                        registrationStatus: "approved"
+                                        registrationStatus: "approved",
+                                        shift: "Management"
                                     });
                                     setSelectedBpjsPhoto(null);
                                     setSelectedNpwpPhoto(null);
@@ -603,6 +610,21 @@ export default function AdminEmployeeList() {
                                                         <SelectItem value="pending">Pending (Menunggu)</SelectItem>
                                                         <SelectItem value="rejected">Rejected (Ditolak)</SelectItem>
                                                         <SelectItem value="unregistered">Belum Daftar</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
+                                        <FormField control={form.control} name="shift" render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Shift Kerja</FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value || "Management"}>
+                                                    <FormControl><SelectTrigger><SelectValue placeholder="Pilih Shift" /></SelectTrigger></FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="Management">Management (Default)</SelectItem>
+                                                        {shifts?.map(s => (
+                                                            <SelectItem key={s.id} value={s.name}>{s.name} ({s.checkInTime}-{s.checkOutTime})</SelectItem>
+                                                        ))}
                                                     </SelectContent>
                                                 </Select>
                                                 <FormMessage />
@@ -819,6 +841,7 @@ export default function AdminEmployeeList() {
                                                         joinDate: (emp as any).joinDate || "",
                                                         employmentStatus: (emp as any).employmentStatus || "Kontrak",
                                                         registrationStatus: (emp as any).registrationStatus || "approved",
+                                                        shift: emp.shift || "Management",
                                                         email: emp.email || ""
                                                     });
                                                     setOpen(true);
