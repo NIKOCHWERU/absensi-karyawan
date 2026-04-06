@@ -453,7 +453,16 @@ export default function AttendanceHistoryPage() {
 
             const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
             const blobUrl = URL.createObjectURL(blob);
-            window.open(blobUrl, '_blank');
+            
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Cleanup blob URL after a short delay
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
         } finally {
             setIsExporting(false);
         }
