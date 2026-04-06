@@ -211,12 +211,13 @@ export default function AttendanceHistoryPage() {
                         <Dialog open={showReport} onOpenChange={setShowReport}>
                             <DialogTrigger asChild>
                                 <Button 
-                                    className="bg-green-600 hover:bg-green-700 text-white shadow-sm"
+                                    variant="outline"
+                                    className="border-blue-600 text-blue-600 hover:bg-blue-50 shadow-sm"
                                     onClick={() => setShowReport(true)}
                                     disabled={filteredRecords.length === 0}
                                 >
                                     <FileText className="mr-2 h-4 w-4" />
-                                    Export Laporan Foto
+                                    Export HTML
                                 </Button>
                             </DialogTrigger>
                             <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto p-0 border-none bg-gray-100">
@@ -308,13 +309,11 @@ export default function AttendanceHistoryPage() {
                                 <table className="w-full text-sm text-left whitespace-nowrap">
                                     <thead className="text-[10px] font-bold text-gray-500 uppercase tracking-widest bg-white border-b-2 border-gray-100">
                                         <tr>
-                                            <th className="px-6 py-4 w-32">Tanggal</th>
-                                            <th className="px-6 py-4">Nama Karyawan</th>
-                                            <th className="px-6 py-4 w-32 cursor-pointer hover:text-gray-800" onClick={() => toggleSort('date')}>Tanggal {sortField === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
-                                            <th className="px-6 py-4 cursor-pointer hover:text-gray-800" onClick={() => toggleSort('name')}>Nama Karyawan {sortField === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
-                                            <th className="px-6 py-4 text-center cursor-pointer hover:text-gray-800" onClick={() => toggleSort('checkIn')}>Waktu Absen {sortField === 'checkIn' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
-                                            <th className="px-6 py-4 text-center">Foto Bukti</th>
-                                            <th className="px-6 py-4 cursor-pointer hover:text-gray-800" onClick={() => toggleSort('status')}>Status & Keterangan {sortField === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
+                                            <th className="px-6 py-4 w-32 cursor-pointer hover:text-gray-800" onClick={() => toggleSort('date')}>TANGGAL {sortField === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
+                                            <th className="px-6 py-4 cursor-pointer hover:text-gray-800" onClick={() => toggleSort('name')}>NAMA KARYAWAN {sortField === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
+                                            <th className="px-6 py-4 text-center cursor-pointer hover:text-gray-800" onClick={() => toggleSort('checkIn')}>WAKTU ABSEN {sortField === 'checkIn' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
+                                            <th className="px-6 py-4 text-center">FOTO BUKTI</th>
+                                            <th className="px-6 py-4 text-center cursor-pointer hover:text-gray-800" onClick={() => toggleSort('status')}>STATUS & KETERANGAN {sortField === 'status' && (sortOrder === 'asc' ? '↑' : '↓')}</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100 bg-white">
@@ -351,10 +350,9 @@ export default function AttendanceHistoryPage() {
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-6 align-top">
-                                                        <div className="flex flex-col gap-1 text-[10px] font-mono tracking-wide mx-auto w-32">
                                                             <div className="flex justify-between">
                                                                 <span className="text-gray-400">Masuk:</span>
-                                                                <span className="font-bold text-green-600">{record.checkIn ? format(new Date(record.checkIn), 'HH:mm') : '-'}</span>
+                                                                <span className="font-bold text-[#0D9488]">{record.checkIn ? format(new Date(record.checkIn), 'HH:mm') : '-'}</span>
                                                             </div>
                                                             <div className="flex justify-between">
                                                                 <span className="text-gray-400">Istirahat:</span>
@@ -368,18 +366,15 @@ export default function AttendanceHistoryPage() {
                                                                 <span className="text-gray-400">Pulang:</span>
                                                                 <span className="font-bold text-red-500">{record.checkOut ? format(new Date(record.checkOut), 'HH:mm') : '-'}</span>
                                                             </div>
-                                                        </div>
-                                                        {!isComplete && (
-                                                            <div className="mt-4 pt-4 border-t border-dashed border-gray-100 flex flex-col items-center">
-                                                                <span className="text-[10px] font-bold text-gray-800 mb-1 leading-none">Absensi Tidak Lengkap</span>
-                                                                <div className="flex items-center gap-1 text-[9px] text-gray-400">
-                                                                    <MapPin className="w-2.5 h-2.5 shrink-0" />
-                                                                    <span className="truncate max-w-[120px]" title={record.checkInLocation || ''}>
-                                                                        {record.checkInLocation || 'Lokasi tidak tersedia'}
-                                                                    </span>
-                                                                </div>
+                                                        <div className="mt-4 pt-4 border-t border-dashed border-gray-100 flex flex-col items-center">
+                                                            {!isComplete && <span className="text-[10px] font-bold text-gray-800 mb-1 leading-none">Absensi tidak lengkap</span>}
+                                                            <div className="flex items-center gap-1 text-[9px] text-gray-400">
+                                                                <MapPin className="w-2.5 h-2.5 shrink-0" />
+                                                                <span className="truncate max-w-[120px]" title={record.checkInLocation || ''}>
+                                                                    {record.checkInLocation || 'Lokasi tidak tersedia'}
+                                                                </span>
                                                             </div>
-                                                        )}
+                                                        </div>
                                                     </td>
                                                     <td className="px-6 py-6 align-top">
                                                         <div className="flex justify-center gap-2 flex-wrap max-w-[200px] mx-auto">
@@ -397,14 +392,14 @@ export default function AttendanceHistoryPage() {
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-6 align-top">
-                                                        <div className="flex flex-col gap-3 items-start max-w-[220px]">
-                                                            <span className={`px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-widest shadow-sm
-                                                                ${record.status === 'present' ? 'bg-green-100 text-green-700' :
-                                                                    record.status === 'late' ? 'bg-orange-100 text-orange-700' :
-                                                                        record.status === 'sick' ? 'bg-blue-100 text-blue-700' :
-                                                                            record.status === 'permission' ? 'bg-purple-100 text-purple-700' :
-                                                                                record.status === 'cuti' ? 'bg-teal-100 text-teal-700' :
-                                                                                    'bg-gray-100 text-gray-600'}`}>
+                                                        <div className="flex flex-col gap-3 items-center w-full">
+                                                            <span className={`px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-widest
+                                                                ${record.status === 'present' ? 'text-[#0D9488]' :
+                                                                    record.status === 'late' ? 'text-orange-700' :
+                                                                        record.status === 'sick' ? 'text-blue-700' :
+                                                                            record.status === 'permission' ? 'text-purple-700' :
+                                                                                record.status === 'cuti' ? 'text-teal-700' :
+                                                                                    'text-gray-600'}`}>
                                                                 {record.status === 'present' ? 'Hadir' :
                                                                     record.status === 'late' ? 'Telat' :
                                                                         record.status === 'sick' ? 'Sakit' :
@@ -415,13 +410,13 @@ export default function AttendanceHistoryPage() {
 
                                                             {/* GPS Alert Box */}
                                                             {showGpsWarning && (
-                                                                <div className="w-full bg-orange-50 border border-orange-200 rounded-md p-2 shadow-sm animate-in zoom-in-95 duration-300">
-                                                                    <p className="flex items-center gap-1.5 font-bold text-orange-700 text-[10px] uppercase mb-1">
+                                                                <div className="w-full max-w-[160px] bg-orange-50 border border-orange-200 rounded-md p-2 shadow-sm">
+                                                                    <p className="flex items-center gap-1.5 font-bold text-orange-700 text-[9px] uppercase mb-0.5">
                                                                         <AlertTriangle className="w-3 h-3" />
                                                                         GPS Mencurigakan
                                                                     </p>
-                                                                    <p className="text-[9px] text-orange-600/80 font-medium leading-tight">
-                                                                        Akurasi buruk / Lokasi palsu terdeteksi.
+                                                                    <p className="text-[8px] text-orange-600/80 font-medium leading-tight">
+                                                                        Akurasi buruk: 20m
                                                                     </p>
                                                                 </div>
                                                             )}
