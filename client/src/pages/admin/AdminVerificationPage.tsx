@@ -27,7 +27,11 @@ export default function AdminVerificationPage() {
     }
   };
 
-  const filteredEmployees = (employees || []).sort((a, b) => {
+  const { data: employees, isLoading } = useQuery<User[]>({
+    queryKey: ["/api/admin/unverified-employees"],
+  });
+
+  const filteredEmployees = [...(employees || [])].sort((a, b) => {
     let valA: any, valB: any;
     if (sortField === 'name') {
       valA = a.fullName.toLowerCase();
@@ -39,10 +43,6 @@ export default function AdminVerificationPage() {
     if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
     if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
     return 0;
-  });
-
-  const { data: employees, isLoading } = useQuery<User[]>({
-    queryKey: ["/api/admin/unverified-employees"],
   });
 
   const verifyMutation = useMutation({
