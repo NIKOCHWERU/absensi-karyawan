@@ -392,8 +392,16 @@ export default function AttendanceHistoryPage() {
                 <td class="c">${isContinuation ? '<span style="color:#cbd5e1;font-weight:bold;">↳</span>' : (i + 1)}</td>
                 <td>${isContinuation ? '' : currentDateStr}</td>
                 <td>
-                    ${isContinuation ? '' : `<b style="color:#1d4ed8;">${currentName}</b><br/>`}
-                    <span style="color:#94a3b8; font-size: 9px; font-style: italic;">Sesi ${r.sessionNumber || 1}</span>
+                    ${isContinuation ? '' : `
+                        <div style="line-height:1.2;">
+                            <b style="color:#1d4ed8;font-size:12px;">${currentName}</b><br/>
+                            <span style="color:#64748b;font-size:9.5px;font-weight:bold;">Shift: ${r.shift || 'Management'}</span><br/>
+                            <span style="color:#94a3b8;font-size:9.5px;">NIK: ${emp?.nik || emp?.username || '-'}</span>
+                        </div>
+                    `}
+                    <div style="margin-top:4px;">
+                        <span style="color:#94a3b8; font-size: 9px; font-style: italic;">Sesi ${r.sessionNumber || 1}</span>
+                    </div>
                 </td>
                 <td>
                   <div style="font-family:monospace;font-size:10.5px;line-height:1.4;">

@@ -366,7 +366,15 @@ export default function RecapPage() {
             return `<tr>
           <td class="col-no">${isSameDayAndUser ? '<span style="color:#cbd5e1;">↳</span>' : (index + 1)}</td>
           <td class="col-date">${isSameDayAndUser ? '' : format(new Date(row.date), 'dd/MM/yyyy')}</td>
-          <td class="col-name">${isSameDayAndUser ? '' : (getUserName(row.userId) || '-')}</td>
+          <td class="col-name">
+              ${isSameDayAndUser ? '' : `
+                  <div style="line-height:1.2;">
+                      <b style="color:#1d4ed8;font-size:11.5px;">${getUserName(row.userId) || '-'}</b><br/>
+                      <span style="color:#16a34a;font-size:9px;font-weight:bold;text-transform:uppercase;">Shift: ${row.shift || 'Management'}</span><br/>
+                      <span style="color:#64748b;font-size:9px;">NIK: ${users?.find(u => u.id === row.userId)?.nik || users?.find(u => u.id === row.userId)?.username || '-'}</span>
+                  </div>
+              `}
+          </td>
           <td class="col-time ${inTime === '-' ? 't-dash' : 't-in'}">${inTime}</td>
           <td class="col-time ${brkTime === '-' ? 't-dash' : 't-brk'}">${brkTime}</td>
           <td class="col-time ${brkEnd === '-' ? 't-dash' : 't-brk'}">${brkEnd}</td>
