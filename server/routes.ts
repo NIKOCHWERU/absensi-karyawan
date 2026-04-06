@@ -1158,6 +1158,8 @@ export async function registerRoutes(
       if (isNaN(id)) return res.status(400).json({ message: "Invalid user ID" });
 
       const updates = normalizeUserData(req.body);
+      console.log(`[AdminUserUpdate] ID: ${id}, Body:`, req.body);
+      console.log(`[AdminUserUpdate] Normalized updates:`, updates);
 
       // registrationStatus is now allowed to be updated by admin via this endpoint
       // delete updates.registrationStatus; // handled by separate endpoint (DISABLED)

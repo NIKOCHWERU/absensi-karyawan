@@ -136,7 +136,7 @@ export default function AdminEmployeeList() {
         joinDate: z.string().optional(),
         employmentStatus: z.string().optional(),
         registrationStatus: z.string().optional(),
-        shift: z.string().optional(),
+        shift: z.string().nullable().optional(),
     });
 
     const form = useForm({
@@ -222,6 +222,7 @@ export default function AdminEmployeeList() {
     const upsertMutation = useMutation({
         mutationFn: async (data: any) => {
             const formData = new FormData();
+            console.log("[EmployeeListPage] Submitting user data:", data);
             Object.keys(data).forEach(key => {
                 if (data[key] !== undefined && data[key] !== null) {
                     formData.append(key, data[key]);
