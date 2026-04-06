@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { LeaveRequest, User } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -102,6 +103,7 @@ export default function AdminLeavePage() {
             </header>
 
             <main className="p-8 max-w-6xl mx-auto space-y-6">
+                <div className="flex items-center justify-between">
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900">Permohonan Cuti</h2>
                         <p className="text-sm text-gray-500">Setujui atau tolak permohonan cuti dari karyawan.</p>
