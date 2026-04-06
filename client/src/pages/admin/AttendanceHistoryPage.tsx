@@ -567,7 +567,6 @@ export default function AttendanceHistoryPage() {
                         <div className="text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full border border-green-100">
                             {filteredRecords.length} Data Absensi
                         </div>
-                        </div>
                     </div>
 
                     <div className="p-0">
