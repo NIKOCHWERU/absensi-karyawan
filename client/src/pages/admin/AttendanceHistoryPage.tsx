@@ -202,17 +202,27 @@ export default function AttendanceHistoryPage() {
                 resolvedUrl = `/uploads/${url}`;
             }
             if (imageCache[resolvedUrl]) return imageCache[resolvedUrl];
+            
             try {
-                const res = await fetch(resolvedUrl);
+                // Timeout logic for slow images
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout per image
+
+                const res = await fetch(resolvedUrl, { signal: controller.signal });
+                clearTimeout(timeoutId);
+
+                if (!res.ok) return '';
                 const blob = await res.blob();
                 const b64 = await new Promise<string>((resolve) => {
                     const reader = new FileReader();
                     reader.onload = () => resolve(reader.result as string);
+                    reader.onerror = () => resolve('');
                     reader.readAsDataURL(blob);
                 });
                 imageCache[resolvedUrl] = b64;
                 return b64;
             } catch (e) {
+                console.error("Export fetch error:", e);
                 return '';
             }
         };
@@ -316,7 +326,7 @@ export default function AttendanceHistoryPage() {
     <thead>
       <tr>
         <th class="c" style="width:24px;">No</th>
-        <th style="width:65px;">Tanggal</th>
+        <th style="width:110px;">Hari & Tanggal</th>
         <th style="width:110px;">Nama Karyawan</th>
         <th style="width:140px;">Waktu Absen</th>
         <th style="width:120px;">Status & Keterangan</th>
@@ -335,7 +345,7 @@ export default function AttendanceHistoryPage() {
                 const r = filteredRecords[i];
                 const emp = getEmployee(r.userId);
                 const currentName = emp?.fullName || '-';
-                const currentDateStr = format(new Date(r.date), 'dd/MM/yyyy');
+                const currentDateStr = format(new Date(r.date), 'EEEE, d MMMM yyyy', { locale: id });
 
                 // Grouping logic: Same as UI
                 const isContinuation = currentName === lastShownName && currentDateStr === lastShownDate;
@@ -390,7 +400,7 @@ export default function AttendanceHistoryPage() {
 
                 html += `<tr>
                 <td class="c">${isContinuation ? '<span style="color:#cbd5e1;font-weight:bold;">↳</span>' : (i + 1)}</td>
-                <td>${isContinuation ? '' : currentDateStr}</td>
+                <td style="font-size:9.5px;color:#475569;">${isContinuation ? '' : currentDateStr}</td>
                 <td>
                     ${isContinuation ? '' : `
                         <div style="line-height:1.2;">
@@ -461,9 +471,19 @@ export default function AttendanceHistoryPage() {
 
             const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
             const blobUrl = URL.createObjectURL(blob);
-            window.open(blobUrl, '_blank');
-            // Cleanup blob URL after a short delay
-            setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+            
+            // Bypass popup blocker by using a hidden link
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = blobUrl;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(blobUrl);
+            }, 5000);
         } finally {
             setIsExporting(false);
         }
@@ -610,11 +630,11 @@ export default function AttendanceHistoryPage() {
                                     <tbody className="divide-y divide-gray-100 bg-white">
                                         {filteredRecords.map((record, index) => {
                                             const emp = getEmployee(record.userId);
-                                            const recordDateStr = format(new Date(record.date), 'dd/MM/yyyy');
+                                            const recordDateStr = format(new Date(record.date), 'EEEE, d MMMM yyyy', { locale: id });
 
                                             const prevRecord = index > 0 ? filteredRecords[index - 1] : null;
                                             const prevEmpName = prevRecord ? getEmployee(prevRecord.userId)?.fullName : null;
-                                            const prevDateStr = prevRecord ? format(new Date(prevRecord.date), 'dd/MM/yyyy') : null;
+                                            const prevDateStr = prevRecord ? format(new Date(prevRecord.date), 'EEEE, d MMMM yyyy', { locale: id }) : null;
                                             const isContinuation = emp?.fullName === prevEmpName && recordDateStr === prevDateStr;
 
                                             const effectiveStatus = isContinuation && record.status === 'late' ? 'present' : record.status;

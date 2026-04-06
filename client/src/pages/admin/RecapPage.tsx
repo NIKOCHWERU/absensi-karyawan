@@ -246,11 +246,16 @@ export default function RecapPage() {
         const fileName = `LAPORAN ABSENSI TENAGA KERJA PT EJA - ${periodStr}.html`;
         let logoDataUrl = '';
         try {
-            const logoRes = await fetch('/logo_elok_buah.jpg');
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            const logoRes = await fetch('/logo_elok_buah.jpg', { signal: controller.signal });
+            clearTimeout(timeoutId);
+            
             const logoBlob = await logoRes.blob();
             logoDataUrl = await new Promise<string>((resolve) => {
                 const reader = new FileReader();
                 reader.onload = () => resolve(reader.result as string);
+                reader.onerror = () => resolve('');
                 reader.readAsDataURL(logoBlob);
             });
         } catch (_) { }
@@ -324,13 +329,13 @@ export default function RecapPage() {
   <div class="report-meta">
     <h2>Laporan Rekapitulasi Absensi</h2>
     <p class="sub">Tipe: ${reportType === 'daily' ? 'Harian' : reportType === 'weekly' ? 'Mingguan' : reportType === 'custom' ? 'Kustom' : 'Bulanan'}</p>
-    <p class="sub">Periode: ${format(startDate, "EEEE, d MMM yyyy", { locale: id })} - ${format(endDate, "EEEE, d MMM yyyy", { locale: id })}</p>
+    <p class="sub">Periode: ${format(startDate, "EEEE, d MMMM yyyy", { locale: id })} - ${format(endDate, "EEEE, d MMMM yyyy", { locale: id })}</p>
   </div>
   <table>
     <thead>
       <tr>
         <th class="c" style="width:28px;">No</th>
-        <th style="width:76px;">Tanggal</th>
+        <th style="width:130px;">Hari & Tanggal</th>
         <th style="width:130px;">Nama Karyawan</th>
         <th class="c" style="width:62px;">Masuk</th>
         <th class="c" style="width:62px;">Istirahat</th>
@@ -365,7 +370,7 @@ export default function RecapPage() {
             const lateNote = row.status === 'late' && (row as any).lateReason ? `<br><span class="note-late">[Telat: ${(row as any).lateReason}]</span>` : '';
             return `<tr>
           <td class="col-no">${isSameDayAndUser ? '<span style="color:#cbd5e1;">↳</span>' : (index + 1)}</td>
-          <td class="col-date">${isSameDayAndUser ? '' : format(new Date(row.date), 'dd/MM/yyyy')}</td>
+          <td class="col-date" style="font-size:9.5px;">${isSameDayAndUser ? '' : format(new Date(row.date), 'EEEE, d MMMM yyyy', { locale: id })}</td>
           <td class="col-name">
               ${isSameDayAndUser ? '' : `
                    <div style="line-height:1.2;">
@@ -408,7 +413,7 @@ export default function RecapPage() {
                         const dayRecords = recordsByDay.get(day)!;
                         const hasIn = dayRecords.some(r => r.checkIn);
                         const hasOut = dayRecords.some(r => r.checkOut);
-                        const dateStr = format(new Date(day), "dd/MM/yyyy");
+                        const dateStr = format(new Date(day), "EEEE, d MMMM yyyy", { locale: id });
                         if (hasIn && hasOut) {
                             const { netWorkMins } = calculateDailyTotal(dayRecords);
                             userSummary.totalMins += netWorkMins;
@@ -469,8 +474,18 @@ export default function RecapPage() {
 </html>`;
         const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
         const blobUrl = URL.createObjectURL(blob);
-        window.open(blobUrl, '_blank');
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+        
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = blobUrl;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
+        }, 5000);
     };
 
     return (
@@ -518,7 +533,7 @@ export default function RecapPage() {
                         <div className="space-y-1">
                             <div className="text-lg font-bold">Laporan Kehadiran</div>
                             <p className="text-sm text-gray-500">
-                                Periode: {format(startDate, "EEEE, d MMM yyyy", { locale: id })} - {format(endDate, "EEEE, d MMM yyyy", { locale: id })}
+                                Periode: {format(startDate, "EEEE, d MMMM yyyy", { locale: id })} - {format(endDate, "EEEE, d MMMM yyyy", { locale: id })}
                             </p>
                         </div>
                         <div className="flex items-center gap-3 w-full md:w-auto">
@@ -561,8 +576,8 @@ export default function RecapPage() {
 
                                         return (
                                             <tr key={row.id} className="hover:bg-gray-50/30 transition-colors group">
-                                                <td className="px-6 py-4 font-bold text-gray-500 text-xs">
-                                                    {isSameDayAndUser ? <span className="ml-4 text-gray-300">↳</span> : format(new Date(row.date), "dd/MM/yyyy")}
+                                                <td className="px-6 py-4 font-bold text-gray-500 text-[10px]">
+                                                    {isSameDayAndUser ? <span className="ml-4 text-gray-300">↳</span> : format(new Date(row.date), "EEEE, d MMMM yyyy", { locale: id })}
                                                 </td>
                                                 <td className="px-6 py-4 font-bold text-gray-900 capitalize">
                                                     {isSameDayAndUser ? "" : (
