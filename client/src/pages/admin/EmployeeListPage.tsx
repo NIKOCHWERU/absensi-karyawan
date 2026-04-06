@@ -623,7 +623,7 @@ export default function AdminEmployeeList() {
                                                 <Select onValueChange={field.onChange} value={field.value || "-"}>
                                                     <FormControl><SelectTrigger><SelectValue placeholder="Pilih Shift" /></SelectTrigger></FormControl>
                                                     <SelectContent>
-                                                        <SelectItem value="-">- (Default)</SelectItem>
+                                                        <SelectItem value="-">Belum Tercatat (Default)</SelectItem>
                                                         {shifts?.map(s => (
                                                             <SelectItem key={s.id} value={s.name}>{s.name} ({s.checkInTime}-{s.checkOutTime})</SelectItem>
                                                         ))}
@@ -807,12 +807,12 @@ export default function AdminEmployeeList() {
                                     </TableCell>
                                     <TableCell className="font-mono text-gray-600">{emp.nik}</TableCell>
                                     <TableCell>
-                                        {emp.shift && emp.shift !== 'Management' ? (
+                                        {emp.shift && emp.shift !== '-' && emp.shift.toLowerCase() !== 'management' ? (
                                             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-[10px] font-bold">
                                                 {emp.shift}
                                             </Badge>
                                         ) : (
-                                            <span className="text-gray-400 text-[10px] italic">Management</span>
+                                            <span className="text-gray-400 text-[10px] italic">Belum Tercatat</span>
                                         )}
                                     </TableCell>
                                     <TableCell>{toTitleCase(emp.position)}</TableCell>

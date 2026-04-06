@@ -1679,7 +1679,7 @@ export async function registerRoutes(
               date: dateStr as any,
               status: 'cuti',
               notes: `Cuti Disetujui: ${request.reason}`,
-              shift: userProfile?.shift || 'Management',
+              shift: userProfile?.shift || '-',
               sessionNumber: 1
             });
           } else {
@@ -1720,7 +1720,7 @@ export async function registerRoutes(
         date: new Date(date + 'T00:00:00+07:00'),
         status: status || 'present',
         notes: notes || null,
-        shift: shift || userProfile?.shift || 'Management',
+        shift: shift || userProfile?.shift || '-',
         sessionNumber,
         checkIn: toDate(date, checkIn) || new Date(date + 'T00:00:00+07:00'),
         checkOut: toDate(date, checkOut) || null,

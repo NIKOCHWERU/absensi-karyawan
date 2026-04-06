@@ -375,7 +375,9 @@ export default function RecapPage() {
               ${isSameDayAndUser ? '' : `
                    <div style="line-height:1.2;">
                       <b style="color:#1d4ed8;font-size:11.5px;">${getUserName(row.userId) || '-'}</b><br/>
-                      ${(row.shift && row.shift.toLowerCase().trim() !== 'management') ? `<span style="color:#16a34a;font-size:9px;font-weight:bold;text-transform:uppercase;">${row.shift}</span><br/>` : ''}
+                      ${(row.shift && row.shift.toLowerCase().trim() !== '-' && row.shift.toLowerCase().trim() !== 'management') 
+                          ? `<span style="color:#16a34a;font-size:9px;font-weight:bold;text-transform:uppercase;">${row.shift}</span><br/>` 
+                          : '<span style="color:#94a3b8;font-size:9px;font-style:italic;">Belum Tercatat</span><br/>'}
                       <span style="color:#64748b;font-size:9px;">NIK: ${users?.find(u => u.id === row.userId)?.nik || users?.find(u => u.id === row.userId)?.username || '-'}</span>
                   </div>
               `}
@@ -583,8 +585,10 @@ export default function RecapPage() {
                                                     {isSameDayAndUser ? "" : (
                                                         <div className="flex flex-col">
                                                             <span className="font-bold text-gray-900">{getUserName(row.userId)}</span>
-                                                            {row.shift && row.shift.toLowerCase().trim() !== 'management' && (
+                                                            {row.shift && row.shift.toLowerCase().trim() !== '-' && row.shift.toLowerCase().trim() !== 'management' ? (
                                                                 <span className="text-[10px] font-bold text-green-600 uppercase tracking-tight">{row.shift}</span>
+                                                            ) : (
+                                                                <span className="text-[10px] italic text-gray-400 font-medium uppercase tracking-tight">Belum Tercatat</span>
                                                             )}
                                                             <span className="text-[10px] text-gray-400 font-medium">NIK: {users?.find(u => u.id === row.userId)?.nik || users?.find(u => u.id === row.userId)?.username}</span>
                                                         </div>
@@ -691,7 +695,7 @@ export default function RecapPage() {
                                 <Select value={manualEntry.shift} onValueChange={(v) => setManualEntry(prev => ({ ...prev, shift: v }))}>
                                     <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Management">Management</SelectItem>
+                                        <SelectItem value="-">Belum Tercatat (Default)</SelectItem>
                                         <SelectItem value="Office">Office</SelectItem>
                                         <SelectItem value="Security">Security</SelectItem>
                                         <SelectItem value="Warehouse">Warehouse</SelectItem>

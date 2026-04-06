@@ -405,7 +405,9 @@ export default function AttendanceHistoryPage() {
                     ${isContinuation ? '' : `
                         <div style="line-height:1.2;">
                             <b style="color:#1d4ed8;font-size:11.5px;">${currentName}</b><br/>
-                            ${(r.shift && r.shift.toLowerCase().trim() !== 'management') ? `<span style="color:#16a34a;font-size:9.5px;font-weight:bold;text-transform:uppercase;">${r.shift}</span><br/>` : ''}
+                            ${(r.shift && r.shift.toLowerCase().trim() !== '-' && r.shift.toLowerCase().trim() !== 'management') 
+                                ? `<span style="color:#16a34a;font-size:9.5px;font-weight:bold;text-transform:uppercase;">${r.shift}</span><br/>` 
+                                : '<span style="color:#94a3b8;font-size:9.5px;font-style:italic;">Belum Tercatat</span><br/>'}
                             <span style="color:#94a3b8;font-size:9.5px;">NIK: ${emp?.nik || emp?.username || '-'}</span>
                         </div>
                     `}
@@ -662,8 +664,10 @@ export default function AttendanceHistoryPage() {
                                                                         <p className="font-bold text-gray-900">{emp?.fullName || 'Unknown'}</p>
                                                                         <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium">Sesi {record.sessionNumber || 1}</span>
                                                                     </div>
-                                                                    {record.shift && record.shift.toLowerCase().trim() !== 'management' && (
+                                                                    {record.shift && record.shift.toLowerCase().trim() !== '-' && record.shift.toLowerCase().trim() !== 'management' ? (
                                                                         <p className="text-[10px] font-bold text-green-600 mt-0.5 uppercase tracking-wide">{record.shift}</p>
+                                                                    ) : (
+                                                                        <p className="text-[10px] italic text-gray-400 mt-0.5 uppercase tracking-wide">Belum Tercatat</p>
                                                                     )}
                                                                     <p className="text-[10px] text-gray-400 font-medium leading-tight">NIK: {emp?.nik || emp?.username}</p>
                                                                 </div>
