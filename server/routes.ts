@@ -1668,12 +1668,14 @@ export async function registerRoutes(
           const existing = await storage.getAttendanceByUserAndDate(request.userId, dateStr);
 
           if (!existing) {
+            // Fetch user to get their current shift
+            const userProfile = await storage.getUser(request.userId);
             await storage.createAttendance({
               userId: request.userId,
               date: dateStr as any,
               status: 'cuti',
               notes: `Cuti Disetujui: ${request.reason}`,
-              shift: 'Karyawan',
+              shift: userProfile?.shift || 'Management',
               sessionNumber: 1
             });
           } else {
@@ -1707,16 +1709,14 @@ export async function registerRoutes(
     };
 
     try {
-      // Check for existing session count
-      const existing = await storage.getAttendanceSessionsByUserAndDate(userId, date);
-      const sessionNumber = existing.length + 1;
-
+      // Fetch user to get current shift if none provided
+      const userProfile = await storage.getUser(parseInt(userId));
       const record = await storage.createAttendance({
         userId: parseInt(userId),
         date: new Date(date + 'T00:00:00+07:00'),
         status: status || 'present',
         notes: notes || null,
-        shift: shift || 'Karyawan',
+        shift: shift || userProfile?.shift || 'Management',
         sessionNumber,
         checkIn: toDate(date, checkIn) || new Date(date + 'T00:00:00+07:00'),
         checkOut: toDate(date, checkOut) || null,

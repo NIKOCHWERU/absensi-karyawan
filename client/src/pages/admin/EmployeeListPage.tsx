@@ -759,6 +759,7 @@ export default function AdminEmployeeList() {
                                     <div className="flex items-center gap-1">Nama <ArrowLeft className={`h-3 w-3 rotate-90 ${sortField === 'fullName' ? 'text-primary' : 'text-gray-300'}`} /></div>
                                 </TableHead>
                                 <TableHead className="cursor-pointer hover:text-primary" onClick={() => toggleSort('nik')}>NIK</TableHead>
+                                <TableHead className="cursor-pointer hover:text-primary" onClick={() => toggleSort('shift')}>Shift</TableHead>
                                 <TableHead className="cursor-pointer hover:text-primary" onClick={() => toggleSort('position')}>Jabatan</TableHead>
                                 <TableHead className="cursor-pointer hover:text-primary" onClick={() => toggleSort('branch')}>Cabang</TableHead>
                                 <TableHead className="cursor-pointer hover:text-primary" onClick={() => toggleSort('registrationStatus')}>Status Data</TableHead>
@@ -803,6 +804,15 @@ export default function AdminEmployeeList() {
                                         </div>
                                     </TableCell>
                                     <TableCell className="font-mono text-gray-600">{emp.nik}</TableCell>
+                                    <TableCell>
+                                        {emp.shift && emp.shift !== 'Management' ? (
+                                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-[10px] font-bold">
+                                                {emp.shift}
+                                            </Badge>
+                                        ) : (
+                                            <span className="text-gray-400 text-[10px] italic">Management</span>
+                                        )}
+                                    </TableCell>
                                     <TableCell>{toTitleCase(emp.position)}</TableCell>
                                     <TableCell>{toTitleCase(emp.branch)}</TableCell>
                                     <TableCell>

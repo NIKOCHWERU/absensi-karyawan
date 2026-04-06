@@ -368,9 +368,9 @@ export default function RecapPage() {
           <td class="col-date">${isSameDayAndUser ? '' : format(new Date(row.date), 'dd/MM/yyyy')}</td>
           <td class="col-name">
               ${isSameDayAndUser ? '' : `
-                  <div style="line-height:1.2;">
+                   <div style="line-height:1.2;">
                       <b style="color:#1d4ed8;font-size:11.5px;">${getUserName(row.userId) || '-'}</b><br/>
-                      <span style="color:#16a34a;font-size:9px;font-weight:bold;text-transform:uppercase;">Shift: ${row.shift || 'Management'}</span><br/>
+                      ${(row.shift && row.shift !== 'Management') ? `<span style="color:#16a34a;font-size:9px;font-weight:bold;text-transform:uppercase;">${row.shift}</span><br/>` : ''}
                       <span style="color:#64748b;font-size:9px;">NIK: ${users?.find(u => u.id === row.userId)?.nik || users?.find(u => u.id === row.userId)?.username || '-'}</span>
                   </div>
               `}
@@ -565,7 +565,15 @@ export default function RecapPage() {
                                                     {isSameDayAndUser ? <span className="ml-4 text-gray-300">↳</span> : format(new Date(row.date), "dd/MM/yyyy")}
                                                 </td>
                                                 <td className="px-6 py-4 font-bold text-gray-900 capitalize">
-                                                    {isSameDayAndUser ? "" : getUserName(row.userId)}
+                                                    {isSameDayAndUser ? "" : (
+                                                        <div className="flex flex-col">
+                                                            <span className="font-bold text-gray-900">{getUserName(row.userId)}</span>
+                                                            {row.shift && row.shift !== 'Management' && (
+                                                                <span className="text-[10px] font-bold text-green-600 uppercase tracking-tight">{row.shift}</span>
+                                                            )}
+                                                            <span className="text-[10px] text-gray-400 font-medium">NIK: {users?.find(u => u.id === row.userId)?.nik || users?.find(u => u.id === row.userId)?.username}</span>
+                                                        </div>
+                                                    )}
                                                 </td>
                                                 <td className="px-6 py-4 text-center font-mono font-bold text-emerald-600">
                                                     {row.checkIn ? format(new Date(row.checkIn), "HH:mm") : "-"}

@@ -393,9 +393,7 @@ export default function AttendanceHistoryPage() {
                 <td>${isContinuation ? '' : currentDateStr}</td>
                 <td>
                     ${isContinuation ? '' : `
-                        <div style="line-height:1.2;">
-                            <b style="color:#1d4ed8;font-size:12px;">${currentName}</b><br/>
-                            <span style="color:#64748b;font-size:9.5px;font-weight:bold;">Shift: ${r.shift || 'Management'}</span><br/>
+                             ${(r.shift && r.shift !== 'Management') ? `<span style="color:#16a34a;font-size:9.5px;font-weight:bold;text-transform:uppercase;">${r.shift}</span><br/>` : ''}
                             <span style="color:#94a3b8;font-size:9.5px;">NIK: ${emp?.nik || emp?.username || '-'}</span>
                         </div>
                     `}
@@ -638,11 +636,14 @@ export default function AttendanceHistoryPage() {
                                                                     {emp?.fullName?.charAt(0) || '?'}
                                                                 </div>
                                                                 <div>
-                                                                    <div className="flex items-center gap-2">
+                                                                    <div className="flex items-center gap-2 leading-tight">
                                                                         <p className="font-bold text-gray-900">{emp?.fullName || 'Unknown'}</p>
                                                                         <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium">Sesi {record.sessionNumber || 1}</span>
                                                                     </div>
-                                                                    <p className="text-[11px] text-gray-500">{emp?.nik || emp?.username}</p>
+                                                                    {record.shift && record.shift !== 'Management' && (
+                                                                        <p className="text-[10px] font-bold text-green-600 mt-0.5 uppercase tracking-wide">{record.shift}</p>
+                                                                    )}
+                                                                    <p className="text-[10px] text-gray-400 font-medium leading-tight">NIK: {emp?.nik || emp?.username}</p>
                                                                 </div>
                                                             </div>
                                                         )}
