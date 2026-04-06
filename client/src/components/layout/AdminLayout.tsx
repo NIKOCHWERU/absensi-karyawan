@@ -62,8 +62,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         <div className="flex items-center gap-3">
                             <img src="/logo_elok_buah.jpg" alt="Logo" className="w-10 h-10 object-contain rounded" />
                             <div className="flex-1 overflow-hidden group-data-[collapsible=icon]:hidden">
-                                <h1 className="text-lg font-bold text-green-600 truncate">Admin Panel</h1>
-                                <p className="text-[10px] text-gray-400 truncate">PT ELOK JAYA ABADHI</p>
+                                <h1 className="text-sm font-black text-gray-900 truncate tracking-tight">PT ELOK JAYA ABADHI</h1>
+                                <p className="text-[10px] text-green-600 font-bold truncate">Admin Panel</p>
                             </div>
                         </div>
                     </SidebarHeader>
@@ -135,7 +135,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
 
-                            <SidebarMenuItem>
+                             <SidebarMenuItem>
                                 <SidebarMenuButton
                                     tooltip="Riwayat Cuti"
                                     isActive={location === "/admin/leave-history"}
@@ -168,7 +168,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                         className={location === "/admin/complaints" ? "bg-green-50 text-green-700 font-medium" : "text-gray-600"}
                                     >
                                         <MessageSquare className="h-4 w-4" />
-                                        <span className="flex-1">Pengaduan</span>
+                                        <span className="flex-1">Pengaduan Karyawan</span>
                                         {pendingComplaintsCount > 0 && (
                                             <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full group-data-[collapsible=icon]:hidden">
                                                 {pendingComplaintsCount}

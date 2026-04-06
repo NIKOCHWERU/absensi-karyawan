@@ -146,23 +146,22 @@ export default function AttendanceHistoryPage() {
         const viewLink = getDriveViewLink(url);
 
         return (
-            <div className="flex flex-col items-center gap-1 p-2 border border-gray-100 rounded-lg bg-gray-50/50">
-                <p className="text-[10px] font-bold text-gray-500">{label}</p>
-                <div className="w-16 h-16 rounded-md overflow-hidden bg-gray-200 border border-gray-300 flex items-center justify-center relative group">
+            <div className="flex flex-col items-center gap-1.5 p-0 bg-transparent">
+                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{label}</p>
+                <div className="w-16 h-20 rounded border border-gray-200 overflow-hidden bg-gray-100 shadow-sm relative group">
                     <img src={getPhotoUrl(url)} alt={label} className="w-full h-full object-cover" />
                     <a
                         href={viewLink || "#"}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-bold"
+                        className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[9px] font-bold"
                     >
-                        Lihat<br />File
+                        LIHAT
                     </a>
                 </div>
                 {location && (
-                    <div className="flex items-center gap-0.5 text-[9px] text-gray-400 max-w-[70px] mt-1" title={location}>
-                        <MapPin className="w-3 h-3 shrink-0" />
-                        <span className="truncate">{location}</span>
+                    <div className="text-[8px] text-gray-400 font-medium text-center leading-tight max-w-[80px]" title={location}>
+                        {location}
                     </div>
                 )}
             </div>
@@ -350,6 +349,7 @@ export default function AttendanceHistoryPage() {
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-6 align-top">
+                                                        <div className="flex flex-col gap-1.5 text-[10px] font-mono tracking-wide mx-auto w-32">
                                                             <div className="flex justify-between">
                                                                 <span className="text-gray-400">Masuk:</span>
                                                                 <span className="font-bold text-[#0D9488]">{record.checkIn ? format(new Date(record.checkIn), 'HH:mm') : '-'}</span>
@@ -366,8 +366,9 @@ export default function AttendanceHistoryPage() {
                                                                 <span className="text-gray-400">Pulang:</span>
                                                                 <span className="font-bold text-red-500">{record.checkOut ? format(new Date(record.checkOut), 'HH:mm') : '-'}</span>
                                                             </div>
-                                                        <div className="mt-4 pt-4 border-t border-dashed border-gray-100 flex flex-col items-center">
-                                                            {!isComplete && <span className="text-[10px] font-bold text-gray-800 mb-1 leading-none">Absensi tidak lengkap</span>}
+                                                        </div>
+                                                        <div className="mt-4 pt-3 border-t border-gray-100 flex flex-col items-start px-2">
+                                                            {!isComplete && <span className="text-[10px] font-bold text-gray-800 mb-1 leading-none uppercase">Absensi tidak lengkap</span>}
                                                             <div className="flex items-center gap-1 text-[9px] text-gray-400">
                                                                 <MapPin className="w-2.5 h-2.5 shrink-0" />
                                                                 <span className="truncate max-w-[120px]" title={record.checkInLocation || ''}>
@@ -408,14 +409,14 @@ export default function AttendanceHistoryPage() {
                                                                                     record.status === 'absent' ? 'Alpha' : record.status}
                                                             </span>
 
-                                                            {/* GPS Alert Box */}
+                                                             {/* GPS Alert Box */}
                                                             {showGpsWarning && (
-                                                                <div className="w-full max-w-[160px] bg-orange-50 border border-orange-200 rounded-md p-2 shadow-sm">
-                                                                    <p className="flex items-center gap-1.5 font-bold text-orange-700 text-[9px] uppercase mb-0.5">
+                                                                <div className="w-full max-w-[170px] bg-[#FFFBEB] border border-[#FEF3C7] rounded p-2.5 shadow-sm">
+                                                                    <p className="flex items-center gap-1.5 font-bold text-[#D97706] text-[9px] uppercase mb-1">
                                                                         <AlertTriangle className="w-3 h-3" />
                                                                         GPS Mencurigakan
                                                                     </p>
-                                                                    <p className="text-[8px] text-orange-600/80 font-medium leading-tight">
+                                                                    <p className="text-[8px] text-[#D97706]/70 font-bold leading-tight">
                                                                         Akurasi buruk: 20m
                                                                     </p>
                                                                 </div>

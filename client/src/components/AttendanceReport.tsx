@@ -86,27 +86,27 @@ export function AttendanceReport({ date, records, users }: AttendanceReportProps
                                     {format(new Date(record.date), "dd/MM/yyyy")}
                                 </td>
                                 <td className="border border-gray-300 px-3 py-4">
-                                    <p className="font-black text-blue-700 mb-0.5">{toTitleCase(emp?.fullName || 'Unknown')}</p>
-                                    <p className="text-[10px] text-gray-400 font-medium">Sesi {(record as any).sessionNumber || 1}</p>
+                                    <p className="font-bold text-blue-600 text-xs mb-0.5">{toTitleCase(emp?.fullName || 'Unknown')}</p>
+                                    <p className="text-[9px] text-blue-500 font-medium">Sesi {(record as any).sessionNumber || 1}</p>
                                 </td>
                                 <td className="border border-gray-300 px-3 py-4">
-                                    <div className="grid grid-cols-1 gap-1.5 font-mono text-[10px]">
+                                    <div className="grid grid-cols-1 gap-1 font-mono text-[10px]">
                                         <p><span className="text-gray-400">IN :</span> <span className="font-bold text-[#0D9488]">{record.checkIn ? format(new Date(record.checkIn), "HH:mm") : "- - : - -"}</span></p>
                                         <p><span className="text-gray-400">BRK:</span> <span className="font-bold text-orange-400">{record.breakStart ? format(new Date(record.breakStart), "HH:mm") : "- - : - -"}</span></p>
                                         <p><span className="text-gray-400">OUT:</span> <span className="font-bold text-red-500">{record.checkOut ? format(new Date(record.checkOut), "HH:mm") : "- - : - -"}</span></p>
                                         
-                                        <div className="mt-3">
-                                            <p className={`text-[10px] font-bold uppercase mb-2 ${isComplete ? 'text-green-600' : 'text-red-600'}`}>
+                                        <div className="mt-2">
+                                            <p className={`text-[10px] font-bold uppercase ${isComplete ? 'text-green-600' : 'text-red-500'}`}>
                                                 {isComplete ? 'LENGKAP' : 'TIDAK LENGKAP'}
                                             </p>
                                         </div>
 
                                         {record.checkInLocation && (
-                                            <div className="mt-2 text-[9px] text-gray-500 leading-tight">
-                                                <p className="font-black flex items-center gap-0.5 mb-1 text-gray-800">
+                                            <div className="mt-3 text-[9px] text-gray-500 leading-tight">
+                                                <p className="font-bold flex items-center gap-0.5 mb-1 text-gray-700 uppercase">
                                                     📍 LOKASI MASUK:
                                                 </p>
-                                                <p className="text-gray-500 text-[8.5px] leading-relaxed">{record.checkInLocation}</p>
+                                                <p className="text-gray-500 text-[8px] leading-relaxed">{record.checkInLocation}</p>
                                             </div>
                                         )}
                                     </div>
@@ -127,10 +127,10 @@ export function AttendanceReport({ date, records, users }: AttendanceReportProps
                                     <div className="flex gap-3 px-2 justify-start items-start">
                                         {record.checkInPhoto && (
                                             <div className="flex flex-col items-center gap-1.5">
-                                                <div className="w-16 h-20 border-2 border-gray-100 rounded overflow-hidden shadow-sm">
+                                                <div className="w-16 h-20 border border-gray-200 rounded overflow-hidden shadow-sm">
                                                     <img src={getPhotoUrl(record.checkInPhoto)} alt="Masuk" className="w-full h-full object-cover" />
                                                 </div>
-                                                <span className="text-[8px] font-bold uppercase tracking-widest text-gray-500">MASUK</span>
+                                                <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-gray-500">MASUK</span>
                                             </div>
                                         )}
                                         {/* Show only Masuk photo if others are null, or all if available */}
