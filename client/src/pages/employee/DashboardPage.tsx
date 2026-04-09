@@ -148,9 +148,10 @@ export default function EmployeeDashboard() {
 
     const defaultShifts = [
         { id: -1, name: "Shift 1", checkInTime: "07:00", checkOutTime: "17:00" },
-        { id: -2, name: "Shift 2", checkInTime: "13:00", checkOutTime: "23:00" },
-        { id: -3, name: "Shift 3", checkInTime: "11:00", checkOutTime: "21:00" },
-        { id: -4, name: "longshift", checkInTime: "07:00", checkOutTime: "23:00" }
+        { id: -2, name: "Shift 2 (Siang)", checkInTime: "09:00", checkOutTime: "19:00", description: "Mulai 09:00-12:00, durasi 9 jam kerja" },
+        { id: -5, name: "Shift 2 (Kasir)", checkInTime: "15:00", checkOutTime: "23:00" },
+        { id: -3, name: "Shift 3", checkInTime: "13:00", checkOutTime: "23:00" },
+        { id: -4, name: "Longshift", checkInTime: "07:00", checkOutTime: "23:00" }
     ];
 
     const shiftList = backendShiftList && backendShiftList.length > 0 ? backendShiftList : defaultShifts;
@@ -337,10 +338,10 @@ export default function EmployeeDashboard() {
         let thresholdMinutes = sHour * 60 + sMinute;
 
         if (shiftId < 0) {
-             if (shiftName === 'Shift 2') thresholdMinutes = 13 * 60; // 13:00
-             else if (shiftName === 'Shift 3') thresholdMinutes = 11 * 60; // 11:00
-             else if (shiftName?.toLowerCase() === 'longshift') thresholdMinutes = 7 * 60; // 07:00
-             else if (shiftName === 'Shift 1') thresholdMinutes = 7 * 60; // 07:00
+             if (shiftName === 'Shift 2 (Siang)') thresholdMinutes = 12 * 60; // 12:00
+             else if (shiftName === 'Shift 2 (Kasir)') thresholdMinutes = 15 * 60; // 15:00
+             else if (shiftName === 'Shift 3') thresholdMinutes = 13 * 60; // 13:00
+             else if (shiftName === 'Shift 1' || shiftName?.toLowerCase() === 'longshift') thresholdMinutes = 7 * 60; // 07:00
         }
 
         const isLate = timeInMinutes > thresholdMinutes;
@@ -474,15 +475,24 @@ export default function EmployeeDashboard() {
         const currentShiftId = (today as any)?.shiftId;
         const currentShift = shiftList?.find((s: any) => s.id === currentShiftId) || (today as any);
 
-        if (currentShift?.checkOutTime) {
+        if (currentShift?.checkOutTime && currentShift?.name !== 'Shift 2 (Siang)') {
             const [eHour, eMinute] = currentShift.checkOutTime.split(':').map(Number);
             const endMinutes = eHour * 60 + eMinute;
             if (timeInMinutes < endMinutes) isEarly = true;
+        } else if (currentShift?.name === 'Shift 2 (Siang)' || (today as any)?.shift === 'Shift 2 (Siang)') {
+            // Flexible Shift 2 (Siang): 9 hours work + 1 hour break = 10 hours total from checkIn
+            if (today?.checkIn) {
+                const checkInDate = new Date(today.checkIn);
+                const diffMs = now.getTime() - checkInDate.getTime();
+                const diffHours = diffMs / (1000 * 60 * 60);
+                if (diffHours < 10) isEarly = true;
+            }
         } else {
-            const sName = currentShift?.shift || '';
-            if (sName === 'Shift 1' && hour < 15) isEarly = true;
-            else if (sName === 'Shift 2' && hour < 20) isEarly = true;
+            const sName = currentShift?.shift || currentShift?.name || '';
+            if (sName === 'Shift 1' && hour < 17) isEarly = true;
+            else if (sName === 'Shift 2 (Kasir)' && hour < 23) isEarly = true;
             else if (sName === 'Shift 3' && hour < 23) isEarly = true;
+            else if (sName?.toLowerCase() === 'longshift' && hour < 23) isEarly = true;
         }
 
         if (isEarly) {
