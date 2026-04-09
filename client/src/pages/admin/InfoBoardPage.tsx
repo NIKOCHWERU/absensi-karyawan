@@ -108,6 +108,11 @@ export default function InfoBoardPage() {
             form.reset();
             setSelectedImage(null);
         },
+        onError: (err: any) => {
+            toast({ title: "Gagal", description: err.message, variant: "destructive" });
+        }
+    });
+
     const updateMutation = useMutation({
         mutationFn: async (values: z.infer<typeof formSchema>) => {
             if (!editingAnnouncement) return;
