@@ -418,10 +418,12 @@ export default function InfoBoardPage() {
                                             </span>
                                         )}
                                     </div>
-                                    <div 
-                                        className="text-sm text-gray-600 line-clamp-3 leading-relaxed flex-1 overflow-hidden prose prose-sm max-w-none prose-p:my-3 prose-headings:my-4 prose-ul:my-2 prose-ol:my-2 prose-p:leading-relaxed"
-                                        dangerouslySetInnerHTML={{ __html: item.content }}
-                                    />
+                                    <div className="ql-snow">
+                                        <div 
+                                            className="ql-editor !p-0 text-sm text-gray-600 line-clamp-3 leading-relaxed flex-1 overflow-hidden prose prose-sm max-w-none prose-p:my-2 prose-headings:my-4 prose-ul:my-2 prose-ol:my-2 prose-p:leading-relaxed"
+                                            dangerouslySetInnerHTML={{ __html: item.content }}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         ))}
