@@ -58,13 +58,13 @@ function ShiftModal({
                 <div className="grid grid-cols-1 gap-3 py-4">
                     {isLoading ? (
                         <div className="text-center py-8 text-slate-400">
-                           <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
-                           Memuat daftar shift...
+                            <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                            Memuat daftar shift...
                         </div>
                     ) : shifts.length === 0 ? (
                         <div className="text-center py-8 text-slate-400">
-                           <p className="font-bold text-red-500 mb-2">Belum ada shift</p>
-                           <p className="text-sm">Silakan hubungi Admin untuk mengatur jadwal shift.</p>
+                            <p className="font-bold text-red-500 mb-2">Belum ada shift</p>
+                            <p className="text-sm">Silakan hubungi Admin untuk mengatur jadwal shift.</p>
                         </div>
                     ) : (
                         <>
@@ -94,24 +94,24 @@ function ShiftModal({
                                 </Button>
                             )}
                             {shifts.map(s => (
-                            <Button
-                                key={s.id}
-                                variant="outline"
-                                className="h-16 justify-between px-6 text-base border-2 hover:border-primary hover:bg-primary/5 transition-all group"
-                                onClick={() => onSelect(s.id, s.name)}
-                            >
-                                <div className="flex flex-col items-start text-left">
-                                    <span className="font-bold text-slate-900">{s.name}</span>
-                                    <span className="text-[10px] text-slate-500 font-mono leading-none mb-1">{s.checkInTime} - {s.checkOutTime}</span>
-                                    {s.description && (
-                                        <span className="text-[9px] text-orange-600 font-medium leading-tight">{s.description}</span>
-                                    )}
-                                </div>
-                                <div className="w-8 h-8 rounded-full bg-slate-100 group-hover:bg-primary/10 flex items-center justify-center">
-                                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-primary" />
-                                </div>
-                            </Button>
-                        ))}
+                                <Button
+                                    key={s.id}
+                                    variant="outline"
+                                    className="h-16 justify-between px-6 text-base border-2 hover:border-primary hover:bg-primary/5 transition-all group"
+                                    onClick={() => onSelect(s.id, s.name)}
+                                >
+                                    <div className="flex flex-col items-start text-left">
+                                        <span className="font-bold text-slate-900">{s.name}</span>
+                                        <span className="text-[10px] text-slate-500 font-mono leading-none mb-1">{s.checkInTime} - {s.checkOutTime}</span>
+                                        {s.description && (
+                                            <span className="text-[9px] text-orange-600 font-medium leading-tight">{s.description}</span>
+                                        )}
+                                    </div>
+                                    <div className="w-8 h-8 rounded-full bg-slate-100 group-hover:bg-primary/10 flex items-center justify-center">
+                                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-primary" />
+                                    </div>
+                                </Button>
+                            ))}
                         </>
                     )}
                 </div>
@@ -151,7 +151,7 @@ export default function EmployeeDashboard() {
 
     const defaultShifts = [
         { id: -1, name: "Shift 1", checkInTime: "07:00", checkOutTime: "17:00" },
-        { id: -2, name: "Shift 2 (Pramuniaga)", checkInTime: "09:00", checkOutTime: "18:00", description: "Masuk : 09.00 - 12.00 | Pulang : 9 jam dari jam masuk" },
+        { id: -2, name: "Shift 2 (Pramuniaga)", checkInTime: "09:00", checkOutTime: "-", description: "Masuk Kerja Antara Jam : 09.00 - 12.00 | Jam Pulang : 9 jam dari jam masuk kerja" },
         { id: -5, name: "Shift 2 (Kasir)", checkInTime: "15:00", checkOutTime: "23:00" },
         { id: -3, name: "Shift 3", checkInTime: "13:00", checkOutTime: "23:00" },
         { id: -4, name: "Longshift", checkInTime: "07:00", checkOutTime: "23:00" }
@@ -341,10 +341,10 @@ export default function EmployeeDashboard() {
         let thresholdMinutes = sHour * 60 + sMinute;
 
         if (shiftId < 0) {
-             if (shiftName === 'Shift 2 (Pramuniaga)') thresholdMinutes = 12 * 60; // 12:00
-             else if (shiftName === 'Shift 2 (Kasir)') thresholdMinutes = 15 * 60; // 15:00
-             else if (shiftName === 'Shift 3') thresholdMinutes = 13 * 60; // 13:00
-             else if (shiftName === 'Shift 1' || shiftName?.toLowerCase() === 'longshift') thresholdMinutes = 7 * 60; // 07:00
+            if (shiftName === 'Shift 2 (Pramuniaga)') thresholdMinutes = 12 * 60; // 12:00
+            else if (shiftName === 'Shift 2 (Kasir)') thresholdMinutes = 15 * 60; // 15:00
+            else if (shiftName === 'Shift 3') thresholdMinutes = 13 * 60; // 13:00
+            else if (shiftName === 'Shift 1' || shiftName?.toLowerCase() === 'longshift') thresholdMinutes = 7 * 60; // 07:00
         }
 
         const isLate = timeInMinutes > thresholdMinutes;
@@ -473,7 +473,7 @@ export default function EmployeeDashboard() {
         const hour = now.getHours();
         const minute = now.getMinutes();
         const timeInMinutes = hour * 60 + minute;
-        
+
         let isEarly = false;
         const currentShiftId = (today as any)?.shiftId;
         const currentShift = shiftList?.find((s: any) => s.id === currentShiftId) || (today as any);
