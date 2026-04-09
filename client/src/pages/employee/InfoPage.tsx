@@ -142,7 +142,10 @@ export default function InfoPage() {
                   {!ann.imageUrl && (
                     <h3 className="font-bold text-gray-800 text-base mb-2">{ann.title}</h3>
                   )}
-                  <p className="text-sm text-gray-500 line-clamp-2 mb-3">{ann.content}</p>
+                  <div 
+                    className="text-sm text-gray-500 line-clamp-2 mb-3 prose prose-sm max-w-none prose-p:my-0.5"
+                    dangerouslySetInnerHTML={{ __html: ann.content }}
+                  />
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] text-gray-400 flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
@@ -201,9 +204,10 @@ export default function InfoPage() {
               <Calendar className="w-3 h-3" />
               {safeFormat(selectedAnnouncement?.createdAt, "EEEE, dd MMMM yyyy • HH:mm")}
             </span>
-            <div className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">
-              {selectedAnnouncement?.content}
-            </div>
+            <div 
+              className="text-sm text-gray-600 leading-relaxed prose prose-sm max-w-none prose-p:my-2 prose-headings:my-3 prose-ul:my-2 prose-ol:my-2"
+              dangerouslySetInnerHTML={{ __html: selectedAnnouncement?.content || '' }}
+            />
 
             {/* Action Buttons */}
             <div className="flex gap-2 border-t pt-4">

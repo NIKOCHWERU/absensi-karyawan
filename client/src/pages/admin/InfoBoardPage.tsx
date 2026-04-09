@@ -24,6 +24,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 // Schema for form since we handle file upload manually
 const formSchema = z.object({
@@ -56,6 +58,23 @@ export default function InfoBoardPage() {
             expiresAt: "",
         }
     });
+
+    const quillModules = {
+        toolbar: [
+            [{ 'header': [1, 2, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'color': [] }, { 'background': [] }],
+            [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+            ['clean']
+        ],
+    };
+
+    const quillFormats = [
+        'header',
+        'bold', 'italic', 'underline', 'strike',
+        'color', 'background',
+        'list', 'bullet'
+    ];
 
     const createMutation = useMutation({
         mutationFn: async (values: z.infer<typeof formSchema>) => {
@@ -181,7 +200,19 @@ export default function InfoBoardPage() {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Konten</FormLabel>
-                                            <FormControl><Textarea {...field} placeholder="Isi pengumuman..." className="resize-none h-32" /></FormControl>
+                                            <FormControl>
+                                                <div className="bg-white rounded-md overflow-hidden border border-input focus-within:ring-2 focus-within:ring-ring">
+                                                    <ReactQuill
+                                                        theme="snow"
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        modules={quillModules}
+                                                        formats={quillFormats}
+                                                        placeholder="Isi pengumuman..."
+                                                        className="h-48 mb-12"
+                                                    />
+                                                </div>
+                                            </FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -288,9 +319,10 @@ export default function InfoBoardPage() {
                                             </span>
                                         )}
                                     </div>
-                                    <p className="text-sm text-gray-600 line-clamp-3 leading-relaxed whitespace-pre-wrap flex-1">
-                                        {item.content}
-                                    </p>
+                                    <div 
+                                        className="text-sm text-gray-600 line-clamp-3 leading-relaxed flex-1 overflow-hidden prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1"
+                                        dangerouslySetInnerHTML={{ __html: item.content }}
+                                    />
                                 </div>
                             </div>
                         ))}
