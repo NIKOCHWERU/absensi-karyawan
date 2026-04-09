@@ -7,6 +7,7 @@ import {
     ArrowLeft,
     Plus,
     Trash2,
+    Pencil,
     Calendar,
     Image as ImageIcon,
     Loader2,
@@ -38,6 +39,7 @@ export default function InfoBoardPage() {
     const [, setLocation] = useLocation();
     const { toast } = useToast();
     const [open, setOpen] = useState(false);
+    const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
 
     const { data: announcements, isLoading } = useQuery<Announcement[]>({
@@ -106,6 +108,39 @@ export default function InfoBoardPage() {
             form.reset();
             setSelectedImage(null);
         },
+    const updateMutation = useMutation({
+        mutationFn: async (values: z.infer<typeof formSchema>) => {
+            if (!editingAnnouncement) return;
+
+            const formData = new FormData();
+            formData.append("title", values.title);
+            formData.append("content", values.content);
+            if (values.expiresAt !== undefined) {
+                formData.append("expiresAt", values.expiresAt);
+            }
+            if (selectedImage) {
+                formData.append("image", selectedImage);
+            }
+
+            const res = await fetch(`/api/announcements/${editingAnnouncement.id}`, {
+                method: "PATCH",
+                body: formData,
+            });
+
+            if (!res.ok) {
+                const error = await res.json();
+                throw new Error(error.message || "Gagal memperbarui pengumuman");
+            }
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["/api/announcements"] });
+            toast({ title: "Berhasil", description: "Pengumuman berhasil diperbarui" });
+            setOpen(false);
+            setEditingAnnouncement(null);
+            form.reset();
+            setSelectedImage(null);
+        },
         onError: (err: any) => {
             toast({ title: "Gagal", description: err.message, variant: "destructive" });
         }
@@ -138,6 +173,29 @@ export default function InfoBoardPage() {
     // Fullscreen Image State
     const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
 
+    const handleOpenEdit = (ann: Announcement) => {
+        setEditingAnnouncement(ann);
+        form.reset({
+            title: ann.title,
+            content: ann.content,
+            expiresAt: ann.expiresAt ? format(new Date(ann.expiresAt), "yyyy-MM-dd") : "",
+        });
+        setOpen(true);
+    };
+
+    const handleCloseModal = (isOpen: boolean) => {
+        setOpen(isOpen);
+        if (!isOpen) {
+            setEditingAnnouncement(null);
+            form.reset({
+                title: "",
+                content: "",
+                expiresAt: "",
+            });
+            setSelectedImage(null);
+        }
+    };
+
     // Event listener for opening images inline
     useState(() => {
         const handleOpenImage = (e: any) => setFullscreenImage(e.detail);
@@ -167,7 +225,7 @@ export default function InfoBoardPage() {
                     </Button>
                     <h1 className="text-xl font-bold text-gray-800">Papan Informasi</h1>
                 </div>
-                <Dialog open={open} onOpenChange={setOpen}>
+                <Dialog open={open} onOpenChange={handleCloseModal}>
                     <DialogTrigger asChild>
                         <Button className="bg-orange-600 hover:bg-orange-700 text-white">
                             <Plus className="mr-2 h-4 w-4" />
@@ -176,13 +234,22 @@ export default function InfoBoardPage() {
                     </DialogTrigger>
                     <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
-                            <DialogTitle>Buat Pengumuman Baru</DialogTitle>
+                            <DialogTitle>{editingAnnouncement ? "Edit Pengumuman" : "Buat Pengumuman Baru"}</DialogTitle>
                             <DialogDescription>
-                                Isi formulir di bawah ini untuk menambahkan pengumuman baru.
+                                {editingAnnouncement ? "Perbarui informasi pengumuman di bawah ini." : "Isi formulir di bawah ini untuk menambahkan pengumuman baru."}
                             </DialogDescription>
                         </DialogHeader>
                         <Form {...form}>
-                            <form onSubmit={form.handleSubmit((d) => createMutation.mutate(d))} className="space-y-4">
+                            <form 
+                                onSubmit={form.handleSubmit((d) => {
+                                    if (editingAnnouncement) {
+                                        updateMutation.mutate(d);
+                                    } else {
+                                        createMutation.mutate(d);
+                                    }
+                                })} 
+                                className="space-y-4"
+                            >
                                 <FormField
                                     control={form.control}
                                     name="title"
@@ -242,9 +309,9 @@ export default function InfoBoardPage() {
                                     <p className="text-xs text-muted-foreground">Format: JPG, PNG. Maks 5MB.</p>
                                 </div>
 
-                                <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white" disabled={createMutation.isPending}>
-                                    {createMutation.isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
-                                    Simpan Pengumuman
+                                <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white" disabled={createMutation.isPending || updateMutation.isPending}>
+                                    {(createMutation.isPending || updateMutation.isPending) ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
+                                    {editingAnnouncement ? "Perbarui Pengumuman" : "Simpan Pengumuman"}
                                 </Button>
                             </form>
                         </Form>
@@ -277,30 +344,24 @@ export default function InfoBoardPage() {
                                         </div>
                                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent pointer-events-none" />
                                         <h3 className="absolute bottom-3 left-4 right-12 text-white font-bold text-base leading-tight drop-shadow-lg line-clamp-2 pointer-events-none">{item.title}</h3>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="absolute top-2 right-2 h-8 w-8 text-white bg-black/30 hover:bg-red-500 hover:text-white rounded-full z-10"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                if (confirm("Hapus pengumuman ini?")) {
-                                                    deleteMutation.mutate(item.id);
-                                                }
-                                            }}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                )}
-                                <div className="p-4 flex-1 flex flex-col">
-                                    {!item.imageUrl && (
-                                        <div className="flex justify-between items-start mb-2">
-                                            <h3 className="font-bold text-gray-800 text-base line-clamp-2">{item.title}</h3>
+                                        <div className="absolute top-2 right-2 flex gap-1 z-10">
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className="h-8 w-8 text-red-500 hover:bg-red-50 -mr-2 -mt-1 shrink-0"
-                                                onClick={() => {
+                                                className="h-8 w-8 text-white bg-black/30 hover:bg-orange-500 hover:text-white rounded-full"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleOpenEdit(item);
+                                                }}
+                                            >
+                                                <Pencil className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-white bg-black/30 hover:bg-red-500 hover:text-white rounded-full"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
                                                     if (confirm("Hapus pengumuman ini?")) {
                                                         deleteMutation.mutate(item.id);
                                                     }
@@ -308,6 +369,39 @@ export default function InfoBoardPage() {
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
+                                        </div>
+                                    </div>
+                                )}
+                                <div className="p-4 flex-1 flex flex-col">
+                                    {!item.imageUrl && (
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h3 className="font-bold text-gray-800 text-base line-clamp-2">{item.title}</h3>
+                                            <div className="flex gap-1 -mr-2 -mt-1 shrink-0">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-orange-500 hover:bg-orange-50"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleOpenEdit(item);
+                                                    }}
+                                                >
+                                                    <Pencil className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-red-500 hover:bg-red-50"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (confirm("Hapus pengumuman ini?")) {
+                                                            deleteMutation.mutate(item.id);
+                                                        }
+                                                    }}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
                                         </div>
                                     )}
                                     <div className="flex items-center gap-2 text-[10px] text-gray-400 mb-3">
@@ -320,7 +414,7 @@ export default function InfoBoardPage() {
                                         )}
                                     </div>
                                     <div 
-                                        className="text-sm text-gray-600 line-clamp-3 leading-relaxed flex-1 overflow-hidden prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1"
+                                        className="text-sm text-gray-600 line-clamp-3 leading-relaxed flex-1 overflow-hidden prose prose-sm max-w-none prose-p:my-3 prose-headings:my-4 prose-ul:my-2 prose-ol:my-2 prose-p:leading-relaxed"
                                         dangerouslySetInnerHTML={{ __html: item.content }}
                                     />
                                 </div>

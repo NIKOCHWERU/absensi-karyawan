@@ -180,6 +180,16 @@ export const api = {
         401: errorSchemas.unauthorized,
       },
     },
+    update: {
+      method: 'PATCH' as const,
+      path: '/api/announcements/:id',
+      input: insertAnnouncementSchema.partial(),
+      responses: {
+        200: z.custom<typeof announcements.$inferSelect>(),
+        400: errorSchemas.validation,
+        401: errorSchemas.unauthorized,
+      },
+    },
   },
   admin: {
     users: {

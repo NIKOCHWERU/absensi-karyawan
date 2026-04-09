@@ -173,6 +173,12 @@ export class DatabaseStorage implements IStorage {
     await db.delete(announcements).where(eq(announcements.id, id));
   }
 
+  async updateAnnouncement(id: number, updates: Partial<Announcement>): Promise<Announcement> {
+    await db.update(announcements).set(updates).where(eq(announcements.id, id));
+    const [record] = await db.select().from(announcements).where(eq(announcements.id, id));
+    return record!;
+  }
+
   // Complaints
   async createComplaint(data: InsertComplaint): Promise<Complaint> {
     const [result] = await db.insert(complaints).values(data);
@@ -344,6 +350,7 @@ export interface IStorage {
   createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement>;
   getAnnouncements(): Promise<Announcement[]>;
   deleteAnnouncement(id: number): Promise<void>;
+  updateAnnouncement(id: number, updates: Partial<Announcement>): Promise<Announcement>;
 
   // Complaint methods
   createComplaint(data: InsertComplaint): Promise<Complaint>;

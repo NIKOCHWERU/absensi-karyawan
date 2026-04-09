@@ -143,7 +143,7 @@ export default function InfoPage() {
                     <h3 className="font-bold text-gray-800 text-base mb-2">{ann.title}</h3>
                   )}
                   <div 
-                    className="text-sm text-gray-500 line-clamp-2 mb-3 prose prose-sm max-w-none prose-p:my-0.5"
+                    className="text-sm text-gray-500 line-clamp-2 mb-3 prose prose-sm max-w-none prose-p:my-3 prose-p:leading-relaxed"
                     dangerouslySetInnerHTML={{ __html: ann.content }}
                   />
                   <div className="flex items-center justify-between">
@@ -205,7 +205,7 @@ export default function InfoPage() {
               {safeFormat(selectedAnnouncement?.createdAt, "EEEE, dd MMMM yyyy • HH:mm")}
             </span>
             <div 
-              className="text-sm text-gray-600 leading-relaxed prose prose-sm max-w-none prose-p:my-2 prose-headings:my-3 prose-ul:my-2 prose-ol:my-2"
+              className="text-sm text-gray-600 leading-relaxed prose prose-sm max-w-none prose-p:my-3 prose-headings:my-4 prose-ul:my-2 prose-ol:my-2 prose-p:leading-relaxed"
               dangerouslySetInnerHTML={{ __html: selectedAnnouncement?.content || '' }}
             />
 

@@ -1433,6 +1433,38 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/announcements/:id", upload.single('image'), async (req, res) => {
+    if (!isAdminRole(req)) return res.sendStatus(401);
+
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+
+      const updates: any = {};
+      if (req.body.title) updates.title = req.body.title;
+      if (req.body.content) updates.content = req.body.content;
+      if (req.body.expiresAt) {
+        updates.expiresAt = req.body.expiresAt === "" ? null : new Date(req.body.expiresAt);
+      } else if (req.body.expiresAt === "") {
+        updates.expiresAt = null;
+      }
+
+      const multerReq = req as any;
+      if (multerReq.file) {
+        const filename = `${Date.now()}-${multerReq.file.originalname}`;
+        const filepath = path.join(uploadsDir, filename);
+        fs.writeFileSync(filepath, multerReq.file.buffer);
+        updates.imageUrl = `/uploads/${filename}`;
+      }
+
+      const announcement = await storage.updateAnnouncement(id, updates);
+      res.json(announcement);
+    } catch (e) {
+      console.error("Announcement Update Error:", e);
+      res.status(400).json({ message: "Invalid input or server error" });
+    }
+  });
+
   // Admin: Get complaint stats
   app.get("/api/admin/complaints/stats", async (req, res) => {
     if (!isAdminRole(req)) return res.sendStatus(401);
