@@ -100,9 +100,12 @@ function ShiftModal({
                                 className="h-16 justify-between px-6 text-base border-2 hover:border-primary hover:bg-primary/5 transition-all group"
                                 onClick={() => onSelect(s.id, s.name)}
                             >
-                                <div className="flex flex-col items-start">
+                                <div className="flex flex-col items-start text-left">
                                     <span className="font-bold text-slate-900">{s.name}</span>
-                                    <span className="text-xs text-slate-500 font-mono">{s.checkInTime} - {s.checkOutTime}</span>
+                                    <span className="text-[10px] text-slate-500 font-mono leading-none mb-1">{s.checkInTime} - {s.checkOutTime}</span>
+                                    {s.description && (
+                                        <span className="text-[9px] text-orange-600 font-medium leading-tight">{s.description}</span>
+                                    )}
                                 </div>
                                 <div className="w-8 h-8 rounded-full bg-slate-100 group-hover:bg-primary/10 flex items-center justify-center">
                                     <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-primary" />
@@ -148,7 +151,7 @@ export default function EmployeeDashboard() {
 
     const defaultShifts = [
         { id: -1, name: "Shift 1", checkInTime: "07:00", checkOutTime: "17:00" },
-        { id: -2, name: "Shift 2 (Siang)", checkInTime: "09:00", checkOutTime: "19:00", description: "Mulai 09:00-12:00, durasi 9 jam kerja" },
+        { id: -2, name: "Shift 2 (Pramuniaga)", checkInTime: "09:00", checkOutTime: "18:00", description: "Masuk : 09.00 - 12.00 | Pulang : 9 jam dari jam masuk" },
         { id: -5, name: "Shift 2 (Kasir)", checkInTime: "15:00", checkOutTime: "23:00" },
         { id: -3, name: "Shift 3", checkInTime: "13:00", checkOutTime: "23:00" },
         { id: -4, name: "Longshift", checkInTime: "07:00", checkOutTime: "23:00" }
@@ -338,7 +341,7 @@ export default function EmployeeDashboard() {
         let thresholdMinutes = sHour * 60 + sMinute;
 
         if (shiftId < 0) {
-             if (shiftName === 'Shift 2 (Siang)') thresholdMinutes = 12 * 60; // 12:00
+             if (shiftName === 'Shift 2 (Pramuniaga)') thresholdMinutes = 12 * 60; // 12:00
              else if (shiftName === 'Shift 2 (Kasir)') thresholdMinutes = 15 * 60; // 15:00
              else if (shiftName === 'Shift 3') thresholdMinutes = 13 * 60; // 13:00
              else if (shiftName === 'Shift 1' || shiftName?.toLowerCase() === 'longshift') thresholdMinutes = 7 * 60; // 07:00
@@ -475,17 +478,17 @@ export default function EmployeeDashboard() {
         const currentShiftId = (today as any)?.shiftId;
         const currentShift = shiftList?.find((s: any) => s.id === currentShiftId) || (today as any);
 
-        if (currentShift?.checkOutTime && currentShift?.name !== 'Shift 2 (Siang)') {
+        if (currentShift?.checkOutTime && currentShift?.name !== 'Shift 2 (Pramuniaga)') {
             const [eHour, eMinute] = currentShift.checkOutTime.split(':').map(Number);
             const endMinutes = eHour * 60 + eMinute;
             if (timeInMinutes < endMinutes) isEarly = true;
-        } else if (currentShift?.name === 'Shift 2 (Siang)' || (today as any)?.shift === 'Shift 2 (Siang)') {
-            // Flexible Shift 2 (Siang): 9 hours work + 1 hour break = 10 hours total from checkIn
+        } else if (currentShift?.name === 'Shift 2 (Pramuniaga)' || (today as any)?.shift === 'Shift 2 (Pramuniaga)') {
+            // Flexible Shift 2 (Pramuniaga): 9 hours total from checkIn
             if (today?.checkIn) {
                 const checkInDate = new Date(today.checkIn);
                 const diffMs = now.getTime() - checkInDate.getTime();
                 const diffHours = diffMs / (1000 * 60 * 60);
-                if (diffHours < 10) isEarly = true;
+                if (diffHours < 9) isEarly = true;
             }
         } else {
             const sName = currentShift?.shift || currentShift?.name || '';

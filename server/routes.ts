@@ -325,7 +325,7 @@ export async function registerRoutes(
         // If thresholdMinutes wasn't changed by shiftData, use legacy/hardcoded rules
         // Legacy/Hardcoded rules for backward compatibility
         if (!shiftId || thresholdMinutes === 420) {
-          if (shiftName === 'Shift 2 (Siang)') thresholdMinutes = 720; // 12:00
+          if (shiftName === 'Shift 2 (Pramuniaga)') thresholdMinutes = 720; // 12:00
           else if (shiftName === 'Shift 2 (Kasir)') thresholdMinutes = 900; // 15:00
           else if (shiftName === 'Shift 3') thresholdMinutes = 780; // 13:00
           else if (shiftName === 'Shift 1' || shiftName?.toLowerCase() === 'longshift') thresholdMinutes = 420; // 07:00
