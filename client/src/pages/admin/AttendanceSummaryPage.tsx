@@ -163,8 +163,7 @@ export default function AttendanceSummaryPage() {
                 sick,
                 permission,
                 alpha: alphaCount,
-                totalAttendance: present + late,
-                percentage: Math.round(((present + late) / totalWorkingDays) * 100) || 0
+                totalAttendance: present + late
             }
         };
     });
@@ -178,7 +177,7 @@ export default function AttendanceSummaryPage() {
             case 'sick': valA = a.stats.sick; valB = b.stats.sick; break;
             case 'permission': valA = a.stats.permission; valB = b.stats.permission; break;
             case 'alpha': valA = a.stats.alpha; valB = b.stats.alpha; break;
-            case 'percentage': valA = a.stats.percentage; valB = b.stats.percentage; break;
+
             default: valA = a.fullName.toLowerCase(); valB = b.fullName.toLowerCase();
         }
 
@@ -574,16 +573,12 @@ export default function AttendanceSummaryPage() {
                                     <TableHead className="text-center bg-red-50 text-red-700 w-[100px] cursor-pointer hover:bg-red-100" onClick={() => toggleSort('alpha')}>
                                         <div className="flex items-center justify-center gap-1">Alpha <ArrowUpDown className="h-3 w-3" /></div>
                                     </TableHead>
-                                    <TableHead className="text-center w-[150px] cursor-pointer hover:bg-gray-100" onClick={() => toggleSort('percentage')}>
-                                        <div className="flex items-center justify-center gap-1">Persentase <ArrowUpDown className="h-3 w-3" /></div>
-                                    </TableHead>
+
                                     <TableHead className="text-right">Aksi</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {sortedEmployees.map((emp, index) => {
-                                    const attendancePercentage = emp.stats.percentage;
-
                                     return (
                                         <TableRow key={emp.id} className="hover:bg-gray-50/50">
                                             <TableCell className="text-gray-500">{index + 1}</TableCell>
@@ -608,20 +603,7 @@ export default function AttendanceSummaryPage() {
                                             <TableCell className="text-center font-mono font-bold text-red-600 bg-red-50/30">
                                                 {emp.stats.alpha}
                                             </TableCell>
-                                            <TableCell className="text-center">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <div className="h-2 w-16 bg-gray-100 rounded-full overflow-hidden">
-                                                        <div
-                                                            className={`h-full rounded-full ${attendancePercentage >= 90 ? 'bg-green-500' :
-                                                                attendancePercentage >= 75 ? 'bg-yellow-500' :
-                                                                    'bg-red-500'
-                                                                }`}
-                                                            style={{ width: `${Math.min(100, attendancePercentage)}%` }}
-                                                        />
-                                                    </div>
-                                                    <span className="text-xs font-semibold w-8">{attendancePercentage}%</span>
-                                                </div>
-                                            </TableCell>
+
                                             <TableCell className="text-right">
                                                 <Button variant="ghost" size="sm" onClick={() => setLocation("/admin/employees")}>
                                                     Detail
