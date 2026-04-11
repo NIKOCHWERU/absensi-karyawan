@@ -159,7 +159,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
 
-                            {user?.role === 'superadmin' && (
+                            {(user?.role === 'superadmin' || user?.role === 'admin') && (
                                 <SidebarMenuItem>
                                     <SidebarMenuButton
                                         tooltip="Pengaduan Karyawan"

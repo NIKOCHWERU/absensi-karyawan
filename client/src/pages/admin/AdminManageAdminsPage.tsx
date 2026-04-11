@@ -48,6 +48,7 @@ export default function AdminManageAdminsPage() {
   const [selectedAdmin, setSelectedAdmin] = useState<User | null>(null);
   const [sortField, setSortField] = useState<string>('fullName');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [open, setOpen] = useState(false);
 
   const toggleSort = (field: string) => {
     if (sortField === field) {

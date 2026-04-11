@@ -118,7 +118,7 @@ function Router() {
         <ProtectedRoute component={() => <AdminLayout><InfoBoardPage /></AdminLayout>} adminOnly />
       </Route>
       <Route path="/admin/complaints">
-        <ProtectedRoute component={() => <AdminLayout><AdminComplaints /></AdminLayout>} superadminOnly />
+        <ProtectedRoute component={() => <AdminLayout><AdminComplaints /></AdminLayout>} adminOnly />
       </Route>
       <Route path="/admin/leave">
         <ProtectedRoute component={() => <AdminLayout><AdminLeave /></AdminLayout>} adminOnly />
