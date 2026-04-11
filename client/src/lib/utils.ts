@@ -1,5 +1,7 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 
 export const toTitleCase = (str: string | null | undefined) => {
   if (!str) return "-";
@@ -160,3 +162,17 @@ export function uploadFileWithProgress(
     xhr.send(formData);
   });
 }
+
+/**
+ * Formats a date into a long string in Indonesian format.
+ * Example: Senin, 1 Januari 2026
+ */
+export const formatLongDate = (date: Date | string | number | null | undefined) => {
+  if (!date) return "-";
+  try {
+    return format(new Date(date), "EEEE, d MMMM yyyy", { locale: id });
+  } catch (err) {
+    console.error("Error formatting date:", err);
+    return "-";
+  }
+};

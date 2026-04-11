@@ -2,10 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { User, Attendance } from "@shared/schema";
 import { format, subMonths, addMonths, isSameMonth, setDate, isAfter, isBefore, isEqual, differenceInBusinessDays, startOfMonth, endOfMonth, isWeekend, startOfWeek, endOfWeek, startOfDay, endOfDay, subDays, addDays } from "date-fns";
 import { id } from "date-fns/locale";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, FileDown, ArrowLeft, Search, Filter, ArrowUpDown, Image as ImageIcon } from "lucide-react";
+import { Search, Image as ImageIcon, CalendarIcon, ArrowUpDown, ChevronLeft, ChevronRight, FileDown, ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,30 +17,44 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import { cn, formatLongDate } from "@/lib/utils";
 
 export default function AttendanceSummaryPage() {
     const [, setLocation] = useLocation();
     // State for selected period (e.g., Feb 2026 means Jan 26 - Feb 25)
     const [targetDate, setTargetDate] = useState(new Date());
+    const [customStartDate, setCustomStartDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+    const [customEndDate, setCustomEndDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+    const [logoBase64, setLogoBase64] = useState("");
+
+    useEffect(() => {
+        // Pre-fetch logo to avoid async delays during export that trigger popup blockers
+        fetch('/logo_elok_buah.jpg')
+            .then(res => res.blob())
+            .then(blob => {
+                const reader = new FileReader();
+                reader.onload = () => setLogoBase64(reader.result as string);
+                reader.readAsDataURL(blob);
+            })
+            .catch(() => {});
+    }, []);
     const [searchTerm, setSearchTerm] = useState("");
     const [sortField, setSortField] = useState<string>("fullName");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
     const { data: users } = useQuery<User[]>({
         queryKey: ["/api/admin/users"],
-        refetchInterval: 5000,
     });
 
     const { data: allAttendance } = useQuery<Attendance[]>({
         queryKey: ["/api/attendance"],
-        refetchInterval: 5000,
     });
 
-    const [reportType, setReportType] = useState<"daily" | "weekly" | "monthly">("daily");
+    const [reportType, setReportType] = useState<"daily" | "weekly" | "monthly" | "custom">("daily");
 
     // Calculate Period Range
-    let startDate: Date;
-    let endDate: Date;
+    let startDate: Date = startOfDay(new Date());
+    let endDate: Date = endOfDay(new Date());
 
     if (reportType === "daily") {
         startDate = startOfDay(targetDate);
@@ -48,6 +62,9 @@ export default function AttendanceSummaryPage() {
     } else if (reportType === "weekly") {
         startDate = startOfWeek(targetDate, { weekStartsOn: 1 }); // Monday
         endDate = endOfWeek(targetDate, { weekStartsOn: 1 });
+    } else if (reportType === "custom") {
+        startDate = startOfDay(new Date(customStartDate));
+        endDate = endOfDay(new Date(customEndDate));
     } else {
         // Default: 26th of previous month to 25th of current month
         startDate = new Date(targetDate.getFullYear(), targetDate.getMonth() - 1, 26);
@@ -180,209 +197,262 @@ export default function AttendanceSummaryPage() {
     };
 
     const handleExport = () => {
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) return;
-
-        let tableHeader: string;
-        let tableRows: string;
-
-        if (reportType === 'monthly') {
-            tableHeader = `
-                <tr>
-                    <th style="width: 40px;">No</th>
-                    <th>Nama Karyawan</th>
-                    <th style="text-align: center; width: 60px;">Hadir</th>
-                    <th style="text-align: center; width: 60px;">Telat</th>
-                    <th style="text-align: center; width: 60px;">Sakit</th>
-                    <th style="text-align: center; width: 60px;">Izin</th>
-                    <th style="text-align: center; width: 60px;">Alpha</th>
-                    <th style="text-align: center; width: 80px;">Persentase</th>
-                </tr>
-            `;
-            tableRows = sortedEmployees.map((emp, index) => `
-                <tr>
-                    <td>${index + 1}</td>
-                    <td>
-                        <div style="font-weight: 600;">${emp.fullName}</div>
-                        <div style="font-size: 10px; color: #64748b;">${emp.nik || '-'}</div>
-                    </td>
-                    <td style="text-align: center;">${emp.stats.present}</td>
-                    <td style="text-align: center;">${emp.stats.late}</td>
-                    <td style="text-align: center;">${emp.stats.sick}</td>
-                    <td style="text-align: center;">${emp.stats.permission}</td>
-                    <td style="text-align: center;">${emp.stats.alpha}</td>
-                    <td style="text-align: center; font-weight: bold;">${emp.stats.percentage}%</td>
-                </tr>
-            `).join('');
+        let periodStr = '';
+        if (reportType === 'daily') {
+            periodStr = formatLongDate(targetDate).toUpperCase();
+        } else if (reportType === 'weekly') {
+            periodStr = `${format(startDate, "d MMMM yyyy", { locale: id })} - ${format(endDate, "d MMMM yyyy", { locale: id })}`.toUpperCase();
+        } else if (reportType === 'custom') {
+            periodStr = `${format(startDate, "d MMMM yyyy", { locale: id })} - ${format(endDate, "d MMMM yyyy", { locale: id })}`.toUpperCase();
         } else {
-            // Weekly or Daily: Show detailed records
-            tableHeader = `
-                <tr>
-                    <th style="width: 30px;">No</th>
-                    <th>Tanggal</th>
-                    <th>Nama Karyawan</th>
-                    <th>Masuk</th>
-                    <th>Istirahat</th>
-                    <th>Selesai</th>
-                    <th>Pulang</th>
-                    <th>Jam Kerja</th>
-                    <th>Total Istirahat</th>
-                    <th>Status</th>
-                    <th>Keterangan</th>
-                </tr>
-            `;
-
-            const calculateHours = (start?: Date | string | null, end?: Date | string | null) => {
-                if (!start || !end) return 0;
-                return Math.floor(Math.abs(new Date(end).getTime() - new Date(start).getTime()) / 60000);
-            };
-
-            const formatDur = (minutes: number) => {
-                if (minutes <= 0) return "-";
-                const h = Math.floor(minutes / 60);
-                const m = minutes % 60;
-                return `${h}j ${m}m`;
-            };
-
-            const allRecords: any[] = [];
-            sortedEmployees.forEach(emp => {
-                const records = getAttendanceForPeriod(emp.id);
-                records.forEach(r => {
-                    allRecords.push({ ...r, employeeName: emp.fullName });
-                });
-            });
-
-            // Sort by date then name
-            allRecords.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime() || a.employeeName.localeCompare(b.employeeName));
-
-            tableRows = allRecords.map((row, index) => {
-                let workMins = calculateHours(row.checkIn, row.checkOut);
-                if (row.permitExitAt && row.permitResumeAt) {
-                    const permitMins = calculateHours(row.permitExitAt, row.permitResumeAt);
-                    workMins = Math.max(0, workMins - permitMins);
-                }
-                const breakMins = calculateHours(row.breakStart, row.breakEnd);
-                const netMins = Math.max(0, workMins - breakMins);
-
-                return `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td>${format(new Date(row.date), "dd/MM/yyyy")}</td>
-                        <td>${row.employeeName}</td>
-                        <td>${row.checkIn ? format(new Date(row.checkIn), "HH:mm") : "-"}</td>
-                        <td>${row.breakStart ? format(new Date(row.breakStart), "HH:mm") : "-"}</td>
-                        <td>${row.breakEnd ? format(new Date(row.breakEnd), "HH:mm") : "-"}</td>
-                        <td>${row.checkOut ? format(new Date(row.checkOut), "HH:mm") : "-"}</td>
-                        <td><b>${formatDur(netMins)}</b></td>
-                        <td>${formatDur(breakMins)}</td>
-                        <td>${(row.status === 'present' ? 'Hadir' :
-                        row.status === 'late' ? 'Telat' :
-                            row.status === 'sick' ? 'Sakit' :
-                                row.status === 'permission' ? 'Izin' :
-                                    row.status === 'absent' ? 'Alpha' : row.status) +
-                    ((row as any).sessionNumber > 1 ? ` (Sesi ${(row as any).sessionNumber})` : '')
-                    }</td>
-                        <td>${row.notes || "-"}</td>
-                    </tr>
-                `;
-            }).join('');
+            periodStr = format(targetDate, "MMMM yyyy", { locale: id }).toUpperCase();
         }
 
-        const html = `
-            <html>
-                <head>
-                    <title>Laporan Absensi Karyawan - ${format(targetDate, "MMMM yyyy", { locale: id })}</title>
-                    <style>
-                        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; padding: 40px; color: #1e293b; }
-                        .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; margin-bottom: 30px; }
-                        .logo-section { display: flex; align-items: center; gap: 15px; }
-                        .logo-placeholder { width: 44px; height: 44px; background: #ea580c; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; }
-                        .company-info h1 { margin: 0; font-size: 20px; color: #0f172a; }
-                        .company-info p { margin: 2px 0 0; color: #64748b; font-size: 13px; }
-                        .report-title { text-align: center; margin-bottom: 30px; }
-                        .report-title h2 { margin: 0; font-size: 22px; color: #0f172a; }
-                        .report-title p { margin: 5px 0 0; color: #64748b; font-size: 14px; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
-                        th { background: #f8fafc; color: #475569; font-weight: 600; text-align: left; padding: 12px 8px; border: 1px solid #e2e8f0; }
-                        td { padding: 10px 8px; border: 1px solid #e2e8f0; color: #334155; }
-                        .footer { margin-top: 50px; font-size: 10px; color: #94a3b8; text-align: right; }
-                        .signature-section { 
-                            margin-top: 80px; 
-                            display: flex; 
-                            justify-content: space-between; 
-                            padding: 0 50px;
-                        }
-                        .signature-box { 
-                            text-align: center; 
-                            width: 200px;
-                        }
-                        .signature-box p { 
-                            margin-bottom: 60px; 
-                            font-weight: bold; 
-                            font-size: 12px;
-                            color: #475569;
-                        }
-                        .signature-line { 
-                            border-top: 1.5px solid #475569; 
-                            padding-top: 10px;
-                            font-weight: bold;
-                            font-size: 14px;
-                            color: #1e293b;
-                        }
-                        @media print {
-                            body { padding: 0; }
-                            .no-print { display: none; }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <div class="logo-section">
-                            <div class="logo-placeholder">A</div>
-                            <div class="company-info">
-                                <h1>PT ELOK JAYA ABADHI</h1>
-                                <p>Sistem Manajemen Kehadiran Digital</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="report-title">
-                        <h2>LAPORAN REKAPITULASI ABSENSI</h2>
-                        <p>Tipe: ${reportType === 'daily' ? 'Harian' : reportType === 'weekly' ? 'Mingguan' : 'Bulanan'}</p>
-                        <p>Periode: ${format(startDate, "EEEE, d MMM yyyy", { locale: id })} - ${format(endDate, "EEEE, d MMM yyyy", { locale: id })}</p>
-                    </div>
-                    <table>
-                        <thead>
-                            ${tableHeader}
-                        </thead>
-                        <tbody>
-                            ${tableRows}
-                        </tbody>
-                    </table>
-                    <div class="signature-section">
-                        <div class="signature-box">
-                            <p>CHECKED BY</p>
-                            <div class="signature-line">NIKO</div>
-                        </div>
-                        <div class="signature-box">
-                            <p>APPROVED BY</p>
-                            <div class="signature-line">CLAVERINA</div>
-                        </div>
-                    </div>
-                    <div class="footer">
-                        Dicetak pada: ${format(new Date(), "EEEE, d MMM yyyy HH:mm", { locale: id })}
-                    </div>
-                    <script>
-                        window.onload = () => {
-                            window.onafterprint = () => { window.close(); };
-                            setTimeout(() => { window.print(); }, 600);
-                        };
-                    </script>
-                </body>
-            </html>
+        const fileName = `LAPORAN ABSENSI SUMMARY PT EJA - ${periodStr}.html`;
+
+        let tableHeader: string = "";
+        let tableRows: string = "";
+
+        const grandTotals = sortedEmployees.reduce((acc, emp) => ({
+            present: acc.present + emp.stats.present,
+            late: acc.late + emp.stats.late,
+            sick: acc.sick + emp.stats.sick,
+            permission: acc.permission + emp.stats.permission,
+            alpha: acc.alpha + emp.stats.alpha,
+        }), { present: 0, late: 0, sick: 0, permission: 0, alpha: 0 });
+
+        tableHeader = `
+            <tr>
+                <th class="c" style="width: 40px;">No</th>
+                <th>Nama Karyawan</th>
+                <th class="c" style="width: 80px;">Hadir</th>
+                <th class="c" style="width: 80px;">Telat</th>
+                <th class="c" style="width: 80px;">Sakit</th>
+                <th class="c" style="width: 80px;">Izin</th>
+                <th class="c" style="width: 80px;">Alpha</th>
+            </tr>
         `;
 
-        printWindow.document.write(html);
-        printWindow.document.close();
+        tableRows = sortedEmployees.map((emp, index) => `
+            <tr>
+                <td class="col-no">${index + 1}</td>
+                <td>
+                    <div style="font-weight: 700; color: #1e293b; font-size: 13px;">${emp.fullName}</div>
+                    <div style="font-size: 10px; color: #64748b; font-family: monospace;">NIK: ${emp.nik || '-'}</div>
+                </td>
+                <td class="c"><span class="st-hadir">${emp.stats.present}</span></td>
+                <td class="c"><span class="st-telat">${emp.stats.late}</span></td>
+                <td class="c"><span class="st-sakit">${emp.stats.sick}</span></td>
+                <td class="c"><span class="st-izin">${emp.stats.permission}</span></td>
+                <td class="c"><span class="st-alpha">${emp.stats.alpha}</span></td>
+            </tr>
+        `).join('') + `
+            <tr style="background: #f1f5f9; font-weight: 800; border-top: 2px solid #1e293b;">
+                <td colspan="2" style="text-align: right; padding-right: 20px; text-transform: uppercase; letter-spacing: 1px;">Grand Total</td>
+                <td class="c"><span class="st-hadir">${grandTotals.present}</span></td>
+                <td class="c"><span class="st-telat">${grandTotals.late}</span></td>
+                <td class="c"><span class="st-sakit">${grandTotals.sick}</span></td>
+                <td class="c"><span class="st-izin">${grandTotals.permission}</span></td>
+                <td class="c"><span class="st-alpha">${grandTotals.alpha}</span></td>
+            </tr>
+        `;
+
+        // Generate Detailed Evidence Section
+        let detailHtml = "";
+        sortedEmployees.forEach(emp => {
+            const records = getAttendanceForPeriod(emp.id);
+            if (records.length > 0) {
+                // Sort records by date
+                records.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                
+                detailHtml += `
+                    <div style="margin-top: 30px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; page-break-inside: avoid;">
+                        <div style="background: #f8fafc; padding: 10px 15px; border-bottom: 1px solid #e2e8f0;">
+                            <h3 style="margin: 0; font-size: 12px; color: #1e293b;">BUKTI DETAIL: ${emp.fullName.toUpperCase()}</h3>
+                        </div>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                            <thead style="background: #f1f5f9;">
+                                <tr>
+                                    <th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid #e2e8f0; width: 140px;">Tanggal</th>
+                                    <th style="padding: 6px 10px; text-align: center; border-bottom: 1px solid #e2e8f0;">Masuk</th>
+                                    <th style="padding: 6px 10px; text-align: center; border-bottom: 1px solid #e2e8f0;">Pulang</th>
+                                    <th style="padding: 6px 10px; text-align: center; border-bottom: 1px solid #e2e8f0;">Durasi</th>
+                                    <th style="padding: 6px 10px; text-align: center; border-bottom: 1px solid #e2e8f0;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${records.map(r => {
+                                    const inTime = r.checkIn ? format(new Date(r.checkIn), "HH:mm") : "-";
+                                    const outTime = r.checkOut ? format(new Date(r.checkOut), "HH:mm") : "-";
+                                    
+                                    let duration = "-";
+                                    if (r.checkIn && r.checkOut) {
+                                        const diff = Math.abs(new Date(r.checkOut).getTime() - new Date(r.checkIn).getTime());
+                                        const h = Math.floor(diff / 3600000);
+                                        const m = Math.floor((diff % 3600000) / 60000);
+                                        duration = `${h}j ${m}m`;
+                                    }
+
+                                    const stClass = r.status === 'present' ? 'st-hadir' :
+                                                    r.status === 'late' ? 'st-telat' :
+                                                    r.status === 'sick' ? 'st-sakit' :
+                                                    r.status === 'permission' ? 'st-izin' : 'st-alpha';
+
+                                    const stLabel = r.status === 'present' ? 'Hadir' :
+                                                   r.status === 'late' ? 'Telat' :
+                                                   r.status === 'sick' ? 'Sakit' :
+                                                   r.status === 'permission' ? 'Izin' : 'Alpha';
+
+                                    return `
+                                        <tr>
+                                            <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9;">${formatLongDate(r.date)}</td>
+                                            <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; text-align: center; font-family: monospace; font-weight: bold; color: #15803d;">${inTime}</td>
+                                            <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; text-align: center; font-family: monospace; font-weight: bold; color: #b91c1c;">${outTime}</td>
+                                            <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; text-align: center; font-weight: bold;">${duration}</td>
+                                            <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; text-align: center;"><span class="${stClass}">${stLabel}</span></td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+        });
+
+        const html = `<!DOCTYPE html>
+<html>
+<head>
+  <title>${fileName}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #1e293b; background: white; padding: 28px 36px; }
+
+    /* LETTERHEAD */
+    .letterhead { display: flex; align-items: center; gap: 16px; padding-bottom: 10px; }
+    .logo-img { width: 60px; height: 60px; object-fit: contain; }
+    .company-block h1 { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; }
+    .company-block .tagline { font-size: 10px; color: #64748b; margin-top: 2px; }
+    .hr-thick { border: none; border-top: 2px solid #cbd5e1; margin: 6px 0 2px; }
+    .hr-thin  { border: none; border-top: 1px solid #e2e8f0; margin-bottom: 18px; }
+
+    /* TITLE */
+    .report-meta { text-align: center; margin-bottom: 20px; }
+    .report-meta h2 { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; color: #1e293b; }
+    .report-meta .sub { font-size: 10.5px; margin-top: 4px; color: #475569; }
+
+    /* TABLE */
+    table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+    thead tr { background-color: #f8fafc; }
+    th { color: #374151; font-weight: 700; text-align: left; padding: 8px 8px; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 2px solid #1e293b; border-right: 1px solid #e2e8f0; white-space: nowrap; }
+    th.c { text-align: center; }
+    td { padding: 7px 8px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; vertical-align: middle; white-space: nowrap; }
+    tbody tr:nth-child(even) { background-color: #f8fafc; }
+
+    .col-no   { text-align: center; color: #94a3b8; font-size: 10px; }
+    .col-date { color: #374151; font-weight: 600; }
+    .col-name { color: #1d4ed8; font-weight: 600; }
+    .col-time { font-family: ui-monospace, Consolas, monospace; font-size: 11px; text-align: center; }
+    .t-in   { color: #15803d; font-weight: 700; }
+    .t-brk  { color: #b45309; font-weight: 700; }
+    .t-out  { color: #b91c1c; font-weight: 700; }
+    .t-dash { color: #94a3b8; }
+    .col-work { font-size: 11px; font-weight: 700; color: #1e293b; }
+    .col-brk  { text-align: center; font-size: 11px; font-weight: 700; color: #ea580c; }
+    .col-stat { text-align: center; font-weight: 700; font-size: 11px; }
+    .st-hadir { color: #16a34a; font-weight: 700; }
+    .st-telat { color: #ea580c; font-weight: 700;}
+    .st-sakit { color: #2563eb; font-weight: 700;}
+    .st-izin  { color: #7c3aed; font-weight: 700;}
+    .st-cuti  { color: #0d9488; font-weight: 700;}
+    .st-alpha { color: #dc2626; font-weight: 700;}
+    .col-note { font-size: 10.5px; color: #475569; white-space: normal; max-width: 200px; }
+
+    /* SIGNATURE */
+    .signature-section { margin-top: 48px; display: flex; justify-content: space-between; padding: 0 24px; }
+    .sig-box { text-align: center; width: 160px; }
+    .sig-label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #374151; margin-bottom: 64px; }
+    .sig-name { font-size: 11px; font-weight: 800; border-top: 1.5px solid #374151; padding-top: 6px; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; }
+
+    .footer { margin-top: 18px; font-size: 8.5px; color: #94a3b8; border-top: 1px dashed #cbd5e1; padding-top: 8px; }
+
+    /* DOWNLOAD BUTTON */
+    .btn-wrap { text-align: center; margin-top: 20px; }
+    .download-btn { display: inline-flex; align-items: center; gap: 8px; background: #1d4ed8; color: #fff; border: none; padding: 10px 28px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; letter-spacing: 0.5px; text-decoration: none; }
+    .download-btn:hover { background: #1e40af; }
+
+    @media print {
+      body { padding: 12px 16px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      thead tr, tbody tr:nth-child(even) { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .btn-wrap { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="letterhead">
+    <img src="${logoBase64}" class="logo-img" alt="Logo" />
+    <div class="company-block">
+      <h1>PT Elok Jaya Abadhi</h1>
+      <p class="tagline">Sistem Manajemen Kehadiran Digital</p>
+    </div>
+  </div>
+  <hr class="hr-thick" />
+  <hr class="hr-thin" />
+
+  <div class="report-meta">
+    <h2>Laporan Ringkasan Absensi PT EJA</h2>
+    <p class="sub">Tipe: ${reportType === 'daily' ? 'Harian' : reportType === 'weekly' ? 'Mingguan' : reportType === 'custom' ? 'Kustom' : 'Bulanan'}</p>
+    <p class="sub">Rentang Waktu: ${format(startDate, "EEEE, d MMMM yyyy", { locale: id })} - ${format(endDate, "EEEE, d MMMM yyyy", { locale: id })}</p>
+  </div>
+
+  <table>
+    <thead>
+      ${tableHeader}
+    </thead>
+    <tbody>
+      ${tableRows}
+    </tbody>
+  </table>
+
+  ${detailHtml}
+
+  <div class="signature-section">
+    <div class="sig-box">
+      <p class="sig-label">Checked By</p>
+      <div class="sig-name">NIKO</div>
+    </div>
+    <div class="sig-box">
+      <p class="sig-label">Approved By</p>
+      <div class="sig-name">CLAVERINA</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Dokumen ini dicetak secara otomatis oleh Sistem Absensi PT Elok Jaya Abadhi &mdash; ${format(new Date(), "d MMMM yyyy, HH:mm", { locale: id })} WIB &mdash; Harap simpan sebagai arsip resmi perusahaan.
+  </div>
+
+  <div class="btn-wrap">
+    <a id="dl-btn" class="download-btn" href="#">&#11015;&nbsp; Download File</a>
+  </div>
+
+  <script>
+    var _fn = "${fileName}";
+    document.title = _fn;
+    window.onload = function() {
+      var btn = document.getElementById('dl-btn');
+      if (btn) {
+        btn.href = window.location.href;
+        btn.download = _fn;
+      }
+      setTimeout(function() { window.print(); }, 600);
+    };
+  </script>
+</body>
+</html>`;
+
+        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
     };
 
     return (
@@ -392,7 +462,7 @@ export default function AttendanceSummaryPage() {
                     <Button variant="ghost" size="icon" onClick={() => setLocation("/admin")}>
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
-                    <h1 className="text-xl font-bold text-gray-800">Absensi Karyawan PT ELOK JAYA ABADHI</h1>
+                    <h1 className="text-xl font-bold text-gray-800">Rekap Absensi Management PT ELOK JAYA ABADHI</h1>
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="relative w-64">
@@ -404,41 +474,64 @@ export default function AttendanceSummaryPage() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <div className="flex items-center gap-2 bg-white border rounded-md p-1">
-                        <Select value={reportType} onValueChange={(v: any) => setReportType(v)}>
-                            <SelectTrigger className="w-[120px] h-8 border-none bg-transparent">
-                                <SelectValue placeholder="Tipe Laporan" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="daily">Harian</SelectItem>
-                                <SelectItem value="weekly">Mingguan</SelectItem>
-                                <SelectItem value="monthly">Bulanan</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <div className="h-4 w-[1px] bg-gray-200 mx-1"></div>
-                        <Button variant="ghost" size="icon" onClick={handlePrev} className="h-8 w-8">
-                            <ChevronLeft className="h-4 w-4" />
-                        </Button>
-                        <span className="text-sm font-medium min-w-[120px] text-center">
-                            {reportType === 'daily' ? format(targetDate, "d MMM yyyy", { locale: id }) :
-                                reportType === 'weekly' ? `${format(startDate, "d MMM")} - ${format(endDate, "d MMM yyyy", { locale: id })}` :
-                                    format(targetDate, "MMMM yyyy", { locale: id })}
-                        </span>
-                        <Button variant="ghost" size="icon" onClick={handleNext} className="h-8 w-8">
-                            <ChevronRight className="h-4 w-4" />
-                        </Button>
+                    <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                        <div className="flex items-center gap-2 bg-white border rounded-md p-1 shadow-sm">
+                            <Select value={reportType} onValueChange={(v: any) => setReportType(v)}>
+                                <SelectTrigger className="w-[120px] h-8 border-none bg-transparent focus:ring-0">
+                                    <SelectValue placeholder="Tipe Laporan" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="daily">Harian</SelectItem>
+                                    <SelectItem value="weekly">Mingguan</SelectItem>
+                                    <SelectItem value="monthly">Bulanan</SelectItem>
+                                    <SelectItem value="custom">Kustom Pilihan</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <div className="h-4 w-[1px] bg-gray-200 mx-1"></div>
+                            {reportType === 'custom' ? (
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        type="date"
+                                        className="h-8 text-xs py-0 px-2 min-w-[130px] border-none focus-visible:ring-0"
+                                        value={customStartDate}
+                                        onChange={e => setCustomStartDate(e.target.value)}
+                                    />
+                                    <span className="text-gray-400 text-xs">-</span>
+                                    <Input
+                                        type="date"
+                                        className="h-8 text-xs py-0 px-2 min-w-[130px] border-none focus-visible:ring-0"
+                                        value={customEndDate}
+                                        onChange={e => setCustomEndDate(e.target.value)}
+                                    />
+                                </div>
+                            ) : (
+                                <>
+                                    <Button variant="ghost" size="icon" onClick={handlePrev} className="h-8 w-8 hover:bg-gray-100">
+                                        <ChevronLeft className="h-4 w-4" />
+                                    </Button>
+                                    <span className="text-sm font-medium min-w-[120px] text-center text-gray-700">
+                                        {reportType === 'daily' ? formatLongDate(targetDate) :
+                                            reportType === 'weekly' ? `${format(startDate, "d MMMM")} - ${format(endDate, "d MMMM yyyy", { locale: id })}` :
+                                                format(targetDate, "MMMM yyyy", { locale: id })}
+                                    </span>
+                                    <Button variant="ghost" size="icon" onClick={handleNext} className="h-8 w-8 hover:bg-gray-100">
+                                        <ChevronRight className="h-4 w-4" />
+                                    </Button>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
             </header>
 
             <main className="p-8 flex-1 overflow-auto">
                 <Card className="border-none shadow-sm mb-6">
-                    <CardContent className="p-4 flex items-center justify-between bg-green-50/50">
+                    <CardContent className="p-4 flex items-center justify-between bg-white">
                         <div className="flex gap-6 text-sm">
                             <div>
                                 <span className="text-gray-500">Periode:</span>
                                 <span className="ml-2 font-semibold text-gray-700">
-                                    {format(startDate, "EEEE, d MMM yyyy", { locale: id })} - {format(endDate, "EEEE, d MMM yyyy", { locale: id })}
+                                    {formatLongDate(startDate)} - {formatLongDate(endDate)}
                                 </span>
                             </div>
                             <div>
@@ -450,7 +543,7 @@ export default function AttendanceSummaryPage() {
                             variant="outline"
                             size="sm"
                             onClick={handleExport}
-                            className="gap-2 text-green-600 border-green-200 bg-white hover:bg-green-50"
+                            className="bg-green-600 text-white hover:bg-green-700 hover:text-white border-none shadow-sm gap-2"
                         >
                             <FileDown className="h-4 w-4" /> Export PDF
                         </Button>
