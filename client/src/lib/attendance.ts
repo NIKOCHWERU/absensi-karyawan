@@ -82,8 +82,19 @@ export function calculateDailyTotal(records: Attendance[]): {
     const normalizeTime = (timeValue: string | Date | null | undefined, baseDate: Date) => {
         if (!timeValue) return null;
         const d = new Date(timeValue);
-        const normalized = new Date(baseDate);
-        normalized.setHours(d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds());
+        const base = new Date(baseDate);
+        
+        // Ensure we use the exact Year-Month-Day from baseDate
+        // but the Hour-Minute-Second from timeValue
+        const normalized = new Date(
+            base.getFullYear(),
+            base.getMonth(),
+            base.getDate(),
+            d.getHours(),
+            d.getMinutes(),
+            d.getSeconds(),
+            d.getMilliseconds()
+        );
         return normalized.getTime();
     };
 
@@ -97,7 +108,9 @@ export function calculateDailyTotal(records: Attendance[]): {
         if (record.checkIn && record.checkOut) {
             const start = normalizeTime(record.checkIn, baseDate)!;
             let end = normalizeTime(record.checkOut, baseDate)!;
-            // Handle overnight wrap (e.g. 21:00 to 02:00)
+            // Handle overnight wrap (e.g. 21:00 to 02:00 next day)
+            // If the checkout time is numerically earlier than checkin on the same normalized day,
+            // it means it must be the following calendar day.
             if (end < start) end += 86400000; 
             workIntervals.push({ start, end });
         }

@@ -150,15 +150,6 @@ export default function RecapPage() {
         }
     });
 
-    const calculateHours = (start?: Date | string | null, end?: Date | string | null) => {
-        if (!start || !end) return 0;
-        const startDate = new Date(start);
-        startDate.setSeconds(0, 0);
-        const endDate = new Date(end);
-        endDate.setSeconds(0, 0);
-        const diff = differenceInMinutes(endDate, startDate);
-        return diff < 0 ? diff + 1440 : diff;
-    };
 
     const manualMutation = useMutation({
         mutationFn: async (data: any) => {
@@ -349,8 +340,8 @@ export default function RecapPage() {
     </thead>
     <tbody>
       ${processedData.map((row, index) => {
-            const breakMins = calculateHours(row.breakStart, row.breakEnd);
             const dateStr = format(new Date(row.date), "yyyy-MM-dd");
+            const breakMins = calculateDuration(row.breakStart, row.breakEnd);
             const key = `${dateStr}-${row.userId}`;
             const dailyEntry = dailyTotals.get(key);
             const dailyTotalMins = dailyEntry?.mins ?? 0;

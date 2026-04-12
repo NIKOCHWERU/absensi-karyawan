@@ -18,6 +18,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { cn, formatLongDate } from "@/lib/utils";
+import { calculateDailyTotal, formatDuration } from "@/lib/attendance";
 
 export default function AttendanceSummaryPage() {
     const [, setLocation] = useLocation();
@@ -286,10 +287,8 @@ export default function AttendanceSummaryPage() {
                                     
                                     let duration = "-";
                                     if (r.checkIn && r.checkOut) {
-                                        const diff = Math.abs(new Date(r.checkOut).getTime() - new Date(r.checkIn).getTime());
-                                        const h = Math.floor(diff / 3600000);
-                                        const m = Math.floor((diff % 3600000) / 60000);
-                                        duration = `${h}j ${m}m`;
+                                        const { netWorkMins } = calculateDailyTotal([r]);
+                                        duration = formatDuration(netWorkMins);
                                     }
 
                                     const stClass = r.status === 'present' ? 'st-hadir' :

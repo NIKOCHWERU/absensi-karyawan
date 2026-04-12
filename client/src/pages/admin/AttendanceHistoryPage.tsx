@@ -5,6 +5,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { format, addDays, subDays, startOfWeek, endOfWeek, startOfDay, endOfDay, subMonths, addMonths, isAfter, isBefore, isEqual } from "date-fns";
 import { id } from "date-fns/locale";
+import { calculateDailyTotal, formatDuration } from "@/lib/attendance";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -423,15 +424,8 @@ export default function AttendanceHistoryPage() {
                     ${duration > 0 ? `PERMIT: <span style="color:#7c3aed;font-weight:bold;">${duration} Jam</span><br/>` : ''}
                     <div style="border-top:1px solid #eee; margin-top:4px; padding-top:4px; font-weight:bold;">
                       ${(() => {
-                        if (r.checkIn && r.checkOut) {
-                            const totalMinutes = Math.floor((new Date(r.checkOut).getTime() - new Date(r.checkIn).getTime()) / 60000);
-                            const permitMinutes = (duration || 0) * 60;
-                            const adjustedMinutes = Math.max(0, totalMinutes - permitMinutes);
-                            const hCount = Math.floor(adjustedMinutes / 60);
-                            const mCount = adjustedMinutes % 60;
-                            return `TOTAL: ${hCount}j ${mCount}m`;
-                        }
-                        return 'TIDAK LENGKAP';
+                        const { netWorkMins } = calculateDailyTotal([r]);
+                        return netWorkMins > 0 ? `TOTAL: ${formatDuration(netWorkMins)}` : 'TIDAK LENGKAP';
                     })()}
                     </div>
                   </div>
@@ -707,16 +701,8 @@ export default function AttendanceHistoryPage() {
                                                                 <div className="mt-2 border-t border-gray-100 pt-1">
                                                                     <p className="text-[10px] font-bold text-gray-900">
                                                                         {(() => {
-                                                                            const { duration } = parsePermitInfo(record.notes);
-                                                                            if (record.checkIn && record.checkOut) {
-                                                                                const totalMinutes = Math.floor((new Date(record.checkOut).getTime() - new Date(record.checkIn).getTime()) / 60000);
-                                                                                const permitMinutes = (duration || 0) * 60;
-                                                                                const adjustedMinutes = Math.max(0, totalMinutes - permitMinutes);
-                                                                                const h = Math.floor(adjustedMinutes / 60);
-                                                                                const m = adjustedMinutes % 60;
-                                                                                return `Total Kerja: ${h}j ${m}m`;
-                                                                            }
-                                                                            return "Absensi tidak lengkap";
+                                                                            const { netWorkMins } = calculateDailyTotal([record]);
+                                                                            return netWorkMins > 0 ? `Total Kerja: ${formatDuration(netWorkMins)}` : "Absensi tidak lengkap";
                                                                         })()}
                                                                     </p>
                                                                 </div>
