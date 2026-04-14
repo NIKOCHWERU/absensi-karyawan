@@ -208,7 +208,7 @@ export default function AttendanceHistoryPage() {
             for (let i = 0; i <= retries; i++) {
                 try {
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 10000); 
+                    const timeoutId = setTimeout(() => controller.abort(), 5000); 
 
                     const res = await fetch(resolvedUrl, { signal: controller.signal });
                     clearTimeout(timeoutId);
@@ -260,7 +260,7 @@ export default function AttendanceHistoryPage() {
 
             // Parallel fetch images in small chunks to avoid overloading
             const urlArray = Array.from(uniqueUrls);
-            const chunkSize = 5;
+            const chunkSize = 15;
             for (let i = 0; i < urlArray.length; i += chunkSize) {
                 const chunk = urlArray.slice(i, i + chunkSize);
                 await Promise.all(chunk.map(url => fetchImageBase64(url)));
