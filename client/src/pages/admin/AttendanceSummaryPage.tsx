@@ -273,15 +273,17 @@ export default function AttendanceSummaryPage() {
                         <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
                             <thead style="background: #f1f5f9;">
                                 <tr>
+                                    <th style="padding: 6px 10px; text-align: center; border-bottom: 1px solid #e2e8f0; width: 30px;">No</th>
                                     <th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid #e2e8f0; width: 140px;">Tanggal</th>
                                     <th style="padding: 6px 10px; text-align: center; border-bottom: 1px solid #e2e8f0;">Masuk</th>
                                     <th style="padding: 6px 10px; text-align: center; border-bottom: 1px solid #e2e8f0;">Pulang</th>
                                     <th style="padding: 6px 10px; text-align: center; border-bottom: 1px solid #e2e8f0;">Durasi</th>
                                     <th style="padding: 6px 10px; text-align: center; border-bottom: 1px solid #e2e8f0;">Status</th>
+                                    <th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid #e2e8f0;">Alasan / Ket. Jam</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${records.map(r => {
+                                ${records.map((r, idx) => {
                                     const inTime = r.checkIn ? format(new Date(r.checkIn), "HH:mm") : "-";
                                     const outTime = r.checkOut ? format(new Date(r.checkOut), "HH:mm") : "-";
                                     
@@ -303,11 +305,15 @@ export default function AttendanceSummaryPage() {
 
                                     return `
                                         <tr>
+                                            <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; text-align: center;">${idx + 1}</td>
                                             <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9;">${formatLongDate(r.date)}</td>
                                             <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; text-align: center; font-family: monospace; font-weight: bold; color: #15803d;">${inTime}</td>
                                             <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; text-align: center; font-family: monospace; font-weight: bold; color: #b91c1c;">${outTime}</td>
                                             <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; text-align: center; font-weight: bold;">${duration}</td>
                                             <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; text-align: center;"><span class="${stClass}">${stLabel}</span></td>
+                                            <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; color: #475569; font-size: 9px; white-space: normal;">
+                                                ${[r.notes, r.lateReason].filter(Boolean).join(' | ')}
+                                            </td>
                                         </tr>
                                     `;
                                 }).join('')}
