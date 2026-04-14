@@ -191,41 +191,47 @@ export default function AttendanceHistoryPage() {
         }
 
         const fileName = `LAPORAN RIWAYAT ABSENSI FOTO TENAGA KERJA PT EJA - ${periodStr}.html`;
-
         const imageCache: Record<string, string> = {};
-        const fetchImageBase64 = async (url: string) => {
+        const fetchImageBase64 = async (url: string, retries = 2) => {
             if (!url) return '';
             if (url.startsWith('data:')) return url;
+            
             let resolvedUrl = url;
             if (!url.includes('/') && !url.includes('.') && url.length > 20) {
                 resolvedUrl = `/api/images/${url}`;
             } else if (!url.startsWith('http')) {
                 resolvedUrl = `/uploads/${url}`;
             }
+            
             if (imageCache[resolvedUrl]) return imageCache[resolvedUrl];
             
-            try {
-                // Timeout logic for slow images
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout per image
+            for (let i = 0; i <= retries; i++) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000); 
 
-                const res = await fetch(resolvedUrl, { signal: controller.signal });
-                clearTimeout(timeoutId);
+                    const res = await fetch(resolvedUrl, { signal: controller.signal });
+                    clearTimeout(timeoutId);
 
-                if (!res.ok) return '';
-                const blob = await res.blob();
-                const b64 = await new Promise<string>((resolve) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result as string);
-                    reader.onerror = () => resolve('');
-                    reader.readAsDataURL(blob);
-                });
-                imageCache[resolvedUrl] = b64;
-                return b64;
-            } catch (e) {
-                console.error("Export fetch error:", e);
-                return '';
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const blob = await res.blob();
+                    const b64 = await new Promise<string>((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result as string);
+                        reader.onerror = () => resolve('');
+                        reader.readAsDataURL(blob);
+                    });
+                    if (b64) {
+                        imageCache[resolvedUrl] = b64;
+                        return b64;
+                    }
+                } catch (e) {
+                    console.warn(`Export fetch attempt ${i + 1} failed for ${resolvedUrl}:`, e);
+                    if (i === retries) return '';
+                    await new Promise(r => setTimeout(r, 1000)); // Wait 1s before retry
+                }
             }
+            return '';
         };
 
         setIsExporting(true);
@@ -252,8 +258,13 @@ export default function AttendanceHistoryPage() {
                 if ((r as any).lateReasonPhoto) uniqueUrls.add((r as any).lateReasonPhoto);
             });
 
-            // Parallel fetch all images
-            await Promise.all(Array.from(uniqueUrls).map(url => fetchImageBase64(url)));
+            // Parallel fetch images in small chunks to avoid overloading
+            const urlArray = Array.from(uniqueUrls);
+            const chunkSize = 5;
+            for (let i = 0; i < urlArray.length; i += chunkSize) {
+                const chunk = urlArray.slice(i, i + chunkSize);
+                await Promise.all(chunk.map(url => fetchImageBase64(url)));
+            }
 
             // Prepare HTML
             let html = `<!DOCTYPE html>
