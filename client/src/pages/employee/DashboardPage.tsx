@@ -340,11 +340,12 @@ export default function EmployeeDashboard() {
         const [sHour, sMinute] = (shiftData?.checkInTime || "07:00").split(':').map(Number);
         let thresholdMinutes = sHour * 60 + sMinute;
 
-        if (shiftId < 0) {
-            if (shiftName === 'Shift 2 (Pramuniaga)') thresholdMinutes = 12 * 60; // 12:00
-            else if (shiftName === 'Shift 2 (Kasir)') thresholdMinutes = 15 * 60; // 15:00
-            else if (shiftName === 'Shift 3') thresholdMinutes = 13 * 60; // 13:00
-            else if (shiftName === 'Shift 1' || shiftName?.toLowerCase() === 'longshift') thresholdMinutes = 7 * 60; // 07:00
+        if (shiftId < 0 || !shiftData) {
+            const sn = shiftName?.toLowerCase() || '';
+            if (sn.includes('middle') || sn === 'shift 2') thresholdMinutes = 11 * 60; // 11:00
+            else if (sn.includes('kasir long')) thresholdMinutes = 10 * 60; // 10:00
+            else if (sn === 'shift 3') thresholdMinutes = 13 * 60; // 13:00
+            else if (sn === 'shift 1' || sn.includes('long')) thresholdMinutes = 7 * 60; // 07:00
         }
 
         const isLate = timeInMinutes > thresholdMinutes;

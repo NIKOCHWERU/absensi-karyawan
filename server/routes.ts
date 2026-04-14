@@ -323,12 +323,13 @@ export async function registerRoutes(
         }
         
         // If thresholdMinutes wasn't changed by shiftData, use legacy/hardcoded rules
-        // Legacy/Hardcoded rules for backward compatibility
+        // Legacy/Hardcoded rules for backward compatibility if dynamic shift table doesn't catch it
         if (!shiftId || thresholdMinutes === 420) {
-          if (shiftName === 'Shift 2 (Pramuniaga)') thresholdMinutes = 720; // 12:00
-          else if (shiftName === 'Shift 2 (Kasir)') thresholdMinutes = 900; // 15:00
-          else if (shiftName === 'Shift 3') thresholdMinutes = 780; // 13:00
-          else if (shiftName === 'Shift 1' || shiftName?.toLowerCase() === 'longshift') thresholdMinutes = 420; // 07:00
+          const sn = shiftName?.toLowerCase() || '';
+          if (sn.includes('middle') || sn === 'shift 2') thresholdMinutes = 660; // 11:00
+          else if (sn.includes('kasir long')) thresholdMinutes = 600; // 10:00
+          else if (sn === 'shift 3') thresholdMinutes = 780; // 13:00
+          else if (sn === 'shift 1' || sn.includes('long')) thresholdMinutes = 420; // 07:00
         }
 
         if (timeInMinutes > thresholdMinutes) {
