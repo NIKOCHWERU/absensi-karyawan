@@ -96,7 +96,7 @@ export default function AttendanceHistoryPage() {
             }
             return {
                 isSuspicious: reasons.length > 0,
-                summary: reasons.length > 0 ? `⚠️ GPS Mencurigakan: ${reasons.join(', ')}` : `✅ GPS Normal (accuracy: ${m.accuracy}m)`
+                summary: reasons.length > 0 ? `GPS Mencurigakan: ${reasons.join(', ')}` : `GPS Normal (accuracy: ${m.accuracy}m)`
             };
         } catch {
             return { isSuspicious: false, summary: '' };
@@ -430,7 +430,7 @@ export default function AttendanceHistoryPage() {
                     </div>
                   </div>
                   <div style="margin-top:8px; font-size:8.5px; color:#64748b; line-height:1.2; max-width:140px; word-break:break-word; background:#f8fafc; padding:4px; border-radius:4px;">
-                    <span style="font-weight:bold; color:#475569; display:block; margin-bottom:2px; text-transform:uppercase; font-size:8px;">📍 Lokasi Masuk:</span>
+                    <span style="font-weight:bold; color:#475569; display:block; margin-bottom:2px; text-transform:uppercase; font-size:8px;">LOKASI MASUK:</span>
                     ${checkInLoc || '-'}
                   </div>
                 </td>
@@ -771,10 +771,10 @@ export default function AttendanceHistoryPage() {
                                                                 if (!meta.isSuspicious) return null;
                                                                 return (
                                                                     <div className="flex items-start gap-1.5 bg-orange-50 border border-orange-200 rounded-md p-2 w-full" title={meta.summary}>
-                                                                        <span className="text-orange-500 text-sm leading-none mt-0.5">⚠️</span>
+                                                                        <span className="mt-0.5"><AlertTriangle className="w-4 h-4 text-orange-500" /></span>
                                                                         <div>
                                                                             <p className="text-[10px] font-bold text-orange-700 uppercase">GPS Mencurigakan</p>
-                                                                            <p className="text-[9px] text-orange-600 mt-0.5">{meta.summary.replace('⚠️ GPS Mencurigakan: ', '')}</p>
+                                                                            <p className="text-[9px] text-orange-600 mt-0.5">{meta.summary.replace('GPS Mencurigakan: ', '')}</p>
                                                                         </div>
                                                                     </div>
                                                                 );

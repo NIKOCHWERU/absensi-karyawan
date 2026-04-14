@@ -7,7 +7,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, User, Camera, MapPin, Coffee, LogOut, X, Check, RefreshCw, SwitchCamera, Zap, ChevronRight, Stethoscope, Umbrella, FileText, Timer, Bell, Info } from "lucide-react";
+import { Loader2, User, Camera, MapPin, Coffee, LogOut, X, Check, RefreshCw, SwitchCamera, Zap, ChevronRight, Stethoscope, Umbrella, FileText, Timer, Bell, Info, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -1107,7 +1107,7 @@ export default function EmployeeDashboard() {
                         {/* Contextual state warning */}
                         {isBreak && !hasBreakEnded ? (
                             <div className="bg-orange-50 p-4 rounded-2xl border border-orange-200">
-                                <p className="text-[10px] font-bold text-orange-700 uppercase mb-2">⚠️ Anda Sedang Istirahat</p>
+                                <p className="text-[10px] font-bold text-orange-700 uppercase mb-2 flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> Anda Sedang Istirahat</p>
                                 <ul className="text-[11px] text-orange-700 space-y-1">
                                     <li className="flex gap-2"><span>•</span><span>Jam istirahat akan <strong>ditutup otomatis</strong>.</span></li>
                                     <li className="flex gap-2"><span>•</span><span>Jam kerja yang sudah berlangsung <strong>tetap dihitung</strong>.</span></li>
@@ -1116,7 +1116,7 @@ export default function EmployeeDashboard() {
                             </div>
                         ) : hasCheckedIn && !hasCheckedOut ? (
                             <div className="bg-yellow-50 p-4 rounded-2xl border border-yellow-200">
-                                <p className="text-[10px] font-bold text-yellow-700 uppercase mb-2">⚠️ Anda Sedang Bekerja</p>
+                                <p className="text-[10px] font-bold text-yellow-700 uppercase mb-2 flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> Anda Sedang Bekerja</p>
                                 <ul className="text-[11px] text-yellow-700 space-y-1">
                                     <li className="flex gap-2"><span>•</span><span>Sesi kerja Anda akan <strong>dihentikan</strong> sekarang.</span></li>
                                     <li className="flex gap-2"><span>•</span><span>Jam kerja yang sudah berlangsung <strong>tetap dihitung</strong>.</span></li>
@@ -1125,7 +1125,7 @@ export default function EmployeeDashboard() {
                             </div>
                         ) : (
                             <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
-                                <p className="text-[10px] font-bold text-blue-700 uppercase mb-2">ℹ️ Sebelum Mulai Kerja</p>
+                                <p className="text-[10px] font-bold text-blue-700 uppercase mb-2 flex items-center gap-1.5"><Info className="w-3.5 h-3.5" /> Sebelum Mulai Kerja</p>
                                 <ul className="text-[11px] text-blue-600/80 space-y-1">
                                     <li className="flex gap-2"><span>•</span><span>Absensi {permitType === 'sick' ? 'Sakit' : 'Izin'} akan dicatat untuk hari ini.</span></li>
                                     <li className="flex gap-2"><span>•</span><span>Anda tetap dapat <strong>Lanjut Bekerja</strong> kapan saja hari ini.</span></li>

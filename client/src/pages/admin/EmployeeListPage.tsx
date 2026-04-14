@@ -1046,7 +1046,7 @@ export default function AdminEmployeeList() {
                                                                             </div>
                                                                         </div>
                                                                         <div className="px-4 pb-4 text-xs text-gray-500 flex items-center gap-1">
-                                                                            📍 {(() => {
+                                                                            <MapPin className="w-3.5 h-3.5" /> {(() => {
                                                                                 const loc = att.checkInLocation || 'Lokasi tidak terdeteksi';
                                                                                 // Check if it's coordinates (format: lat,lng)
                                                                                 if (loc.match(/^-?\d+\.?\d*,-?\d+\.?\d*$/)) {

@@ -104,7 +104,7 @@ export function AttendanceReport({ date, records, users }: AttendanceReportProps
                                         {record.checkInLocation && (
                                             <div className="mt-3 text-[9px] text-gray-500 leading-tight">
                                                 <p className="font-bold flex items-center gap-0.5 mb-1 text-gray-700 uppercase">
-                                                    📍 LOKASI MASUK:
+                                                    LOKASI MASUK:
                                                 </p>
                                                 <p className="text-gray-500 text-[8px] leading-relaxed">{record.checkInLocation}</p>
                                             </div>
