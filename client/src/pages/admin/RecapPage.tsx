@@ -687,9 +687,11 @@ export default function RecapPage() {
                                     <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="-">Belum Tercatat (Default)</SelectItem>
-                                        <SelectItem value="Office">Office</SelectItem>
-                                        <SelectItem value="Security">Security</SelectItem>
-                                        <SelectItem value="Warehouse">Warehouse</SelectItem>
+                                        <SelectItem value="Shift 1">Shift 1 (07:00 - 17:00)</SelectItem>
+                                        <SelectItem value="Shift 2 (Middle)">Shift 2 (Middle) (11:00 - 21:00)</SelectItem>
+                                        <SelectItem value="Shift 3">Shift 3 (13:00 - 23:00)</SelectItem>
+                                        <SelectItem value="Long Shift">Long Shift (07:00 - 23:00)</SelectItem>
+                                        <SelectItem value="Kasir Long Shift">Kasir Long Shift (10:00 - 23:00)</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

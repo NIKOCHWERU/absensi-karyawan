@@ -624,9 +624,17 @@ export default function AdminEmployeeList() {
                                                     <FormControl><SelectTrigger><SelectValue placeholder="Pilih Shift" /></SelectTrigger></FormControl>
                                                     <SelectContent>
                                                         <SelectItem value="-">Belum Tercatat (Default)</SelectItem>
-                                                        {shifts?.map(s => (
-                                                            <SelectItem key={s.id} value={s.name}>{s.name} ({s.checkInTime}-{s.checkOutTime})</SelectItem>
-                                                        ))}
+                                                        <SelectItem value="Shift 1">Shift 1 (07:00 - 17:00)</SelectItem>
+                                                        <SelectItem value="Shift 2 (Middle)">Shift 2 (Middle) (11:00 - 21:00)</SelectItem>
+                                                        <SelectItem value="Shift 3">Shift 3 (13:00 - 23:00)</SelectItem>
+                                                        <SelectItem value="Long Shift">Long Shift (07:00 - 23:00)</SelectItem>
+                                                        <SelectItem value="Kasir Long Shift">Kasir Long Shift (10:00 - 23:00)</SelectItem>
+                                                        {shifts?.map(s => {
+                                                            // Only map dynamic shifts that aren't already hardcoded to avoid duplicate keys/values
+                                                            const isHardcoded = ['Shift 1', 'Shift 2 (Middle)', 'Shift 3', 'Long Shift', 'Kasir Long Shift'].includes(s.name);
+                                                            if (isHardcoded) return null;
+                                                            return <SelectItem key={s.id} value={s.name}>{s.name} ({s.checkInTime}-{s.checkOutTime})</SelectItem>;
+                                                        })}
                                                     </SelectContent>
                                                 </Select>
                                                 <FormMessage />
