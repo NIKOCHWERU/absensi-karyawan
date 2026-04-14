@@ -279,7 +279,7 @@ export default function AttendanceSummaryPage() {
                                     <th style="padding: 6px 10px; text-align: center; border-bottom: 1px solid #e2e8f0;">Pulang</th>
                                     <th style="padding: 6px 10px; text-align: center; border-bottom: 1px solid #e2e8f0;">Durasi</th>
                                     <th style="padding: 6px 10px; text-align: center; border-bottom: 1px solid #e2e8f0;">Status</th>
-                                    <th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid #e2e8f0;">Alasan / Ket. Jam</th>
+                                    <th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid #e2e8f0; width: 250px;">Alasan / Ket. Jam</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -311,7 +311,7 @@ export default function AttendanceSummaryPage() {
                                             <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; text-align: center; font-family: monospace; font-weight: bold; color: #b91c1c;">${outTime}</td>
                                             <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; text-align: center; font-weight: bold;">${duration}</td>
                                             <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; text-align: center;"><span class="${stClass}">${stLabel}</span></td>
-                                            <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; color: #475569; font-size: 9px; white-space: normal;">
+                                            <td style="padding: 6px 10px; border-bottom: 1px solid #f1f5f9; color: #475569; font-size: 9px; white-space: normal; width: 250px; min-width: 250px;">
                                                 ${[r.notes, r.lateReason].filter(Boolean).join(' | ')}
                                             </td>
                                         </tr>
