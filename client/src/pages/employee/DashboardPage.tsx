@@ -151,10 +151,10 @@ export default function EmployeeDashboard() {
 
     const defaultShifts = [
         { id: -1, name: "Shift 1", checkInTime: "07:00", checkOutTime: "17:00" },
-        { id: -2, name: "Shift 2 (Pramuniaga)", checkInTime: "09:00", checkOutTime: "-", description: "Masuk Kerja Antara Jam : 09.00 - 12.00 | Jam Pulang : 9 jam dari jam masuk kerja" },
-        { id: -5, name: "Shift 2 (Kasir)", checkInTime: "15:00", checkOutTime: "23:00" },
+        { id: -2, name: "Shift 2 (Middle)", checkInTime: "11:00", checkOutTime: "21:00" },
         { id: -3, name: "Shift 3", checkInTime: "13:00", checkOutTime: "23:00" },
-        { id: -4, name: "Longshift", checkInTime: "07:00", checkOutTime: "23:00" }
+        { id: -4, name: "Long Shift", checkInTime: "07:00", checkOutTime: "23:00" },
+        { id: -5, name: "Kasir Long Shift", checkInTime: "10:00", checkOutTime: "23:00" }
     ];
 
     const shiftList = backendShiftList && backendShiftList.length > 0 ? backendShiftList : defaultShifts;
