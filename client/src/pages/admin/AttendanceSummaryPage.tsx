@@ -128,16 +128,9 @@ export default function AttendanceSummaryPage() {
         const late = empAttendance.filter(a => a.status === 'late').length;
         const sick = empAttendance.filter(a => a.status === 'sick').length;
         const permission = empAttendance.filter(a => a.status === 'permission').length;
-        // Alpha is tricky. It's working days minus recorded days.
-        // But if user joined mid-month? Ignored for simplicity now.
-        const recorded = present + late + sick + permission;
-        // Also absent status might be explicitly recorded?
-        const explicitAbsent = empAttendance.filter(a => a.status === 'absent').length;
+        const off = empAttendance.filter(a => a.status === 'off').length;
 
-        // Effective Alpha = Total Working Days - (Present + Late + Sick + Permission)
-        // Note: Future dates shouldn't count as Alpha if today < endDate.
-
-        // Let's refine Alpha calculation:
+        // Alpha calculation:
         // iterate days from startDate to min(endDate, today)
         // check if record exists. if not -> alpha.
         let alphaCount = 0;
@@ -163,6 +156,7 @@ export default function AttendanceSummaryPage() {
                 late,
                 sick,
                 permission,
+                off,
                 alpha: alphaCount,
                 totalAttendance: present + late
             }
@@ -177,6 +171,7 @@ export default function AttendanceSummaryPage() {
             case 'late': valA = a.stats.late; valB = b.stats.late; break;
             case 'sick': valA = a.stats.sick; valB = b.stats.sick; break;
             case 'permission': valA = a.stats.permission; valB = b.stats.permission; break;
+            case 'off': valA = a.stats.off; valB = b.stats.off; break;
             case 'alpha': valA = a.stats.alpha; valB = b.stats.alpha; break;
 
             default: valA = a.fullName.toLowerCase(); valB = b.fullName.toLowerCase();
@@ -218,18 +213,20 @@ export default function AttendanceSummaryPage() {
             late: acc.late + emp.stats.late,
             sick: acc.sick + emp.stats.sick,
             permission: acc.permission + emp.stats.permission,
+            off: acc.off + emp.stats.off,
             alpha: acc.alpha + emp.stats.alpha,
-        }), { present: 0, late: 0, sick: 0, permission: 0, alpha: 0 });
+        }), { present: 0, late: 0, sick: 0, permission: 0, off: 0, alpha: 0 });
 
         tableHeader = `
             <tr>
                 <th class="c" style="width: 40px;">No</th>
                 <th>Nama Karyawan</th>
-                <th class="c" style="width: 80px;">Hadir</th>
-                <th class="c" style="width: 80px;">Telat</th>
-                <th class="c" style="width: 80px;">Sakit</th>
-                <th class="c" style="width: 80px;">Izin</th>
-                <th class="c" style="width: 80px;">Alpha</th>
+                <th class="c" style="width: 70px;">Hadir</th>
+                <th class="c" style="width: 70px;">Telat</th>
+                <th class="c" style="width: 70px;">Sakit</th>
+                <th class="c" style="width: 70px;">Izin</th>
+                <th class="c" style="width: 70px;">Alpha</th>
+                <th class="c" style="width: 70px;">Off</th>
             </tr>
         `;
 
@@ -245,6 +242,7 @@ export default function AttendanceSummaryPage() {
                 <td class="c"><span class="st-sakit">${emp.stats.sick}</span></td>
                 <td class="c"><span class="st-izin">${emp.stats.permission}</span></td>
                 <td class="c"><span class="st-alpha">${emp.stats.alpha}</span></td>
+                <td class="c"><span class="st-off">${emp.stats.off}</span></td>
             </tr>
         `).join('') + `
             <tr style="background: #f1f5f9; font-weight: 800; border-top: 2px solid #1e293b;">
@@ -254,6 +252,7 @@ export default function AttendanceSummaryPage() {
                 <td class="c"><span class="st-sakit">${grandTotals.sick}</span></td>
                 <td class="c"><span class="st-izin">${grandTotals.permission}</span></td>
                 <td class="c"><span class="st-alpha">${grandTotals.alpha}</span></td>
+                <td class="c"><span class="st-off">${grandTotals.off}</span></td>
             </tr>
         `;
 
@@ -296,12 +295,14 @@ export default function AttendanceSummaryPage() {
                                     const stClass = r.status === 'present' ? 'st-hadir' :
                                                     r.status === 'late' ? 'st-telat' :
                                                     r.status === 'sick' ? 'st-sakit' :
-                                                    r.status === 'permission' ? 'st-izin' : 'st-alpha';
+                                                    r.status === 'permission' ? 'st-izin' :
+                                                    r.status === 'off' ? 'st-off' : 'st-alpha';
 
                                     const stLabel = r.status === 'present' ? 'Hadir' :
                                                    r.status === 'late' ? 'Telat' :
                                                    r.status === 'sick' ? 'Sakit' :
-                                                   r.status === 'permission' ? 'Izin' : 'Alpha';
+                                                   r.status === 'permission' ? 'Izin' :
+                                                   r.status === 'off' ? 'Off Day' : 'Alpha';
 
                                     return `
                                         <tr>
@@ -369,6 +370,7 @@ export default function AttendanceSummaryPage() {
     .st-sakit { color: #2563eb; font-weight: 700;}
     .st-izin  { color: #7c3aed; font-weight: 700;}
     .st-cuti  { color: #0d9488; font-weight: 700;}
+    .st-off   { color: #64748b; font-weight: 700;}
     .st-alpha { color: #dc2626; font-weight: 700;}
     .col-note { font-size: 10.5px; color: #475569; white-space: normal; max-width: 200px; }
 
@@ -578,6 +580,9 @@ export default function AttendanceSummaryPage() {
                                     <TableHead className="text-center bg-red-50 text-red-700 w-[100px] cursor-pointer hover:bg-red-100" onClick={() => toggleSort('alpha')}>
                                         <div className="flex items-center justify-center gap-1">Alpha <ArrowUpDown className="h-3 w-3" /></div>
                                     </TableHead>
+                                    <TableHead className="text-center bg-slate-50 text-slate-700 w-[100px] cursor-pointer hover:bg-slate-100" onClick={() => toggleSort('off')}>
+                                        <div className="flex items-center justify-center gap-1">Off <ArrowUpDown className="h-3 w-3" /></div>
+                                    </TableHead>
 
                                     <TableHead className="text-right">Aksi</TableHead>
                                 </TableRow>
@@ -607,6 +612,9 @@ export default function AttendanceSummaryPage() {
                                             </TableCell>
                                             <TableCell className="text-center font-mono font-bold text-red-600 bg-red-50/30">
                                                 {emp.stats.alpha}
+                                            </TableCell>
+                                            <TableCell className="text-center font-mono font-bold text-slate-600 bg-slate-50/30">
+                                                {emp.stats.off}
                                             </TableCell>
 
                                             <TableCell className="text-right">
