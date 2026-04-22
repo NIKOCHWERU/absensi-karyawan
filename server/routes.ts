@@ -327,7 +327,7 @@ export async function registerRoutes(
         if (!shiftId || thresholdMinutes === 420) {
           const sn = shiftName?.toLowerCase() || '';
           if (sn.includes('middle') || sn === 'shift 2') thresholdMinutes = 660; // 11:00
-          else if (sn.includes('kasir long')) thresholdMinutes = 600; // 10:00
+          else if (sn.includes('kasir long')) thresholdMinutes = 660; // 11:00
           else if (sn === 'shift 3') thresholdMinutes = 780; // 13:00
           else if (sn === 'shift 1' || sn.includes('long')) thresholdMinutes = 420; // 07:00
         }

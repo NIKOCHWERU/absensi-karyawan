@@ -691,7 +691,7 @@ export default function RecapPage() {
                                         <SelectItem value="Shift 2 (Middle)">Shift 2 (Middle) (11:00 - 21:00)</SelectItem>
                                         <SelectItem value="Shift 3">Shift 3 (13:00 - 23:00)</SelectItem>
                                         <SelectItem value="Long Shift">Long Shift (07:00 - 23:00)</SelectItem>
-                                        <SelectItem value="Kasir Long Shift">Kasir Long Shift (10:00 - 23:00)</SelectItem>
+                                        <SelectItem value="Kasir Long Shift">Kasir Long Shift (11:00 - 23:00)</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
