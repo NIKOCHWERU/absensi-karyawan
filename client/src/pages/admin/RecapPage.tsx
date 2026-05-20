@@ -495,45 +495,22 @@ export default function RecapPage() {
 
     return (
         <div className="w-full">
-            <header className="bg-white border-b border-gray-200 p-4 px-8 flex items-center justify-between sticky top-0 z-10">
-                <div className="flex items-center gap-4">
-                    <h1 className="text-xl font-bold text-gray-800 uppercase tracking-tight">Rekap Absensi Tenaga Kerja PT ELOK JAYA ABADHI</h1>
-                </div>
-                <div className="flex items-center gap-2 bg-white border rounded-md p-1">
-                    <Select value={reportType} onValueChange={(v: any) => setReportType(v)}>
-                        <SelectTrigger className="w-[120px] h-8 border-none bg-transparent">
-                            <SelectValue placeholder="Tipe Laporan" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="daily">Harian</SelectItem>
-                            <SelectItem value="weekly">Mingguan</SelectItem>
-                            <SelectItem value="monthly">Bulanan</SelectItem>
-                            <SelectItem value="custom">Kustom Pilihan</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <div className="h-4 w-[1px] bg-gray-200 mx-1"></div>
-                    {reportType === 'custom' ? (
-                        <div className="flex items-center gap-2">
-                            <Input type="date" className="h-8 text-xs py-0 px-2 min-w-[130px] w-auto" value={customStartDate} onChange={e => setCustomStartDate(e.target.value)} />
-                            <span className="text-gray-400 text-xs">-</span>
-                            <Input type="date" className="h-8 text-xs py-0 px-2 min-w-[130px] w-auto" value={customEndDate} onChange={e => setCustomEndDate(e.target.value)} />
-                        </div>
-                    ) : (
-                        <>
-                            <Button variant="ghost" size="icon" onClick={handlePrev} className="h-8 w-8"><ChevronLeft className="h-4 w-4" /></Button>
-                            <span className="text-sm font-medium min-w-[120px] text-center">
-                                {reportType === 'daily' ? format(targetDate, "d MMM yyyy", { locale: id }) :
-                                    reportType === 'weekly' ? `${format(startDate, "d MMM")} - ${format(endDate, "d MMM yyyy", { locale: id })}` :
-                                        format(targetDate, "MMMM yyyy", { locale: id })}
-                            </span>
-                            <Button variant="ghost" size="icon" onClick={handleNext} className="h-8 w-8"><ChevronRight className="h-4 w-4" /></Button>
-                        </>
-                    )}
-                </div>
-            </header>
+            
 
-            <main className="p-4 md:p-8 flex-1 overflow-auto">
-                <div className="bg-white rounded-2xl overflow-hidden mb-6">
+            <div className="space-y-6">
+            {/* Header Section */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">Rekap Kehadiran Karyawan</h1>
+                    <p className="text-sm text-gray-500">Ekspor laporan rekap kehadiran bulanan secara lengkap untuk penggajian.</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    
+                </div>
+            </div>
+
+            <div className="space-y-6">
+                <div className="bg-white rounded-xl overflow-hidden mb-6">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-gray-100 bg-white py-4 px-6">
                         <div className="space-y-1">
                             <div className="text-lg font-bold">Laporan Kehadiran</div>
@@ -650,7 +627,8 @@ export default function RecapPage() {
                         </div>
                     </div>
                 </div>
-            </main>
+            </div>
+        </div>
 
             <Dialog open={!!selectedPhotoRecord} onOpenChange={(open) => !open && setSelectedPhotoRecord(null)}>
                 <DialogContent className="sm:max-w-md bg-white rounded-xl p-6 overflow-y-auto max-h-[90vh]">
@@ -729,7 +707,7 @@ export default function RecapPage() {
             </Dialog>
 
             <Dialog open={deleteConfirmId !== null} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
-                <DialogContent className="sm:max-w-xs bg-white rounded-2xl p-6">
+                <DialogContent className="sm:max-w-xs bg-white rounded-xl p-6">
                     <DialogHeader><DialogTitle className="text-red-600">Hapus Data?</DialogTitle></DialogHeader>
                     <div className="flex gap-3 pt-4">
                         <Button variant="outline" className="flex-1" onClick={() => setDeleteConfirmId(null)}>Batal</Button>

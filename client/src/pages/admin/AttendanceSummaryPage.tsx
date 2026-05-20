@@ -462,75 +462,22 @@ export default function AttendanceSummaryPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
-            <header className="bg-white border-b border-gray-200 p-4 px-8 flex items-center justify-between sticky top-0 z-10">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => setLocation("/admin")}>
-                        <ArrowLeft className="h-5 w-5" />
-                    </Button>
-                    <h1 className="text-xl font-bold text-gray-800">Rekap Absensi Management PT ELOK JAYA ABADHI</h1>
-                </div>
-                <div className="flex items-center gap-4">
-                    <div className="relative w-64">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <Input
-                            placeholder="Cari nama atau NIK..."
-                            className="pl-9"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                    <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                        <div className="flex items-center gap-2 bg-white border rounded-md p-1 shadow-sm">
-                            <Select value={reportType} onValueChange={(v: any) => setReportType(v)}>
-                                <SelectTrigger className="w-[120px] h-8 border-none bg-transparent focus:ring-0">
-                                    <SelectValue placeholder="Tipe Laporan" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="daily">Harian</SelectItem>
-                                    <SelectItem value="weekly">Mingguan</SelectItem>
-                                    <SelectItem value="monthly">Bulanan</SelectItem>
-                                    <SelectItem value="custom">Kustom Pilihan</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <div className="h-4 w-[1px] bg-gray-200 mx-1"></div>
-                            {reportType === 'custom' ? (
-                                <div className="flex items-center gap-2">
-                                    <Input
-                                        type="date"
-                                        className="h-8 text-xs py-0 px-2 min-w-[130px] border-none focus-visible:ring-0"
-                                        value={customStartDate}
-                                        onChange={e => setCustomStartDate(e.target.value)}
-                                    />
-                                    <span className="text-gray-400 text-xs">-</span>
-                                    <Input
-                                        type="date"
-                                        className="h-8 text-xs py-0 px-2 min-w-[130px] border-none focus-visible:ring-0"
-                                        value={customEndDate}
-                                        onChange={e => setCustomEndDate(e.target.value)}
-                                    />
-                                </div>
-                            ) : (
-                                <>
-                                    <Button variant="ghost" size="icon" onClick={handlePrev} className="h-8 w-8 hover:bg-gray-100">
-                                        <ChevronLeft className="h-4 w-4" />
-                                    </Button>
-                                    <span className="text-sm font-medium min-w-[120px] text-center text-gray-700">
-                                        {reportType === 'daily' ? formatLongDate(targetDate) :
-                                            reportType === 'weekly' ? `${format(startDate, "d MMMM")} - ${format(endDate, "d MMMM yyyy", { locale: id })}` :
-                                                format(targetDate, "MMMM yyyy", { locale: id })}
-                                    </span>
-                                    <Button variant="ghost" size="icon" onClick={handleNext} className="h-8 w-8 hover:bg-gray-100">
-                                        <ChevronRight className="h-4 w-4" />
-                                    </Button>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </header>
+        <div className="space-y-6">
+            
 
-            <main className="p-8 flex-1 overflow-auto">
+            <div className="space-y-6">
+            {/* Header Section */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">Ringkasan Absensi</h1>
+                    <p className="text-sm text-gray-500">Analisis statistik kehadiran, tingkat keterlambatan, dan keaktifan presensi karyawan.</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    
+                </div>
+            </div>
+
+            <div className="space-y-6">
                 <Card className="border-none shadow-sm mb-6">
                     <CardContent className="p-4 flex items-center justify-between bg-white">
                         <div className="flex gap-6 text-sm">
@@ -636,7 +583,8 @@ export default function AttendanceSummaryPage() {
                         </Table>
                     </div>
                 </Card>
-            </main>
+            </div>
+        </div>
         </div>
     );
 }

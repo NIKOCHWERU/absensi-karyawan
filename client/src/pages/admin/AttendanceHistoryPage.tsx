@@ -528,66 +528,28 @@ export default function AttendanceHistoryPage() {
     return (
         <div className="w-full">
             {/* Main Content */}
-            <main className="flex-1 p-4 md:p-8 overflow-auto">
-                <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                    <div>
-                        <h2 className="text-2xl font-bold text-gray-800">Riwayat Absensi & Foto</h2>
-                        <p className="text-sm text-gray-500">Lihat detail waktu, status, foto bukti absensi, dan cetak laporan.</p>
-                    </div>
+            <div className="space-y-6">
+            {/* Header Section */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">Riwayat Absensi Karyawan</h1>
+                    <p className="text-sm text-gray-500">Pantau waktu masuk, pulang, status keterlambatan, dan log GPS presensi karyawan.</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                                        <Button
+                        variant="outline"
+                        className="rounded-lg gap-2 cursor-pointer bg-white"
+                        onClick={() => setLocation("/admin/recap")}
+                    >
+                        Lihat Rekap Absen
+                    </Button>
+                </div>
+            </div>
 
-                    <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                        <div className="flex items-center gap-2 bg-white border rounded-md p-1">
-                            <Select value={reportType} onValueChange={(v: any) => setReportType(v)}>
-                                <SelectTrigger className="w-[120px] h-8 border-none bg-transparent">
-                                    <SelectValue placeholder="Tipe Laporan" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="daily">Harian</SelectItem>
-                                    <SelectItem value="weekly">Mingguan</SelectItem>
-                                    <SelectItem value="monthly">Bulanan</SelectItem>
-                                    <SelectItem value="custom">Kustom Pilihan</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <div className="h-4 w-[1px] bg-gray-200 mx-1"></div>
-                            {reportType === 'custom' ? (
-                                <div className="flex items-center gap-2">
-                                    <Input
-                                        type="date"
-                                        className="h-8 text-xs py-0 px-2 min-w-[130px] w-auto"
-                                        value={customStartDate}
-                                        onChange={e => setCustomStartDate(e.target.value)}
-                                    />
-                                    <span className="text-gray-400 text-xs">-</span>
-                                    <Input
-                                        type="date"
-                                        className="h-8 text-xs py-0 px-2 min-w-[130px] w-auto"
-                                        value={customEndDate}
-                                        onChange={e => setCustomEndDate(e.target.value)}
-                                    />
-                                </div>
-                            ) : (
-                                <>
-                                    <Button variant="ghost" size="icon" onClick={handlePrev} className="h-8 w-8">
-                                        <ChevronLeft className="h-4 w-4" />
-                                    </Button>
-                                    <span className="text-sm font-medium min-w-[120px] text-center">
-                                        {reportType === 'daily' ? format(targetDate, "d MMM yyyy", { locale: id }) :
-                                            reportType === 'weekly' ? `${format(startDate, "d MMM")} - ${format(endDate, "d MMM yyyy", { locale: id })} ` :
-                                                format(targetDate, "MMMM yyyy", { locale: id })}
-                                    </span>
-                                    <Button variant="ghost" size="icon" onClick={handleNext} className="h-8 w-8">
-                                        <ChevronRight className="h-4 w-4" />
-                                    </Button>
-                                </>
-                            )}
-                        </div>
-                        <Button variant="outline" className="gap-2 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 shadow-sm" onClick={handleExport} disabled={isExporting}>
-                            <FileDown className="h-4 w-4" /> {isExporting ? "Memproses..." : "Export HTML"}
-                        </Button>
-                    </div>
-                </header>
+            <div className="space-y-6">
+                
 
-                <div className="bg-white rounded-2xl overflow-hidden mb-6">
+                <div className="bg-white rounded-xl overflow-hidden mb-6">
                     <div className="p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4 border-b border-gray-50 bg-white">
                         <div className="flex flex-col md:flex-row gap-2 md:items-center">
                             <span>Data Periode: {format(startDate, 'dd MMM yyyy', { locale: id })} - {format(endDate, 'dd MMM yyyy', { locale: id })}</span>
@@ -801,7 +763,8 @@ export default function AttendanceHistoryPage() {
                         )}
                     </div>
                 </div>
-            </main>
+            </div>
+        </div>
         </div>
     );
 }

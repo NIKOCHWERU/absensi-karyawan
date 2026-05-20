@@ -46,17 +46,29 @@ export default function AdminLeaveHistoryPage() {
     });
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <header className="bg-white border-b border-gray-200 p-4 px-8 flex items-center justify-between sticky top-0 z-10">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => setLocation("/admin")}>
-                        <ArrowLeft className="h-5 w-5" />
-                    </Button>
-                    <h1 className="text-xl font-bold text-gray-800">Riwayat & Log Cuti</h1>
-                </div>
-            </header>
+        <div className="space-y-6">
+            
 
-            <main className="p-8 max-w-6xl mx-auto space-y-6">
+            <div className="space-y-6">
+            {/* Header Section */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">Riwayat Permohonan Cuti</h1>
+                    <p className="text-sm text-gray-500">Daftar arsip dan riwayat persetujuan cuti seluruh karyawan.</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                                        <Button
+                        variant="outline"
+                        className="rounded-lg gap-2 cursor-pointer bg-white"
+                        onClick={() => setLocation("/admin/leave")}
+                    >
+                        <ArrowLeft className="w-4 h-4" />
+                        Kembali
+                    </Button>
+                </div>
+            </div>
+
+            <div className="space-y-6">
                 <Card className="border-none shadow-sm rounded-xl overflow-hidden">
                     <CardHeader className="bg-white border-b border-gray-50 flex flex-row items-center justify-between gap-4 p-6">
                         <div className="flex-1 relative">
@@ -140,7 +152,8 @@ export default function AdminLeaveHistoryPage() {
                         </div>
                     </CardContent>
                 </Card>
-            </main>
+            </div>
+        </div>
         </div>
     );
 }

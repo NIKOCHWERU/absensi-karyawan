@@ -92,17 +92,29 @@ export default function AdminLeavePage() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <header className="bg-white border-b border-gray-200 p-4 px-8 flex items-center justify-between sticky top-0 z-10">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => setLocation("/admin")}>
-                        <ArrowLeft className="h-5 w-5" />
-                    </Button>
-                    <h1 className="text-xl font-bold text-gray-800">Manajemen Cuti Karyawan</h1>
-                </div>
-            </header>
+        <div className="space-y-6">
+            
 
-            <main className="p-8 max-w-6xl mx-auto space-y-6">
+            <div className="space-y-6">
+            {/* Header Section */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">Manajemen Permohonan Cuti</h1>
+                    <p className="text-sm text-gray-500">Verifikasi dan kelola persetujuan cuti sakit, tahunan, dan cuti melahirkan karyawan.</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                                        <Button
+                        variant="outline"
+                        className="rounded-lg gap-2 cursor-pointer bg-white"
+                        onClick={() => setLocation("/admin/leave-history")}
+                    >
+                        <Calendar className="w-4 h-4" />
+                        Lihat Riwayat Cuti
+                    </Button>
+                </div>
+            </div>
+
+            <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900">Permohonan Cuti</h2>
@@ -175,7 +187,7 @@ export default function AdminLeavePage() {
                                     </span>
                                 </CardHeader>
                                 <CardContent className="p-6 space-y-4">
-                                    <div className="bg-gray-50 p-4 rounded-2xl space-y-2 border border-gray-100">
+                                    <div className="bg-gray-50 p-4 rounded-xl space-y-2 border border-gray-100">
                                         <div className="flex items-center gap-2 text-xs font-bold text-gray-500">
                                             <Calendar className="w-3 h-3" /> {req.selectedDates ? "TANGGAL TERPILIH" : "PERIODE CUTI"}
                                         </div>
@@ -200,7 +212,7 @@ export default function AdminLeavePage() {
                                         <div className="flex items-center gap-2 text-xs font-bold text-gray-500">
                                             <MessageSquare className="w-3 h-3" /> ALASAN
                                         </div>
-                                        <p className="text-sm text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-2xl italic">
+                                        <p className="text-sm text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-xl italic">
                                             "{req.reason}"
                                         </p>
                                     </div>
@@ -229,7 +241,8 @@ export default function AdminLeavePage() {
                         ))
                     )}
                 </div>
-            </main>
+            </div>
+        </div>
         </div>
     );
 }

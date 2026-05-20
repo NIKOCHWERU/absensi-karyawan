@@ -208,7 +208,7 @@ export default function InfoBoardPage() {
     });
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
+        <div className="space-y-6">
             <Dialog open={!!fullscreenImage} onOpenChange={(open) => !open && setFullscreenImage(null)}>
                 <DialogContent className="max-w-4xl max-h-[90vh] p-1 bg-transparent border-none shadow-none flex items-center justify-center">
                     <DialogTitle className="sr-only">Lihat Gambar</DialogTitle>
@@ -222,114 +222,30 @@ export default function InfoBoardPage() {
                     )}
                 </DialogContent>
             </Dialog>
-            <header className="bg-white border-b border-gray-200 p-4 px-8 flex items-center justify-between sticky top-0 z-10">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => setLocation("/admin")}>
-                        <ArrowLeft className="h-5 w-5" />
-                    </Button>
-                    <h1 className="text-xl font-bold text-gray-800">Papan Informasi</h1>
+            
+
+            <div className="space-y-6">
+            {/* Header Section */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">Papan Informasi</h1>
+                    <p className="text-sm text-gray-500">Publikasikan pengumuman penting, memo perusahaan, dan kebijakan baru.</p>
                 </div>
-                <Dialog open={open} onOpenChange={handleCloseModal}>
-                    <DialogTrigger asChild>
-                        <Button className="bg-orange-600 hover:bg-orange-700 text-white">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Tambah Informasi
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                            <DialogTitle>{editingAnnouncement ? "Edit Pengumuman" : "Buat Pengumuman Baru"}</DialogTitle>
-                            <DialogDescription>
-                                {editingAnnouncement ? "Perbarui informasi pengumuman di bawah ini." : "Isi formulir di bawah ini untuk menambahkan pengumuman baru."}
-                            </DialogDescription>
-                        </DialogHeader>
-                        <Form {...form}>
-                            <form 
-                                onSubmit={form.handleSubmit((d) => {
-                                    if (editingAnnouncement) {
-                                        updateMutation.mutate(d);
-                                    } else {
-                                        createMutation.mutate(d);
-                                    }
-                                })} 
-                                className="space-y-4"
-                            >
-                                <FormField
-                                    control={form.control}
-                                    name="title"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Judul</FormLabel>
-                                            <FormControl><Input {...field} placeholder="Contoh: Libur Nasional" /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="content"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Konten</FormLabel>
-                                            <FormControl>
-                                                <div className="bg-white rounded-md overflow-hidden border border-input focus-within:ring-2 focus-within:ring-ring">
-                                                    <ReactQuill
-                                                        theme="snow"
-                                                        value={field.value}
-                                                        onChange={field.onChange}
-                                                        modules={quillModules}
-                                                        formats={quillFormats}
-                                                        placeholder="Isi pengumuman..."
-                                                        className="h-48 mb-12"
-                                                    />
-                                                </div>
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="expiresAt"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Tampilkan Sampai (Opsional)</FormLabel>
-                                            <FormControl><Input type="date" {...field} /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <div className="space-y-2">
-                                    <FormLabel>Gambar (Opsional)</FormLabel>
-                                    <Input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => {
-                                            if (e.target.files && e.target.files[0]) {
-                                                setSelectedImage(e.target.files[0]);
-                                            }
-                                        }}
-                                    />
-                                    <p className="text-xs text-muted-foreground">Format: JPG, PNG. Maks 5MB.</p>
-                                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                                        <Button className="bg-green-600 hover:bg-green-700 text-white rounded-lg gap-2 shadow-sm" onClick={() => setOpen(true)}>
+                        <Plus className="w-4 h-4" />
+                        Tambah Informasi
+                    </Button>
+                </div>
+            </div>
 
-                                <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700 text-white" disabled={createMutation.isPending || updateMutation.isPending}>
-                                    {(createMutation.isPending || updateMutation.isPending) ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
-                                    {editingAnnouncement ? "Perbarui Pengumuman" : "Simpan Pengumuman"}
-                                </Button>
-                            </form>
-                        </Form>
-                    </DialogContent>
-                </Dialog>
-            </header>
-
-            <main className="p-8 flex-1 max-w-5xl mx-auto w-full">
+            <div className="space-y-6">
                 {isLoading ? (
                     <div className="flex justify-center p-10"><Loader2 className="animate-spin text-green-600" /></div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {announcements?.map((item) => (
-                            <div key={item.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 flex flex-col hover:shadow-lg transition-all group">
+                            <div key={item.id} className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 flex flex-col hover:shadow-lg transition-all group">
                                 {item.imageUrl && (
                                     <div className="relative h-48 overflow-hidden group/image">
                                         <div
@@ -427,14 +343,15 @@ export default function InfoBoardPage() {
                             </div>
                         ))}
                         {announcements?.length === 0 && (
-                            <div className="col-span-full text-center py-12 text-gray-400 bg-white rounded-2xl border border-dashed border-gray-200">
+                            <div className="col-span-full text-center py-12 text-gray-400 bg-white rounded-xl border border-dashed border-gray-200">
                                 <ImageIcon className="w-10 h-10 mx-auto mb-3 text-gray-300" />
                                 Belum ada pengumuman aktif.
                             </div>
                         )}
                     </div>
                 )}
-            </main>
+            </div>
+        </div>
         </div>
     );
 }

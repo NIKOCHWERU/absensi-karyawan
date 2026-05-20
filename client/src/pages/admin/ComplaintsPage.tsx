@@ -184,7 +184,7 @@ export default function AdminComplaintsPage() {
                         <Loader2 className="w-6 h-6 animate-spin text-primary" />
                     </div>
                 ) : sortedComplaints.length === 0 ? (
-                    <div className="text-center py-12 bg-white rounded-2xl shadow-sm border border-gray-100">
+                    <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-100">
                         <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                         <p className="text-gray-400 text-sm">Belum ada pengaduan</p>
                     </div>
@@ -197,7 +197,7 @@ export default function AdminComplaintsPage() {
                                 animate={{ y: 0, opacity: 1 }}
                                 transition={{ delay: i * 0.05 }}
                                 onClick={() => setSelectedComplaint(c)}
-                                className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all"
+                                className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 cursor-pointer hover:shadow-md transition-all"
                             >
                                 <div className="flex justify-between items-start mb-3">
                                     <div>
