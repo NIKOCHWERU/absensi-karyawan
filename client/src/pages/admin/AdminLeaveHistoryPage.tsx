@@ -57,18 +57,18 @@ export default function AdminLeaveHistoryPage() {
             </header>
 
             <main className="p-8 max-w-6xl mx-auto space-y-6">
-                <Card className="border-none shadow-sm rounded-3xl overflow-hidden">
+                <Card className="border-none shadow-sm rounded-xl overflow-hidden">
                     <CardHeader className="bg-white border-b border-gray-50 flex flex-row items-center justify-between gap-4 p-6">
                         <div className="flex-1 relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                             <Input
                                 placeholder="Cari nama karyawan atau alasan..."
-                                className="pl-10 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white transition-all h-11"
+                                className="pl-10 rounded-lg border-gray-100 bg-gray-50 focus:bg-white transition-all h-11"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <Button variant="outline" className="rounded-2xl h-11 gap-2 text-gray-600 border-gray-200">
+                        <Button variant="outline" className="rounded-lg h-11 gap-2 text-gray-600 border-gray-200">
                             <Filter className="w-4 h-4" /> Filter
                         </Button>
                     </CardHeader>

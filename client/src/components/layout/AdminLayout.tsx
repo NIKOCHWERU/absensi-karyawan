@@ -30,6 +30,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const dropdownRef = useRef<HTMLDivElement>(null);
     const sidebarRef = useRef<HTMLDivElement>(null);
 
+    // Persist collapsible sidebar using localStorage
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+        if (typeof window !== "undefined") {
+            return localStorage.getItem("admin_sidebar_collapsed") === "true";
+        }
+        return false;
+    });
+
+    const toggleSidebarCollapse = () => {
+        setSidebarCollapsed(prev => {
+            const next = !prev;
+            localStorage.setItem("admin_sidebar_collapsed", String(next));
+            return next;
+        });
+    };
+
     // Polling counts for notifications in sidebar
     const { data: complaintsStats } = useQuery<{ pendingCount: number }>({
         queryKey: ["/api/admin/complaints/stats"],
@@ -68,6 +84,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         setSidebarOpen(false);
     }, [location]);
 
+    const isLinkActive = (path: string) => location === path;
+    const getLinkClass = (path: string) => {
+        const active = isLinkActive(path);
+        if (sidebarCollapsed) {
+            return `flex items-center justify-center lg:w-11 lg:h-11 mx-auto rounded-lg text-sm font-medium transition-all duration-200 relative ${
+                active
+                    ? "bg-green-50 text-green-700 font-bold shadow-xs border border-green-200"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+            }`;
+        }
+        return `flex items-center gap-3 w-full rounded-lg py-2.5 text-sm font-medium transition-all duration-200 ${
+            active
+                ? "bg-green-50 text-green-700 font-bold border-l-4 border-green-600 pl-2.5 shadow-xs"
+                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:translate-x-1 pl-3"
+        }`;
+    };
+
     return (
         <div className="flex h-screen overflow-hidden bg-gray-50/50">
             {/* Mobile Sidebar Overlay */}
@@ -78,21 +111,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 />
             )}
 
-            {/* Sidebar Component (TailAdmin structural layout style) */}
+            {/* Sidebar Component */}
             <aside
                 ref={sidebarRef}
-                className={`fixed left-0 top-0 z-50 flex h-screen w-72 flex-col overflow-y-hidden bg-white border-r border-gray-100 transition-all duration-300 ease-in-out lg:static lg:translate-x-0 ${
+                className={`fixed left-0 top-0 z-50 flex h-screen flex-col overflow-y-hidden bg-white border-r border-gray-100 transition-all duration-300 ease-in-out lg:static lg:translate-x-0 ${
                     sidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full lg:translate-x-0"
-                }`}
+                } ${sidebarCollapsed ? "lg:w-20" : "lg:w-72"}`}
             >
                 {/* Sidebar Header Brand */}
-                <div className="flex items-center justify-between gap-2 px-6 py-5 border-b border-gray-50 bg-white">
+                <div className={`flex items-center justify-between gap-2 px-6 py-5 border-b border-gray-50 bg-white ${sidebarCollapsed ? "lg:px-4 lg:justify-center" : ""}`}>
                     <div className="flex items-center gap-3">
-                        <img src="/logo_elok_buah.jpg" alt="Logo" className="w-10 h-10 object-contain rounded-lg shadow-xs" />
-                        <div className="flex flex-col">
-                            <h1 className="text-sm font-black text-gray-900 tracking-tight">PT ELOK JAYA ABADHI</h1>
-                            <p className="text-[10px] text-green-600 font-bold tracking-wider">ADMIN PANEL</p>
-                        </div>
+                        <img src="/logo_elok_buah.jpg" alt="Logo" className="w-10 h-10 object-contain rounded-lg shadow-xs shrink-0" />
+                        {!sidebarCollapsed && (
+                            <div className="flex flex-col lg:animate-in lg:fade-in duration-200">
+                                <h1 className="text-sm font-black text-gray-900 tracking-tight leading-tight">PT ELOK JAYA ABADHI</h1>
+                                <p className="text-[10px] text-green-600 font-bold tracking-wider">ADMIN PANEL</p>
+                            </div>
+                        )}
                     </div>
                     {/* Mobile close button */}
                     <button
@@ -108,34 +143,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <nav className="space-y-6">
                         {/* Section: Main Menu */}
                         <div>
-                            <p className="px-3 mb-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                Menu Utama
-                            </p>
+                            {!sidebarCollapsed ? (
+                                <p className="px-3 mb-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest lg:animate-in lg:fade-in duration-200">
+                                    Menu Utama
+                                </p>
+                            ) : (
+                                <div className="border-t border-gray-100 my-4 first:hidden" />
+                            )}
                             <ul className="space-y-1">
                                 <li>
                                     <button
                                         onClick={() => setLocation("/admin")}
-                                        className={`flex items-center gap-3 w-full rounded-xl py-2.5 text-sm font-medium transition-all duration-200 ${
-                                            location === "/admin"
-                                                ? "bg-green-50 text-green-700 font-bold border-l-4 border-green-600 pl-2.5 shadow-xs"
-                                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:translate-x-1 pl-3"
-                                        }`}
+                                        className={getLinkClass("/admin")}
+                                        title={sidebarCollapsed ? "Dashboard" : undefined}
                                     >
                                         <CalendarDays className="h-4.5 w-4.5 shrink-0" />
-                                        <span>Dashboard</span>
+                                        {!sidebarCollapsed && <span>Dashboard</span>}
                                     </button>
                                 </li>
                                 <li>
                                     <button
                                         onClick={() => setLocation("/admin/employees")}
-                                        className={`flex items-center gap-3 w-full rounded-xl py-2.5 text-sm font-medium transition-all duration-200 ${
-                                            location === "/admin/employees"
-                                                ? "bg-green-50 text-green-700 font-bold border-l-4 border-green-600 pl-2.5 shadow-xs"
-                                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:translate-x-1 pl-3"
-                                        }`}
+                                        className={getLinkClass("/admin/employees")}
+                                        title={sidebarCollapsed ? "Daftar Karyawan" : undefined}
                                     >
                                         <Users className="h-4.5 w-4.5 shrink-0" />
-                                        <span>Daftar Karyawan</span>
+                                        {!sidebarCollapsed && <span>Daftar Karyawan</span>}
                                     </button>
                                 </li>
                             </ul>
@@ -143,80 +176,80 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                         {/* Section: Attendance & Leave */}
                         <div>
-                            <p className="px-3 mb-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                Absensi & Cuti
-                            </p>
+                            {!sidebarCollapsed ? (
+                                <p className="px-3 mb-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest lg:animate-in lg:fade-in duration-200">
+                                    Absensi & Cuti
+                                </p>
+                            ) : (
+                                <div className="border-t border-gray-100 my-4" />
+                            )}
                             <ul className="space-y-1">
                                 <li>
                                     <button
                                         onClick={() => setLocation("/admin/recap")}
-                                        className={`flex items-center gap-3 w-full rounded-xl py-2.5 text-sm font-medium transition-all duration-200 ${
-                                            location === "/admin/recap"
-                                                ? "bg-green-50 text-green-700 font-bold border-l-4 border-green-600 pl-2.5 shadow-xs"
-                                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:translate-x-1 pl-3"
-                                        }`}
+                                        className={getLinkClass("/admin/recap")}
+                                        title={sidebarCollapsed ? "Rekap Absensi" : undefined}
                                     >
                                         <Clock className="h-4.5 w-4.5 shrink-0" />
-                                        <span>Rekap Absensi</span>
+                                        {!sidebarCollapsed && <span>Rekap Absensi</span>}
                                     </button>
                                 </li>
                                 <li>
                                     <button
                                         onClick={() => setLocation("/admin/attendance-history")}
-                                        className={`flex items-center gap-3 w-full rounded-xl py-2.5 text-sm font-medium transition-all duration-200 ${
-                                            location === "/admin/attendance-history"
-                                                ? "bg-green-50 text-green-700 font-bold border-l-4 border-green-600 pl-2.5 shadow-xs"
-                                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:translate-x-1 pl-3"
-                                        }`}
+                                        className={getLinkClass("/admin/attendance-history")}
+                                        title={sidebarCollapsed ? "Riwayat Absensi" : undefined}
                                     >
                                         <ImageIcon className="h-4.5 w-4.5 shrink-0" />
-                                        <span>Riwayat Absensi</span>
+                                        {!sidebarCollapsed && <span>Riwayat Absensi</span>}
                                     </button>
                                 </li>
                                 <li>
                                     <button
                                         onClick={() => setLocation("/admin/leave")}
-                                        className={`flex items-center justify-between w-full rounded-xl py-2.5 text-sm font-medium transition-all duration-200 ${
-                                            location === "/admin/leave"
-                                                ? "bg-green-50 text-green-700 font-bold border-l-4 border-green-600 pl-2.5 pr-3 shadow-xs"
-                                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:translate-x-1 pl-3 pr-3"
-                                        }`}
+                                        className={getLinkClass("/admin/leave")}
+                                        title={sidebarCollapsed ? `Manajemen Cuti (${pendingLeaveCount})` : undefined}
                                     >
-                                        <div className="flex items-center gap-3">
-                                            <CalendarDays className="h-4.5 w-4.5 shrink-0" />
-                                            <span>Manajemen Cuti</span>
-                                        </div>
-                                        {pendingLeaveCount > 0 && (
-                                            <span className="bg-orange-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
-                                                {pendingLeaveCount}
-                                            </span>
+                                        {sidebarCollapsed ? (
+                                            <>
+                                                <CalendarDays className="h-4.5 w-4.5 shrink-0" />
+                                                {pendingLeaveCount > 0 && (
+                                                    <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5 rounded-full bg-orange-500 ring-2 ring-white animate-pulse" />
+                                                )}
+                                            </>
+                                        ) : (
+                                            <div className="flex items-center justify-between w-full">
+                                                <div className="flex items-center gap-3">
+                                                    <CalendarDays className="h-4.5 w-4.5 shrink-0" />
+                                                    <span>Manajemen Cuti</span>
+                                                </div>
+                                                {pendingLeaveCount > 0 && (
+                                                    <span className="bg-orange-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+                                                        {pendingLeaveCount}
+                                                    </span>
+                                                )}
+                                            </div>
                                         )}
                                     </button>
                                 </li>
                                 <li>
                                     <button
                                         onClick={() => setLocation("/admin/leave-history")}
-                                        className={`flex items-center gap-3 w-full rounded-xl py-2.5 text-sm font-medium transition-all duration-200 ${
-                                            location === "/admin/leave-history"
-                                                ? "bg-green-50 text-green-700 font-bold border-l-4 border-green-600 pl-2.5 shadow-xs"
-                                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:translate-x-1 pl-3"
-                                        }`}
+                                        className={getLinkClass("/admin/leave-history")}
+                                        title={sidebarCollapsed ? "Riwayat Cuti" : undefined}
                                     >
                                         <History className="h-4.5 w-4.5 shrink-0" />
-                                        <span>Riwayat Cuti</span>
+                                        {!sidebarCollapsed && <span>Riwayat Cuti</span>}
                                     </button>
                                 </li>
                                 <li>
                                     <button
                                         onClick={() => setLocation("/admin/attendance-summary")}
-                                        className={`flex items-center gap-3 w-full rounded-xl py-2.5 text-sm font-medium transition-all duration-200 ${
-                                            location === "/admin/attendance-summary"
-                                                ? "bg-green-50 text-green-700 font-bold border-l-4 border-green-600 pl-2.5 shadow-xs"
-                                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:translate-x-1 pl-3"
-                                        }`}
+                                        className={getLinkClass("/admin/attendance-summary")}
+                                        title={sidebarCollapsed ? "Ringkasan Absensi" : undefined}
                                     >
                                         <FileText className="h-4.5 w-4.5 shrink-0" />
-                                        <span className="truncate">Ringkasan Absensi</span>
+                                        {!sidebarCollapsed && <span className="truncate">Ringkasan Absensi</span>}
                                     </button>
                                 </li>
                             </ul>
@@ -224,21 +257,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                         {/* Section: Management & Setting */}
                         <div>
-                            <p className="px-3 mb-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                Manajemen
-                            </p>
+                            {!sidebarCollapsed ? (
+                                <p className="px-3 mb-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest lg:animate-in lg:fade-in duration-200">
+                                    Manajemen
+                                </p>
+                            ) : (
+                                <div className="border-t border-gray-100 my-4" />
+                            )}
                             <ul className="space-y-1">
                                 <li>
                                     <button
                                         onClick={() => setLocation("/admin/info-board")}
-                                        className={`flex items-center gap-3 w-full rounded-xl py-2.5 text-sm font-medium transition-all duration-200 ${
-                                            location === "/admin/info-board"
-                                                ? "bg-green-50 text-green-700 font-bold border-l-4 border-green-600 pl-2.5 shadow-xs"
-                                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:translate-x-1 pl-3"
-                                        }`}
+                                        className={getLinkClass("/admin/info-board")}
+                                        title={sidebarCollapsed ? "Papan Informasi" : undefined}
                                     >
                                         <FileText className="h-4.5 w-4.5 shrink-0" />
-                                        <span>Papan Informasi</span>
+                                        {!sidebarCollapsed && <span>Papan Informasi</span>}
                                     </button>
                                 </li>
 
@@ -246,20 +280,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                     <li>
                                         <button
                                             onClick={() => setLocation("/admin/complaints")}
-                                            className={`flex items-center justify-between w-full rounded-xl py-2.5 text-sm font-medium transition-all duration-200 ${
-                                                location === "/admin/complaints"
-                                                    ? "bg-green-50 text-green-700 font-bold border-l-4 border-green-600 pl-2.5 pr-3 shadow-xs"
-                                                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:translate-x-1 pl-3 pr-3"
-                                            }`}
+                                            className={getLinkClass("/admin/complaints")}
+                                            title={sidebarCollapsed ? `Pengaduan Karyawan (${pendingComplaintsCount})` : undefined}
                                         >
-                                            <div className="flex items-center gap-3">
-                                                <MessageSquare className="h-4.5 w-4.5 shrink-0" />
-                                                <span>Pengaduan Karyawan</span>
-                                            </div>
-                                            {pendingComplaintsCount > 0 && (
-                                                <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">
-                                                    {pendingComplaintsCount}
-                                                </span>
+                                            {sidebarCollapsed ? (
+                                                <>
+                                                    <MessageSquare className="h-4.5 w-4.5 shrink-0" />
+                                                    {pendingComplaintsCount > 0 && (
+                                                        <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white animate-pulse" />
+                                                    )}
+                                                </>
+                                            ) : (
+                                                <div className="flex items-center justify-between w-full">
+                                                    <div className="flex items-center gap-3">
+                                                        <MessageSquare className="h-4.5 w-4.5 shrink-0" />
+                                                        <span>Pengaduan Karyawan</span>
+                                                    </div>
+                                                    {pendingComplaintsCount > 0 && (
+                                                        <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">
+                                                            {pendingComplaintsCount}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             )}
                                         </button>
                                     </li>
@@ -268,20 +310,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 <li>
                                     <button
                                         onClick={() => setLocation("/admin/verification")}
-                                        className={`flex items-center justify-between w-full rounded-xl py-2.5 text-sm font-medium transition-all duration-200 ${
-                                            location === "/admin/verification"
-                                                ? "bg-green-50 text-green-700 font-bold border-l-4 border-green-600 pl-2.5 pr-3 shadow-xs"
-                                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:translate-x-1 pl-3 pr-3"
-                                        }`}
+                                        className={getLinkClass("/admin/verification")}
+                                        title={sidebarCollapsed ? `Verifikasi Karyawan (${pendingVerificationCount})` : undefined}
                                     >
-                                        <div className="flex items-center gap-3">
-                                            <ShieldCheck className="h-4.5 w-4.5 shrink-0" />
-                                            <span>Verifikasi Karyawan</span>
-                                        </div>
-                                        {pendingVerificationCount > 0 && (
-                                            <span className="bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
-                                                {pendingVerificationCount}
-                                            </span>
+                                        {sidebarCollapsed ? (
+                                            <>
+                                                <ShieldCheck className="h-4.5 w-4.5 shrink-0" />
+                                                {pendingVerificationCount > 0 && (
+                                                    <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5 rounded-full bg-amber-500 ring-2 ring-white animate-pulse" />
+                                                )}
+                                            </>
+                                        ) : (
+                                            <div className="flex items-center justify-between w-full">
+                                                <div className="flex items-center gap-3">
+                                                    <ShieldCheck className="h-4.5 w-4.5 shrink-0" />
+                                                    <span>Verifikasi Karyawan</span>
+                                                </div>
+                                                {pendingVerificationCount > 0 && (
+                                                    <span className="bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+                                                        {pendingVerificationCount}
+                                                    </span>
+                                                )}
+                                            </div>
                                         )}
                                     </button>
                                 </li>
@@ -290,14 +340,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                     <li>
                                         <button
                                             onClick={() => setLocation("/admin/manage-admins")}
-                                            className={`flex items-center gap-3 w-full rounded-xl py-2.5 text-sm font-medium transition-all duration-200 ${
-                                                location === "/admin/manage-admins"
-                                                    ? "bg-green-50 text-green-700 font-bold border-l-4 border-green-600 pl-2.5 shadow-xs"
-                                                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:translate-x-1 pl-3"
-                                            }`}
+                                            className={getLinkClass("/admin/manage-admins")}
+                                            title={sidebarCollapsed ? "Kelola Admin" : undefined}
                                         >
                                             <UserCog className="h-4.5 w-4.5 shrink-0" />
-                                            <span>Kelola Admin</span>
+                                            {!sidebarCollapsed && <span>Kelola Admin</span>}
                                         </button>
                                     </li>
                                 )}
@@ -307,20 +354,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </div>
 
                 {/* Sidebar Footer Logout (Premium Style) */}
-                <div className="p-4 border-t border-gray-100 bg-white">
+                <div className={`p-4 border-t border-gray-100 bg-white ${sidebarCollapsed ? "lg:p-2.5" : ""}`}>
                     <button
                         onClick={() => logout()}
-                        className="flex items-center gap-3 w-full px-4 py-3 text-sm font-semibold text-red-600 hover:text-red-700 rounded-xl bg-red-50/50 hover:bg-red-50 transition-all duration-200 active:scale-[0.98] shadow-xs border border-red-100/50 hover:border-red-200"
+                        className={`flex items-center gap-3 text-sm font-semibold text-red-600 hover:text-red-700 rounded-lg bg-red-50/50 hover:bg-red-50 transition-all duration-200 active:scale-[0.98] border border-red-100/50 hover:border-red-200 ${
+                            sidebarCollapsed 
+                                ? "w-11 h-11 mx-auto justify-center p-0" 
+                                : "w-full px-4 py-3"
+                        }`}
+                        title={sidebarCollapsed ? "Keluar" : undefined}
                     >
                         <LogOut className="w-4.5 h-4.5 shrink-0" />
-                        <span>Keluar</span>
+                        {!sidebarCollapsed && <span>Keluar</span>}
                     </button>
                 </div>
             </aside>
 
             {/* Main Page Area Container */}
             <div className="relative flex flex-grow flex-col overflow-y-auto overflow-x-hidden">
-                {/* Header (TailAdmin structural layout style) */}
+                {/* Header */}
                 <header className="sticky top-0 z-30 flex w-full bg-white border-b border-gray-100 px-4 sm:px-6 h-16 shrink-0 items-center justify-between shadow-xs">
                     {/* Header Left Side */}
                     <div className="flex items-center gap-4">
@@ -332,6 +384,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 setSidebarOpen(!sidebarOpen);
                             }}
                             className="block lg:hidden rounded-lg border border-gray-200 bg-white p-2 text-gray-600 hover:text-gray-900 shadow-xs transition-all active:scale-95 hover:bg-gray-50 focus:outline-none"
+                        >
+                            <Menu className="w-5 h-5" />
+                        </button>
+
+                        {/* Desktop Hamburg Toggle Button */}
+                        <button
+                            onClick={() => toggleSidebarCollapse()}
+                            className="hidden lg:block rounded-lg border border-gray-200 bg-white p-2 text-gray-600 hover:text-gray-900 shadow-xs transition-all active:scale-95 hover:bg-gray-50 focus:outline-none cursor-pointer"
                         >
                             <Menu className="w-5 h-5" />
                         </button>
@@ -374,7 +434,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         <div className="relative" ref={dropdownRef}>
                             <button
                                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                                className="flex items-center gap-2 sm:gap-3 hover:bg-gray-50 p-1.5 rounded-xl sm:rounded-2xl transition-all duration-200 focus:outline-none"
+                                className="flex items-center gap-2 sm:gap-3 hover:bg-gray-50 p-1.5 rounded-lg sm:rounded-xl transition-all duration-200 focus:outline-none"
                             >
                                 <div className="hidden text-right sm:block">
                                     <p className="text-xs font-black text-gray-800 tracking-tight leading-none truncate max-w-[120px]">
@@ -395,7 +455,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                             {/* Dropdown Menu */}
                             {dropdownOpen && (
-                                <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white border border-gray-100 shadow-2xl py-2 z-50 transition-all origin-top-right animate-in fade-in slide-in-from-top-2 duration-150">
+                                <div className="absolute right-0 mt-2 w-56 rounded-xl bg-white border border-gray-100 shadow-2xl py-2 z-50 transition-all origin-top-right animate-in fade-in slide-in-from-top-2 duration-150">
                                     <div className="px-4 py-2 border-b border-gray-50 mb-1.5">
                                         <p className="text-xs font-bold text-gray-800 truncate">
                                             {user?.fullName || "User Admin"}
@@ -408,12 +468,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                     <button
                                         onClick={() => {
                                             setDropdownOpen(false);
-                                            setLocation("/profile");
+                                            setLocation("/admin/profile");
                                         }}
                                         className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
                                     >
-                                        <Users className="w-4 h-4 text-gray-400" />
-                                        <span>Profil Karyawan</span>
+                                        <UserCog className="w-4 h-4 text-gray-400" />
+                                        <span>Profil Admin</span>
                                     </button>
                                     
                                     <div className="h-px bg-gray-50 my-1" />

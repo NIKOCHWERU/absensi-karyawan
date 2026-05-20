@@ -137,12 +137,24 @@ export default function RecapPage() {
         }
     };
 
+    const safeFormatDate = (dateVal: any, formatStr: string, options?: any) => {
+        try {
+            if (!dateVal) return "";
+            const d = new Date(dateVal);
+            if (isNaN(d.getTime())) return "";
+            return format(d, formatStr, options);
+        } catch (e) {
+            return "";
+        }
+    };
+
     const dailyTotals = new Map<string, { mins: number; complete: boolean }>();
     processedData.forEach(row => {
-        const key = `${format(new Date(row.date), "yyyy-MM-dd")}-${row.userId}`;
-        if (!dailyTotals.has(key)) {
+        const dateKey = safeFormatDate(row.date, "yyyy-MM-dd");
+        const key = `${dateKey}-${row.userId}`;
+        if (dateKey && !dailyTotals.has(key)) {
             const dayRecords = processedData.filter(r =>
-                format(new Date(r.date), "yyyy-MM-dd") === format(new Date(row.date), "yyyy-MM-dd") &&
+                safeFormatDate(r.date, "yyyy-MM-dd") === dateKey &&
                 r.userId === row.userId
             );
             const { netWorkMins, hasAllCheckOuts } = calculateDailyTotal(dayRecords);
@@ -562,15 +574,15 @@ export default function RecapPage() {
                                 <tbody className="divide-y divide-gray-100">
                                     {processedData.map((row, index) => {
                                         const { netWorkMins: sessionNetMins } = calculateDailyTotal([row]);
-                                        const dateStr = format(new Date(row.date), "yyyy-MM-dd");
+                                        const dateStr = safeFormatDate(row.date, "yyyy-MM-dd");
                                         const key = `${dateStr}-${row.userId}`;
                                         const prevRow = index > 0 ? processedData[index - 1] : null;
-                                        const isSameDayAndUser = prevRow && format(new Date(prevRow.date), "yyyy-MM-dd") === dateStr && prevRow.userId === row.userId;
+                                        const isSameDayAndUser = prevRow && safeFormatDate(prevRow.date, "yyyy-MM-dd") === dateStr && prevRow.userId === row.userId;
 
                                         return (
                                             <tr key={row.id} className="hover:bg-gray-50/30 transition-colors group">
                                                 <td className="px-6 py-4 font-bold text-gray-500 text-[10px]">
-                                                    {isSameDayAndUser ? <span className="ml-4 text-gray-300">↳</span> : format(new Date(row.date), "EEEE, d MMMM yyyy", { locale: id })}
+                                                    {isSameDayAndUser ? <span className="ml-4 text-gray-300">↳</span> : safeFormatDate(row.date, "EEEE, d MMMM yyyy", { locale: id })}
                                                 </td>
                                                 <td className="px-6 py-4 font-bold text-gray-900 capitalize">
                                                     {isSameDayAndUser ? "" : (
@@ -586,21 +598,21 @@ export default function RecapPage() {
                                                     )}
                                                 </td>
                                                 <td className="px-6 py-4 text-center font-mono font-bold text-emerald-600">
-                                                    {row.checkIn ? format(new Date(row.checkIn), "HH:mm") : "-"}
+                                                    {row.checkIn ? safeFormatDate(row.checkIn, "HH:mm") : "-"}
                                                 </td>
                                                 <td className="px-6 py-4 text-center font-mono font-bold text-amber-600">
-                                                    {row.breakStart ? format(new Date(row.breakStart), "HH:mm") : "-"}
+                                                    {row.breakStart ? safeFormatDate(row.breakStart, "HH:mm") : "-"}
                                                 </td>
                                                 <td className="px-6 py-4 text-center font-mono font-bold text-blue-600">
-                                                    {row.breakEnd ? format(new Date(row.breakEnd), "HH:mm") : "-"}
+                                                    {row.breakEnd ? safeFormatDate(row.breakEnd, "HH:mm") : "-"}
                                                 </td>
                                                 <td className="px-6 py-4 text-center font-mono font-bold text-rose-600">
-                                                    {row.checkOut ? format(new Date(row.checkOut), "HH:mm") : "-"}
+                                                    {row.checkOut ? safeFormatDate(row.checkOut, "HH:mm") : "-"}
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     {!isSameDayAndUser && (
                                                         <div className="font-black text-gray-800">
-                                                            {dailyTotals.get(key)!.mins > 0 ? formatDuration(dailyTotals.get(key)!.mins) : "-"}
+                                                            {(dailyTotals.get(key)?.mins ?? 0) > 0 ? formatDuration(dailyTotals.get(key)?.mins ?? 0) : "-"}
                                                         </div>
                                                     )}
                                                     <div className="text-[10px] text-gray-400 mt-0.5">
@@ -641,7 +653,7 @@ export default function RecapPage() {
             </main>
 
             <Dialog open={!!selectedPhotoRecord} onOpenChange={(open) => !open && setSelectedPhotoRecord(null)}>
-                <DialogContent className="sm:max-w-md bg-white rounded-3xl p-6 overflow-y-auto max-h-[90vh]">
+                <DialogContent className="sm:max-w-md bg-white rounded-xl p-6 overflow-y-auto max-h-[90vh]">
                     <DialogHeader>
                         <DialogTitle className="text-xl font-black text-blue-600 uppercase">Bukti Foto Absensi</DialogTitle>
                     </DialogHeader>
@@ -671,7 +683,7 @@ export default function RecapPage() {
             </Dialog>
 
             <Dialog open={isManualModalOpen} onOpenChange={setIsManualModalOpen}>
-                <DialogContent className="sm:max-w-lg bg-white rounded-3xl p-6 overflow-y-auto max-h-[90vh]">
+                <DialogContent className="sm:max-w-lg bg-white rounded-xl p-6 overflow-y-auto max-h-[90vh]">
                     <DialogHeader>
                         <DialogTitle>{editingAttendance ? "Edit Data" : "Input Manual"}</DialogTitle>
                     </DialogHeader>

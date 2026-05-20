@@ -149,7 +149,7 @@ export default function AdminLeavePage() {
                         </Card>
                     ) : (
                         sortedRequests?.map((req) => (
-                            <Card key={req.id} className="rounded-3xl border-none shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                            <Card key={req.id} className="rounded-xl border-none shadow-sm overflow-hidden hover:shadow-md transition-shadow">
                                 <CardHeader className="bg-white pb-2 flex flex-row items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className="bg-blue-50 p-2 rounded-xl text-blue-600">

@@ -173,6 +173,40 @@ export async function registerRoutes(
     }
   });
 
+  // --- Admin: Edit own profile and password ---
+  app.patch("/api/admin/profile", isAuthenticated, async (req, res) => {
+    if (!isAdminRole(req)) return res.sendStatus(403);
+    try {
+      const userId = req.user!.id;
+      const { fullName, email, phoneNumber, username, password } = req.body;
+      const updates: any = {};
+      
+      if (fullName) updates.fullName = fullName;
+      if (email !== undefined) updates.email = email || null;
+      if (phoneNumber !== undefined) updates.phoneNumber = phoneNumber || null;
+      if (username) {
+        const existing = await storage.getUserByUsername(username);
+        if (existing && existing.id !== userId) {
+          return res.status(400).json({ message: "Username sudah digunakan oleh orang lain." });
+        }
+        updates.username = username;
+      }
+      
+      if (password) {
+        if (password.length < 4) {
+          return res.status(400).json({ message: "Password minimal 4 karakter." });
+        }
+        updates.password = await hashPassword(password);
+      }
+
+      const updatedUser = await storage.updateUser(userId, updates);
+      res.json(updatedUser);
+    } catch (err: any) {
+      console.error("Admin Profile Update Error:", err);
+      res.status(500).json({ message: "Gagal memperbarui profil admin: " + err.message });
+    }
+  });
+
 
 
 

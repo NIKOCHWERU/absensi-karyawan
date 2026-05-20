@@ -29,6 +29,7 @@ import ProfilePage from "@/pages/employee/ProfilePage";
 import AdminVerificationPage from "@/pages/admin/AdminVerificationPage";
 import AdminShiftPage from "@/pages/admin/AdminShiftPage";
 import AdminManageAdminsPage from "@/pages/admin/AdminManageAdminsPage";
+import AdminProfilePage from "@/pages/admin/AdminProfilePage";
 import StatusPendingPage from "@/pages/employee/StatusPendingPage";
 import NotFound from "@/pages/not-found";
 import InstallAppBanner from "@/components/InstallAppBanner";
@@ -58,6 +59,12 @@ function ProtectedRoute({ component: Component, adminOnly, superadminOnly }: { c
         } else if (user.registrationStatus === 'approved' && (isRegistrationPage || isPendingPage)) {
           setLocation("/");
         }
+      } else if (user.role === 'admin' || user.role === 'superadmin') {
+        // Enforce strict separation: block admin from accessing employee/user pages
+        const isAdminRoute = window.location.pathname.startsWith("/admin");
+        if (!isAdminRoute && !["/login", "/admin/login", "/karyawan/login"].includes(window.location.pathname)) {
+          setLocation("/admin");
+        }
       }
 
       if (superadminOnly && user.role !== 'superadmin') {
@@ -85,8 +92,16 @@ function ProtectedRoute({ component: Component, adminOnly, superadminOnly }: { c
 
 function DashboardSwitcher() {
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (user?.role === 'admin' || user?.role === 'superadmin') {
+      setLocation("/admin");
+    }
+  }, [user, setLocation]);
+
   if (user?.role === 'admin' || user?.role === 'superadmin') {
-    return <AdminLayout><AdminDashboard /></AdminLayout>;
+    return null;
   }
   return <EmployeeDashboard />;
 }
@@ -125,6 +140,9 @@ function Router() {
       </Route>
       <Route path="/admin/leave-history">
         <ProtectedRoute component={() => <AdminLayout><AdminLeaveHistory /></AdminLayout>} adminOnly />
+      </Route>
+      <Route path="/admin/profile">
+        <ProtectedRoute component={() => <AdminLayout><AdminProfilePage /></AdminLayout>} adminOnly />
       </Route>
 
       {/* Employee & Shared Routes */}

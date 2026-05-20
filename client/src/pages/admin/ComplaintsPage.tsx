@@ -225,7 +225,7 @@ export default function AdminComplaintsPage() {
 
             {/* Detail Dialog */}
             <Dialog open={!!selectedComplaint} onOpenChange={() => setSelectedComplaint(null)}>
-                <DialogContent className="rounded-3xl max-w-md p-5 max-h-[90vh] overflow-y-auto">
+                <DialogContent className="rounded-xl max-w-md p-5 max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="text-lg font-bold">{selectedComplaint?.title}</DialogTitle>
                         <DialogDescription>
