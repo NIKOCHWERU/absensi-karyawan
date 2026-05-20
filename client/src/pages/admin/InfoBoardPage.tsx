@@ -26,7 +26,6 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
 
 // Schema for form since we handle file upload manually
 const formSchema = z.object({

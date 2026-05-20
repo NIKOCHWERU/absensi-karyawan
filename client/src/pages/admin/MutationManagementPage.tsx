@@ -87,6 +87,7 @@ export default function MutationManagementPage() {
     const [formNewPosition, setFormNewPosition] = useState("");
     const [formNotes, setFormNotes] = useState("");
     const [formFile, setFormFile] = useState<File | null>(null);
+    const [employeeQuery, setEmployeeQuery] = useState("");
 
     // Queries
     const { data: mutationsList = [], isLoading: isLoadingMutations } = useQuery<MutationData[]>({
@@ -207,6 +208,7 @@ export default function MutationManagementPage() {
         setFormNotes("");
         setFormFile(null);
         setSelectedMutation(null);
+        setEmployeeQuery("");
     };
 
     const handleAddSubmit = (e: React.FormEvent) => {
@@ -500,24 +502,64 @@ export default function MutationManagementPage() {
                             </Select>
                         </div>
 
-                        <div className="space-y-1.5">
+                        <div className="space-y-1.5 relative">
                             <label className="text-xs font-black text-gray-500 uppercase">Pilih Karyawan <span className="text-red-500">*</span></label>
-                            <Select value={formUserId} onValueChange={setFormUserId}>
-                                <SelectTrigger className="rounded-lg border-gray-200">
-                                    <SelectValue placeholder="Pilih Karyawan..." />
-                                </SelectTrigger>
-                                <SelectContent className="max-h-60 rounded-lg">
-                                    {activeEmployees.length === 0 ? (
-                                        <div className="p-4 text-center text-xs text-gray-400">Tidak ada karyawan aktif</div>
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <Input
+                                    placeholder="Ketik nama / NIK untuk mencari..."
+                                    value={employeeQuery}
+                                    onChange={(e) => setEmployeeQuery(e.target.value)}
+                                    className="pl-9 rounded-lg border-gray-200"
+                                />
+                            </div>
+                            
+                            {employeeQuery.trim() !== "" && (
+                                <div className="absolute z-30 left-0 right-0 mt-1 max-h-48 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-lg divide-y divide-gray-50">
+                                    {activeEmployees.filter(emp => 
+                                        emp.fullName.toLowerCase().includes(employeeQuery.toLowerCase()) ||
+                                        (emp.nik || "").toLowerCase().includes(employeeQuery.toLowerCase())
+                                    ).length === 0 ? (
+                                        <div className="p-3 text-center text-xs text-gray-400">Tidak ada karyawan cocok</div>
                                     ) : (
-                                        activeEmployees.map((emp) => (
-                                            <SelectItem key={emp.id} value={emp.id.toString()}>
-                                                {emp.fullName} ({emp.position || "Staff"} - {emp.branch || "Pusat"})
-                                            </SelectItem>
-                                        ))
+                                        activeEmployees
+                                            .filter(emp => 
+                                                emp.fullName.toLowerCase().includes(employeeQuery.toLowerCase()) ||
+                                                (emp.nik || "").toLowerCase().includes(employeeQuery.toLowerCase())
+                                            )
+                                            .map((emp) => (
+                                                <button
+                                                    key={emp.id}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setFormUserId(emp.id.toString());
+                                                        setEmployeeQuery("");
+                                                    }}
+                                                    className="w-full text-left px-4 py-2.5 text-xs hover:bg-slate-50 flex items-center justify-between font-bold text-gray-800 transition-colors"
+                                                >
+                                                    <span>{emp.fullName} ({emp.nik || "Tanpa NIK"})</span>
+                                                    <span className="text-[10px] text-gray-400 font-medium">{emp.position || "Staff"}</span>
+                                                </button>
+                                            ))
                                     )}
-                                </SelectContent>
-                            </Select>
+                                </div>
+                            )}
+
+                            {/* Active Display Selected Employee */}
+                            {formUserId && (
+                                <div className="mt-2 px-3 py-2 bg-green-50 border border-green-100 rounded-lg text-xs font-bold text-green-700 flex items-center justify-between">
+                                    <span>
+                                        Terpilih: {activeEmployees.find(e => e.id.toString() === formUserId)?.fullName} ({activeEmployees.find(e => e.id.toString() === formUserId)?.position || "Staff"})
+                                    </span>
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setFormUserId("")} 
+                                        className="text-red-500 hover:text-red-700 font-bold ml-2 transition-colors cursor-pointer"
+                                    >
+                                        Batal
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         {selectedEmployeeInfo && (
