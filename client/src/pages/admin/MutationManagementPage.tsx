@@ -157,7 +157,7 @@ export default function MutationManagementPage() {
         onSuccess: (data) => {
             toast({
                 title: "Berhasil",
-                description: data.message || "Data karir berhasil diperbarui.",
+                description: data.message || "Data berhasil diperbarui.",
                 variant: "default",
             });
             queryClient.invalidateQueries({ queryKey: ["/api/admin/mutations"] });
@@ -188,7 +188,7 @@ export default function MutationManagementPage() {
         onSuccess: (data) => {
             toast({
                 title: "Berhasil",
-                description: data.message || "Data karir berhasil dihapus.",
+                description: data.message || "Data berhasil dihapus.",
                 variant: "default",
             });
             queryClient.invalidateQueries({ queryKey: ["/api/admin/mutations"] });
@@ -325,7 +325,7 @@ export default function MutationManagementPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-black text-gray-900 tracking-tight">Manajemen Mutasi, Promosi & Demosi</h1>
-                    <p className="text-sm text-gray-500">Kelola perpindahan cabang dan penyesuaian karir jabatan karyawan.</p>
+                    <p className="text-sm text-gray-500">Kelola perpindahan cabang dan penyesuaian jabatan karyawan.</p>
                 </div>
                 <div className="flex gap-2.5">
                     <Button
@@ -375,7 +375,7 @@ export default function MutationManagementPage() {
                                 <tr className="bg-gray-50 border-b border-gray-100 text-xs font-black text-gray-400 uppercase tracking-wider">
                                     <th className="py-4 px-6 text-center w-16">No</th>
                                     <th className="py-4 px-6">Nama Karyawan</th>
-                                    <th className="py-4 px-6">Aksi Karir</th>
+                                    <th className="py-4 px-6">Aksi</th>
                                     <th className="py-4 px-6">Lama</th>
                                     <th className="py-4 px-6">Baru</th>
                                     <th className="py-4 px-6 text-center">Dokumen Pendukung</th>
@@ -389,7 +389,7 @@ export default function MutationManagementPage() {
                                         <td colSpan={8} className="py-12 text-center text-gray-400">
                                             <div className="flex flex-col items-center justify-center gap-2">
                                                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600" />
-                                                <span>Memuat data karir...</span>
+                                                <span>Memuat data...</span>
                                             </div>
                                         </td>
                                     </tr>
@@ -399,7 +399,7 @@ export default function MutationManagementPage() {
                                             <div className="flex flex-col items-center justify-center gap-3">
                                                 <ArrowLeftRight className="w-10 h-10 text-gray-300 animate-pulse" />
                                                 <p className="font-semibold text-gray-500">Tidak ada data mutasi/promosi/demosi</p>
-                                                <p className="text-xs text-gray-400">Silakan tambahkan data pergerakan karir karyawan baru.</p>
+                                                <p className="text-xs text-gray-400">Silakan tambahkan data pergerakan karyawan baru.</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -487,12 +487,12 @@ export default function MutationManagementPage() {
                     <DialogHeader>
                         <DialogTitle>Catat Mutasi / Promosi / Demosi</DialogTitle>
                         <DialogDescription>
-                            Daftarkan aksi karir karyawan. Sistem akan secara otomatis mengupdate posisi cabang / jabatan karyawan terpilih.
+                            Daftarkan aksi karyawan. Sistem akan secara otomatis mengupdate posisi cabang / jabatan karyawan terpilih.
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleAddSubmit} className="space-y-4 pt-2">
                         <div className="space-y-1.5">
-                            <label className="text-xs font-black text-gray-500 uppercase">Tipe Aksi Karir <span className="text-red-500">*</span></label>
+                            <label className="text-xs font-black text-gray-500 uppercase">Tipe Aksi <span className="text-red-500">*</span></label>
                             <Select value={formType} onValueChange={(val: any) => setFormType(val)}>
                                 <SelectTrigger className="rounded-lg border-gray-200">
                                     <SelectValue placeholder="Pilih Tipe Aksi..." />
@@ -663,7 +663,7 @@ export default function MutationManagementPage() {
                     <DialogHeader>
                         <DialogTitle>Edit Mutasi / Promosi / Demosi</DialogTitle>
                         <DialogDescription>
-                            Sunting tipe karir, tujuan pemindahan cabang/jabatan, atau unggah ulang berkas pendukung.
+                            Sunting tipe, tujuan pemindahan cabang/jabatan, atau unggah ulang berkas pendukung.
                         </DialogDescription>
                     </DialogHeader>
                     {selectedMutation && (
@@ -679,7 +679,7 @@ export default function MutationManagementPage() {
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="text-xs font-black text-gray-500 uppercase">Tipe Aksi Karir <span className="text-red-500">*</span></label>
+                                <label className="text-xs font-black text-gray-500 uppercase">Tipe Aksi <span className="text-red-500">*</span></label>
                                 <Select value={formType} onValueChange={(val: any) => setFormType(val)}>
                                     <SelectTrigger className="rounded-lg border-gray-200">
                                         <SelectValue placeholder="Pilih Tipe Aksi..." />
@@ -779,7 +779,7 @@ export default function MutationManagementPage() {
             <Dialog open={openViewModal} onOpenChange={setOpenViewModal}>
                 <DialogContent className="max-w-md rounded-xl">
                     <DialogHeader>
-                        <DialogTitle>Detail Pergerakan Karir Karyawan</DialogTitle>
+                        <DialogTitle>Detail Pergerakan Karyawan</DialogTitle>
                         <DialogDescription>
                             Informasi detail pergerakan mutasi, promosi, atau demosi karyawan.
                         </DialogDescription>
@@ -794,7 +794,7 @@ export default function MutationManagementPage() {
                                 <div>
                                     <h4 className="font-bold text-gray-900 text-base">{selectedMutation.user.fullName}</h4>
                                     <p className="text-xs text-gray-400 font-bold uppercase flex items-center gap-1.5 mt-0.5">
-                                        Status Karir: {getActionBadge(selectedMutation.type)}
+                                        Status: {getActionBadge(selectedMutation.type)}
                                     </p>
                                 </div>
                             </div>

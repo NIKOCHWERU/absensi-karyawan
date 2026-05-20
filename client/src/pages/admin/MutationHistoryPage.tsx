@@ -112,7 +112,7 @@ export default function MutationHistoryPage() {
                     />
                 </div>
                 <div className="text-xs text-gray-400 font-bold bg-white border border-gray-100 px-3 py-1.5 rounded-full shadow-xs">
-                    Total: {filteredMutations.length} Mutasi & Karir Log
+                    Total: {filteredMutations.length} Mutasi & Log
                 </div>
             </div>
 
@@ -121,14 +121,14 @@ export default function MutationHistoryPage() {
                 <div className="py-20 text-center text-gray-400">
                     <div className="flex flex-col items-center justify-center gap-2">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />
-                        <span>Memuat riwayat karir...</span>
+                        <span>Memuat riwayat...</span>
                     </div>
                 </div>
             ) : filteredMutations.length === 0 ? (
                 <Card className="border-dashed border-gray-200 shadow-none rounded-xl">
                     <CardContent className="py-16 text-center text-gray-400 flex flex-col items-center justify-center gap-3">
                         <ArrowLeftRight className="w-12 h-12 text-gray-300" />
-                        <p className="font-semibold text-gray-500">Belum ada riwayat pergerakan karir</p>
+                        <p className="font-semibold text-gray-500">Belum ada riwayat pergerakan</p>
                         <p className="text-xs text-gray-400">Setiap mutasi, promosi, dan demosi karyawan akan tercatat di sini secara historis.</p>
                     </CardContent>
                 </Card>

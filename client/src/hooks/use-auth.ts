@@ -40,7 +40,11 @@ export function useAuth() {
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
-      setLocation("/login");
+      if (window.location.pathname.startsWith("/admin")) {
+        setLocation("/admin/login");
+      } else {
+        setLocation("/login");
+      }
       toast({ title: "Logout Berhasil" });
     },
     onError: (error: Error) => {
