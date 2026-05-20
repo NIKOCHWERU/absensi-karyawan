@@ -481,7 +481,7 @@ export default function AdminEmployeeList() {
                                     <TableCell>{toTitleCase(emp.position)}</TableCell>
                                     <TableCell>{toTitleCase(emp.branch)}</TableCell>
                                     <TableCell>
-                                        {(emp as any).employmentStatus === 'Resign' ? (
+                                        {((emp as any).employmentStatus === 'Resign' || resignations.some((r: any) => r.userId === emp.id)) ? (
                                             <Badge variant="destructive" className="capitalize cursor-pointer hover:bg-red-700 font-bold shadow-sm" onClick={() => setViewResignEmployee(emp)}>
                                                 Resign
                                             </Badge>
