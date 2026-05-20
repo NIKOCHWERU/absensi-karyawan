@@ -148,99 +148,117 @@ export default function AdminLeavePage() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {isLoading ? (
-                        <div className="col-span-full py-20 flex flex-col items-center justify-center text-gray-400">
-                            <Loader2 className="w-10 h-10 animate-spin mb-4" />
-                            <p>Memuat data permohonan...</p>
-                        </div>
-                    ) : requests?.length === 0 ? (
-                        <Card className="col-span-full border-dashed border-2 py-20 flex flex-col items-center justify-center text-gray-400 bg-transparent">
-                            <Calendar className="w-12 h-12 mb-4 opacity-20" />
-                            <p className="font-medium text-lg">Belum ada permohonan cuti.</p>
-                        </Card>
-                    ) : (
-                        sortedRequests?.map((req) => (
-                            <Card key={req.id} className="rounded-xl border-none shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-                                <CardHeader className="bg-white pb-2 flex flex-row items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="bg-blue-50 p-2 rounded-xl text-blue-600">
-                                            <UserIcon className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                            <CardTitle className="text-base font-bold text-gray-900 leading-tight">
-                                                {getUserName(req.userId)}
-                                            </CardTitle>
-                                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                                                Diajukan pada: {format(new Date(req.createdAt!), "d MMM yyyy")}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg border ${req.status === 'approved' ? 'text-green-600 bg-green-50 border-green-100' :
-                                        req.status === 'rejected' ? 'text-red-600 bg-red-50 border-red-100' :
-                                            req.status === 'cancelled' ? 'text-gray-600 bg-gray-50 border-gray-100' :
-                                                'text-orange-600 bg-orange-50 border-orange-100'
-                                        }`}>
-                                        {req.status === 'approved' ? 'Disetujui' :
-                                            req.status === 'rejected' ? 'Ditolak' :
-                                                req.status === 'cancelled' ? 'Dibatalkan' : 'Pending'}
-                                    </span>
-                                </CardHeader>
-                                <CardContent className="p-6 space-y-4">
-                                    <div className="bg-gray-50 p-4 rounded-xl space-y-2 border border-gray-100">
-                                        <div className="flex items-center gap-2 text-xs font-bold text-gray-500">
-                                            <Calendar className="w-3 h-3" /> {req.selectedDates ? "TANGGAL TERPILIH" : "PERIODE CUTI"}
-                                        </div>
-                                        <div className="font-bold text-gray-800">
-                                            {req.selectedDates ? (
-                                                <div className="flex flex-wrap gap-1 mt-1">
-                                                    {req.selectedDates.split(',').map(d => (
-                                                        <span key={d} className="bg-white px-2 py-0.5 rounded-md border border-gray-100 text-[10px]">
-                                                            {format(new Date(d), "d MMM yyyy", { locale: id })}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <p>
-                                                    {format(new Date(req.startDate), "EEEE, d MMM", { locale: id })} - {format(new Date(req.endDate), "EEEE, d MMM yyyy", { locale: id })}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <div className="flex items-center gap-2 text-xs font-bold text-gray-500">
-                                            <MessageSquare className="w-3 h-3" /> ALASAN
-                                        </div>
-                                        <p className="text-sm text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-xl italic">
-                                            "{req.reason}"
-                                        </p>
-                                    </div>
-
-                                    {req.status === 'pending' && (
-                                        <div className="flex gap-3 pt-2">
-                                            <Button
-                                                variant="outline"
-                                                className="flex-1 rounded-xl h-12 text-red-600 border-red-100 hover:bg-red-50 gap-2 font-bold"
-                                                onClick={() => mutation.mutate({ id: req.id, status: 'rejected' })}
-                                                disabled={mutation.isPending}
-                                            >
-                                                <X className="w-4 h-4" /> Tolak
-                                            </Button>
-                                            <Button
-                                                className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-xl h-12 gap-2 font-bold shadow-lg shadow-green-100"
-                                                onClick={() => mutation.mutate({ id: req.id, status: 'approved' })}
-                                                disabled={mutation.isPending}
-                                            >
-                                                <Check className="w-4 h-4" /> Setujui
-                                            </Button>
-                                        </div>
+                <Card className="border-gray-100 shadow-sm rounded-xl overflow-hidden mt-6">
+                    <CardContent className="p-0">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm text-left">
+                                <thead className="text-[10px] text-gray-400 font-black uppercase tracking-widest bg-gray-50/50">
+                                    <tr>
+                                        <th className="px-6 py-4">Karyawan</th>
+                                        <th className="px-6 py-4">Tanggal Pengajuan</th>
+                                        <th className="px-6 py-4">Periode Cuti</th>
+                                        <th className="px-6 py-4">Status</th>
+                                        <th className="px-6 py-4 max-w-[200px]">Alasan</th>
+                                        <th className="px-6 py-4 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50">
+                                    {isLoading ? (
+                                        <tr>
+                                            <td colSpan={6} className="px-6 py-12 text-center">
+                                                <Loader2 className="w-6 h-6 animate-spin mx-auto text-gray-200 mb-2" />
+                                                <p className="text-gray-400 font-medium">Memuat data permohonan...</p>
+                                            </td>
+                                        </tr>
+                                    ) : sortedRequests?.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={6} className="px-6 py-16 text-center text-gray-400">
+                                                <Calendar className="w-12 h-12 mx-auto text-gray-200 mb-3 opacity-50" />
+                                                <p className="font-semibold text-gray-500">Belum ada permohonan cuti.</p>
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        sortedRequests?.map((req) => (
+                                            <tr key={req.id} className="hover:bg-gray-50/50 transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-xs uppercase shrink-0">
+                                                            {getUserName(req.userId).charAt(0)}
+                                                        </div>
+                                                        <span className="font-bold text-gray-900">{getUserName(req.userId)}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-gray-500 font-medium whitespace-nowrap">
+                                                    {format(new Date(req.createdAt!), "d MMM yyyy HH:mm")}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    {req.selectedDates ? (
+                                                        <div className="flex flex-col gap-1.5 max-w-[200px]">
+                                                            <span className="font-bold text-gray-700 whitespace-nowrap">{req.selectedDates.split(',').length} Hari Terpilih</span>
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {req.selectedDates.split(',').map(d => (
+                                                                    <span key={d} className="bg-gray-50 px-2 py-1 rounded-md border border-gray-100 text-[10px] text-gray-600 font-medium tracking-wide">
+                                                                        {format(new Date(d), "d MMM", { locale: id })}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="font-bold text-gray-700 whitespace-nowrap bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100 inline-block text-xs">
+                                                            {format(new Date(req.startDate), "d MMM yyyy", { locale: id })} <span className="text-gray-400 font-normal mx-1">-</span> {format(new Date(req.endDate), "d MMM yyyy", { locale: id })}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg border whitespace-nowrap ${
+                                                        req.status === 'approved' ? 'text-green-600 bg-green-50 border-green-100' :
+                                                        req.status === 'rejected' ? 'text-red-600 bg-red-50 border-red-100' :
+                                                        req.status === 'cancelled' ? 'text-gray-600 bg-gray-50 border-gray-100' :
+                                                        'text-orange-600 bg-orange-50 border-orange-100'
+                                                    }`}>
+                                                        {req.status === 'approved' ? 'Disetujui' :
+                                                         req.status === 'rejected' ? 'Ditolak' :
+                                                         req.status === 'cancelled' ? 'Dibatalkan' : 'Pending'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 max-w-[200px]">
+                                                    <p className="text-gray-600 line-clamp-2 italic text-xs leading-relaxed">"{req.reason}"</p>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    {req.status === 'pending' ? (
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                className="rounded-lg text-red-600 border-red-100 hover:bg-red-50 gap-1.5 h-8 px-3"
+                                                                onClick={() => mutation.mutate({ id: req.id, status: 'rejected' })}
+                                                                disabled={mutation.isPending}
+                                                                title="Tolak"
+                                                            >
+                                                                <X className="w-3.5 h-3.5" /> <span className="hidden xl:inline">Tolak</span>
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                className="bg-green-600 hover:bg-green-700 text-white rounded-lg gap-1.5 shadow-sm h-8 px-3"
+                                                                onClick={() => mutation.mutate({ id: req.id, status: 'approved' })}
+                                                                disabled={mutation.isPending}
+                                                                title="Setujui"
+                                                            >
+                                                                <Check className="w-3.5 h-3.5" /> <span className="hidden xl:inline">Setuju</span>
+                                                            </Button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-center text-xs font-bold text-gray-400">-</div>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))
                                     )}
-                                </CardContent>
-                            </Card>
-                        ))
-                    )}
-                </div>
+                                </tbody>
+                            </table>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         </div>
         </div>
