@@ -17,7 +17,8 @@ import {
     X,
     Calendar,
     ChevronDown,
-    Bell
+    Bell,
+    AlertTriangle
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -220,10 +221,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                     <button
                                         onClick={() => setLocation("/admin/mutation-history")}
                                         className={getLinkClass("/admin/mutation-history")}
-                                        title={sidebarCollapsed ? "Riwayat Karir" : undefined}
+                                        title={sidebarCollapsed ? "Riwayat Mutasi & Promosi" : undefined}
                                     >
                                         <History className="h-4.5 w-4.5 shrink-0" />
                                         {!sidebarCollapsed && <span>Riwayat Mutasi & Promosi</span>}
+                                    </button>
+                                </li>
+                                <li>
+                                    <button
+                                        onClick={() => setLocation("/admin/warning-letters")}
+                                        className={getLinkClass("/admin/warning-letters")}
+                                        title={sidebarCollapsed ? "Surat Peringatan (SP)" : undefined}
+                                    >
+                                        <AlertTriangle className="h-4.5 w-4.5 shrink-0" />
+                                        {!sidebarCollapsed && <span>Surat Peringatan (SP)</span>}
                                     </button>
                                 </li>
                                 <li>

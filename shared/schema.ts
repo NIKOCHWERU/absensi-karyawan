@@ -169,6 +169,20 @@ export const mutations = mysqlTable("mutations", {
   userIdIdx: index("idx_mutations_user_id").on(table.userId),
 }));
 
+// Warning Letters Table (SP1, SP2, SP3)
+export const warningLetters = mysqlTable("warning_letters", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("user_id").notNull(),
+  type: mysqlEnum("type", ["SP1", "SP2", "SP3"]).notNull(),
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date").notNull(),
+  documentUrl: varchar("document_url", { length: 512 }),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  userIdIdx: index("idx_warning_letters_user_id").on(table.userId),
+}));
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   attendanceRecords: many(attendance),
@@ -178,6 +192,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   pushSubscriptions: many(pushSubscriptions),
   resignations: many(resignations),
   mutations: many(mutations),
+  warningLetters: many(warningLetters),
 }));
 
 export const shiftsRelations = relations(shifts, ({ many }) => ({

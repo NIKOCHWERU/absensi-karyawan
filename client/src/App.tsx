@@ -35,6 +35,7 @@ import ResignManagementPage from "@/pages/admin/ResignManagementPage";
 import ResignHistoryPage from "@/pages/admin/ResignHistoryPage";
 import MutationManagementPage from "@/pages/admin/MutationManagementPage";
 import MutationHistoryPage from "@/pages/admin/MutationHistoryPage";
+import WarningLetterManagementPage from "@/pages/admin/WarningLetterManagementPage";
 import NotFound from "@/pages/not-found";
 import InstallAppBanner from "@/components/InstallAppBanner";
 
@@ -156,6 +157,9 @@ function Router() {
       </Route>
       <Route path="/admin/mutation-history">
         <ProtectedRoute component={() => <AdminLayout><MutationHistoryPage /></AdminLayout>} adminOnly />
+      </Route>
+      <Route path="/admin/warning-letters">
+        <ProtectedRoute component={() => <AdminLayout><WarningLetterManagementPage /></AdminLayout>} adminOnly />
       </Route>
       <Route path="/admin/profile">
         <ProtectedRoute component={() => <AdminLayout><AdminProfilePage /></AdminLayout>} adminOnly />

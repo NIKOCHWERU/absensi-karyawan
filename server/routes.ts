@@ -7,7 +7,7 @@ import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import multer from "multer";
 import { uploadFile } from "./services/googleDrive";
-import { User as DbUser, resignations, mutations, users } from "@shared/schema";
+import { User as DbUser, resignations, mutations, warningLetters, users } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
 import fs from "fs";
@@ -328,6 +328,114 @@ export async function registerRoutes(
       res.status(500).json({ message: "Gagal menghapus data resign: " + err.message });
     }
   });
+
+  // --- Warning Letters Admin Routes ---
+  app.get("/api/admin/warning-letters", isAuthenticated, async (req, res) => {
+    if (!isAdminRole(req)) return res.sendStatus(403);
+    try {
+      const list = await db.select({
+        id: warningLetters.id,
+        userId: warningLetters.userId,
+        type: warningLetters.type,
+        startDate: warningLetters.startDate,
+        endDate: warningLetters.endDate,
+        documentUrl: warningLetters.documentUrl,
+        notes: warningLetters.notes,
+        createdAt: warningLetters.createdAt,
+        user: {
+          fullName: users.fullName,
+          nik: users.nik
+        }
+      })
+      .from(warningLetters)
+      .innerJoin(users, eq(warningLetters.userId, users.id))
+      .orderBy(desc(warningLetters.createdAt));
+      
+      res.json(list);
+    } catch (err: any) {
+      console.error("Fetch Warning Letters Error:", err);
+      res.status(500).json({ message: "Gagal memuat data SP: " + err.message });
+    }
+  });
+
+  app.post("/api/admin/warning-letters", isAuthenticated, upload.single('document'), async (req, res) => {
+    if (!isAdminRole(req)) return res.sendStatus(403);
+    try {
+      const { userId, type, startDate, endDate, notes } = req.body;
+      if (!userId || !type || !startDate || !endDate) {
+        return res.status(400).json({ message: "Data tidak lengkap. Harap isi semua field wajib." });
+      }
+
+      let documentUrl: string | null = null;
+      if (req.file) {
+        const docDir = path.join(uploadsDir, 'documents');
+        if (!fs.existsSync(docDir)) fs.mkdirSync(docDir, { recursive: true });
+        const filename = `sp-${userId}-${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+        fs.writeFileSync(path.join(docDir, filename), req.file.buffer);
+        documentUrl = `/uploads/documents/${filename}`;
+      }
+
+      const [result] = await db.insert(warningLetters).values({
+        userId: parseInt(userId),
+        type,
+        startDate,
+        endDate,
+        notes,
+        documentUrl
+      });
+
+      res.status(201).json({ id: result.insertId, message: "Surat peringatan berhasil dicatat." });
+    } catch (err: any) {
+      console.error("Create Warning Letter Error:", err);
+      res.status(500).json({ message: "Gagal mencatat SP: " + err.message });
+    }
+  });
+
+  app.patch("/api/admin/warning-letters/:id", isAuthenticated, upload.single('document'), async (req, res) => {
+    if (!isAdminRole(req)) return res.sendStatus(403);
+    try {
+      const { id } = req.params;
+      const { type, startDate, endDate, notes } = req.body;
+      
+      const [existing] = await db.select().from(warningLetters).where(eq(warningLetters.id, parseInt(id)));
+      if (!existing) {
+        return res.status(404).json({ message: "Data SP tidak ditemukan." });
+      }
+
+      const updates: any = {};
+      if (type) updates.type = type;
+      if (startDate) updates.startDate = startDate;
+      if (endDate) updates.endDate = endDate;
+      if (notes !== undefined) updates.notes = notes;
+
+      if (req.file) {
+        const docDir = path.join(uploadsDir, 'documents');
+        if (!fs.existsSync(docDir)) fs.mkdirSync(docDir, { recursive: true });
+        const filename = `sp-${existing.userId}-${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+        fs.writeFileSync(path.join(docDir, filename), req.file.buffer);
+        updates.documentUrl = `/uploads/documents/${filename}`;
+      }
+
+      await db.update(warningLetters).set(updates).where(eq(warningLetters.id, parseInt(id)));
+      res.json({ message: "Data SP berhasil diperbarui." });
+    } catch (err: any) {
+      console.error("Update Warning Letter Error:", err);
+      res.status(500).json({ message: "Gagal memperbarui SP: " + err.message });
+    }
+  });
+
+  app.delete("/api/admin/warning-letters/:id", isAuthenticated, async (req, res) => {
+    if (!isAdminRole(req)) return res.sendStatus(403);
+    try {
+      const { id } = req.params;
+      await db.delete(warningLetters).where(eq(warningLetters.id, parseInt(id)));
+      res.json({ message: "Data SP berhasil dihapus." });
+    } catch (err: any) {
+      console.error("Delete Warning Letter Error:", err);
+      res.status(500).json({ message: "Gagal menghapus SP: " + err.message });
+    }
+  });
+
 
   // --- Mutation Admin Routes ---
   app.get("/api/admin/mutations", isAuthenticated, async (req, res) => {

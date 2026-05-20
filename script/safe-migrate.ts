@@ -124,7 +124,24 @@ async function runSafeMigration() {
     `);
     console.log("  ✅ Tabel 'mutations' siap.");
 
-    // 7. Perbarui data lama "Resigned" menjadi "Resign"
+    // 7. Buat tabel warning_letters jika belum ada
+    console.log("➜ Memeriksa tabel 'warning_letters'...");
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS \`warning_letters\` (
+        \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+        \`user_id\` INT NOT NULL,
+        \`type\` ENUM('SP1', 'SP2', 'SP3') NOT NULL,
+        \`start_date\` DATE NOT NULL,
+        \`end_date\` DATE NOT NULL,
+        \`document_url\` VARCHAR(512),
+        \`notes\` TEXT,
+        \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX \`idx_warning_letters_user_id\` (\`user_id\`)
+      );
+    `);
+    console.log("  ✅ Tabel 'warning_letters' siap.");
+
+    // 8. Perbarui data lama "Resigned" menjadi "Resign"
     console.log("➜ Memeriksa dan memperbarui status 'Resigned' lama ke 'Resign'...");
     try {
       const [result]: any = await connection.query(`
