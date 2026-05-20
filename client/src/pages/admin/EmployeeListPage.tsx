@@ -4,7 +4,7 @@ import { z } from "zod";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
-import { ArrowLeft, UserPlus, Search, Calendar, Phone, Image as ImageIcon, ImageOff, MapPin, Trash2, MessageSquare, Upload, Eye, Briefcase, CreditCard, User as UserIcon } from "lucide-react";
+import { ArrowLeft, UserPlus, UserMinus, Search, Calendar, Phone, Image as ImageIcon, ImageOff, MapPin, Trash2, MessageSquare, Upload, Eye, Briefcase, CreditCard, User as UserIcon, FileText } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -79,6 +79,7 @@ export default function AdminEmployeeList() {
     const [open, setOpen] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
     const [viewEmployee, setViewEmployee] = useState<User | null>(null);
+    const [viewResignEmployee, setViewResignEmployee] = useState<User | null>(null);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [attendanceViewDate, setAttendanceViewDate] = useState(new Date());
     const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
@@ -92,6 +93,10 @@ export default function AdminEmployeeList() {
     const { data: users = [], isLoading } = useQuery<User[]>({
         queryKey: ["/api/admin/users"],
         refetchInterval: 5000,
+    });
+
+    const { data: resignations = [] } = useQuery<any[]>({
+        queryKey: ["/api/admin/resignations"],
     });
 
     // Fetch attendance for selected employee if needed
@@ -476,13 +481,19 @@ export default function AdminEmployeeList() {
                                     <TableCell>{toTitleCase(emp.position)}</TableCell>
                                     <TableCell>{toTitleCase(emp.branch)}</TableCell>
                                     <TableCell>
-                                        <Badge variant={
-                                            emp.registrationStatus === 'approved' ? 'default' :
-                                            emp.registrationStatus === 'pending' ? 'secondary' :
-                                            emp.registrationStatus === 'rejected' ? 'destructive' : 'outline'
-                                        } className="capitalize">
-                                            {emp.registrationStatus || 'unregistered'}
-                                        </Badge>
+                                        {(emp as any).employmentStatus === 'Resign' ? (
+                                            <Badge variant="destructive" className="capitalize cursor-pointer hover:bg-red-700 font-bold shadow-sm" onClick={() => setViewResignEmployee(emp)}>
+                                                Resign
+                                            </Badge>
+                                        ) : (
+                                            <Badge variant={
+                                                emp.registrationStatus === 'approved' ? 'default' :
+                                                emp.registrationStatus === 'pending' ? 'secondary' :
+                                                emp.registrationStatus === 'rejected' ? 'destructive' : 'outline'
+                                            } className="capitalize">
+                                                {emp.registrationStatus || 'unregistered'}
+                                            </Badge>
+                                        )}
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex items-center justify-end gap-2">
@@ -886,6 +897,56 @@ export default function AdminEmployeeList() {
                             </DialogFooter>
                         </>
                     )}
+                </DialogContent>
+            </Dialog>
+
+            {/* View Resign Dialog */}
+            <Dialog open={!!viewResignEmployee} onOpenChange={(open) => !open && setViewResignEmployee(null)}>
+                <DialogContent className="sm:max-w-[425px] overflow-hidden bg-white rounded-2xl p-0">
+                    <DialogHeader className="px-6 py-4 bg-gray-50 border-b border-gray-100">
+                        <DialogTitle className="flex items-center gap-2 text-red-600 text-lg font-black">
+                            <UserMinus className="w-5 h-5" />
+                            Keterangan Resign
+                        </DialogTitle>
+                    </DialogHeader>
+                    {viewResignEmployee && (() => {
+                        const resignData = resignations.find((r: any) => r.userId === viewResignEmployee.id);
+                        if (!resignData) {
+                            return (
+                                <div className="px-6 py-8 text-center text-gray-500">
+                                    Data permohonan resign tidak ditemukan. Mungkin status diubah secara manual.
+                                </div>
+                            );
+                        }
+                        return (
+                            <div className="space-y-4 p-6">
+                                <div>
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Karyawan</h4>
+                                    <p className="font-bold text-gray-900">{viewResignEmployee.fullName}</p>
+                                </div>
+                                <div>
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Tanggal Resign</h4>
+                                    <p className="font-bold text-gray-900">
+                                        {format(new Date(resignData.resignDate), "d MMMM yyyy", { locale: id })}
+                                    </p>
+                                </div>
+                                <div>
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Alasan</h4>
+                                    <div className="mt-1.5 p-3 bg-gray-50 rounded-xl border border-gray-100 text-sm text-gray-700 whitespace-pre-wrap italic">
+                                        "{resignData.reason}"
+                                    </div>
+                                </div>
+                                {resignData.documentUrl && (
+                                    <div className="pt-2">
+                                        <a href={resignData.documentUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 font-bold transition-colors">
+                                            <FileText className="w-4 h-4" />
+                                            Lihat Dokumen Terkait
+                                        </a>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })()}
                 </DialogContent>
             </Dialog>
         </div>
