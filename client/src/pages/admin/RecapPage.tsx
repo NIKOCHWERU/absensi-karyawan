@@ -39,14 +39,6 @@ export default function RecapPage() {
         shift: "-"
     });
 
-    const { data: users } = useQuery<User[]>({
-        queryKey: ["/api/admin/users"],
-    });
-
-    const { data: allAttendance } = useQuery<Attendance[]>({
-        queryKey: ["/api/attendance"],
-    });
-
     const [reportType, setReportType] = useState<"daily" | "weekly" | "monthly" | "custom">("monthly");
     const [customStartDate, setCustomStartDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
     const [customEndDate, setCustomEndDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
@@ -67,6 +59,14 @@ export default function RecapPage() {
         startDate = new Date(targetDate.getFullYear(), targetDate.getMonth() - 1, 26);
         endDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 25);
     }
+
+    const { data: users } = useQuery<User[]>({
+        queryKey: ["/api/admin/users"],
+    });
+
+    const { data: allAttendance } = useQuery<Attendance[]>({
+        queryKey: [`/api/attendance?startDate=${format(startDate, 'yyyy-MM-dd')}&endDate=${format(endDate, 'yyyy-MM-dd')}`],
+    });
 
     const handlePrev = () => {
         if (reportType === "daily") setTargetDate(d => subDays(d, 1));

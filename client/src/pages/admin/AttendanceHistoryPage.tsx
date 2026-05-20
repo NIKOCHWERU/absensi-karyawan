@@ -51,15 +51,6 @@ export default function AttendanceHistoryPage() {
         }
     };
 
-    const { data: attendanceHistory, isLoading: isLoadingAttendance } = useQuery<Attendance[]>({
-        queryKey: ["/api/attendance"],
-        refetchInterval: 10000,
-    });
-
-    const { data: users } = useQuery<User[]>({
-        queryKey: ["/api/admin/users"],
-    });
-
     let startDate: Date;
     let endDate: Date;
 
@@ -77,6 +68,15 @@ export default function AttendanceHistoryPage() {
         startDate = new Date(targetDate.getFullYear(), targetDate.getMonth() - 1, 26);
         endDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), 25);
     }
+
+    const { data: attendanceHistory, isLoading: isLoadingAttendance } = useQuery<Attendance[]>({
+        queryKey: [`/api/attendance?startDate=${format(startDate, 'yyyy-MM-dd')}&endDate=${format(endDate, 'yyyy-MM-dd')}`],
+        refetchInterval: 10000,
+    });
+
+    const { data: users } = useQuery<User[]>({
+        queryKey: ["/api/admin/users"],
+    });
 
     const getEmployee = (userId: number) => {
         return users?.find(user => user.id === userId);
