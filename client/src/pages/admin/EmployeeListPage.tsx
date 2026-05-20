@@ -1195,7 +1195,7 @@ function DocumentBox({ label, url, isDrive }: { label: string; url?: string | nu
                                                 <SelectContent>
                                                     <SelectItem value="Kontrak">Kontrak</SelectItem>
                                                     <SelectItem value="Tetap">Tetap</SelectItem>
-                                                    <SelectItem value="Resigned">Resigned</SelectItem>
+                                                    <SelectItem value="Resign">Resign</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                             <FormMessage />

@@ -124,6 +124,17 @@ async function runSafeMigration() {
     `);
     console.log("  ✅ Tabel 'mutations' siap.");
 
+    // 7. Perbarui data lama "Resigned" menjadi "Resign"
+    console.log("➜ Memeriksa dan memperbarui status 'Resigned' lama ke 'Resign'...");
+    try {
+      const [result]: any = await connection.query(`
+        UPDATE \`users\` SET \`employment_status\` = 'Resign' WHERE \`employment_status\` = 'Resigned';
+      `);
+      console.log(`  ✅ Berhasil memperbarui ${result.affectedRows || 0} data karyawan.`);
+    } catch (err: any) {
+      console.log(`  ❌ Gagal memperbarui data Resigned:`, err.message);
+    }
+
     console.log("\n🎉 MIGRASI SELESAI DENGAN AMAN! (Data lama tidak terhapus)");
   } catch (error) {
     console.error("❌ Terjadi kesalahan saat migrasi:", error);

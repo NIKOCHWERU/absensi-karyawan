@@ -94,7 +94,7 @@ export default function ResignManagementPage() {
 
     // Filter active employees (role is employee and not already resigned)
     const activeEmployees = employees.filter(
-        (emp) => emp.role === "employee" && emp.employmentStatus !== "Resigned"
+        (emp) => emp.role === "employee" && emp.employmentStatus !== "Resign"
     );
 
     // Mutations

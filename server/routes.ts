@@ -263,9 +263,9 @@ export async function registerRoutes(
         documentUrl
       });
 
-      // Update employee's employment status to 'Resigned'
+      // Update employee's employment status to 'Resign'
       await db.update(users)
-        .set({ employmentStatus: "Resigned" })
+        .set({ employmentStatus: "Resign" })
         .where(eq(users.id, parseInt(userId)));
 
       res.status(201).json({ id: result.insertId, message: "Karyawan berhasil diatur resign." });

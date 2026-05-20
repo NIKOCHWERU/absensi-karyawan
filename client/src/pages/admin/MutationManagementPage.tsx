@@ -100,7 +100,7 @@ export default function MutationManagementPage() {
 
     // Filter active employees (excluding resigned ones)
     const activeEmployees = employees.filter(
-        (emp) => emp.role === "employee" && emp.employmentStatus !== "Resigned"
+        (emp) => emp.role === "employee" && emp.employmentStatus !== "Resign"
     );
 
     // Get selected employee's current branch/position
