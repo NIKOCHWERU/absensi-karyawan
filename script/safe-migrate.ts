@@ -90,6 +90,40 @@ async function runSafeMigration() {
       console.log(`  ❌ Gagal memperbarui ENUM status:`, err.message);
     }
 
+    // 5. Buat tabel resignations jika belum ada
+    console.log("➜ Memeriksa tabel 'resignations'...");
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS \`resignations\` (
+        \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+        \`user_id\` INT NOT NULL,
+        \`resign_date\` DATE NOT NULL,
+        \`reason\` TEXT NOT NULL,
+        \`document_url\` VARCHAR(512),
+        \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX \`idx_resignations_user_id\` (\`user_id\`)
+      );
+    `);
+    console.log("  ✅ Tabel 'resignations' siap.");
+
+    // 6. Buat tabel mutations jika belum ada
+    console.log("➜ Memeriksa tabel 'mutations'...");
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS \`mutations\` (
+        \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+        \`user_id\` INT NOT NULL,
+        \`type\` ENUM('mutasi', 'promosi', 'demosi') NOT NULL,
+        \`old_branch\` VARCHAR(100),
+        \`new_branch\` VARCHAR(100),
+        \`old_position\` VARCHAR(100),
+        \`new_position\` VARCHAR(100),
+        \`document_url\` VARCHAR(512),
+        \`notes\` TEXT,
+        \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX \`idx_mutations_user_id\` (\`user_id\`)
+      );
+    `);
+    console.log("  ✅ Tabel 'mutations' siap.");
+
     console.log("\n🎉 MIGRASI SELESAI DENGAN AMAN! (Data lama tidak terhapus)");
   } catch (error) {
     console.error("❌ Terjadi kesalahan saat migrasi:", error);
