@@ -106,6 +106,9 @@ export default function MutationManagementPage() {
     // Get selected employee's current branch/position
     const selectedEmployeeInfo = activeEmployees.find(e => e.id.toString() === formUserId);
 
+    const existingBranches = Array.from(new Set(employees.map(u => u.branch).filter(Boolean))) as string[];
+    const existingPositions = Array.from(new Set(employees.map(u => u.position).filter(Boolean))) as string[];
+
     // Mutations
     const createMutation = useMutation({
         mutationFn: async (formData: FormData) => {
@@ -575,36 +578,34 @@ export default function MutationManagementPage() {
                         {formType === "mutasi" ? (
                             <div className="space-y-1.5">
                                 <label className="text-xs font-black text-gray-500 uppercase">Cabang Baru <span className="text-red-500">*</span></label>
-                                <Select value={formNewBranch} onValueChange={setFormNewBranch}>
-                                    <SelectTrigger className="rounded-lg border-gray-200">
-                                        <SelectValue placeholder="Pilih Cabang Baru..." />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-lg">
-                                        <SelectItem value="Jakarta">Jakarta</SelectItem>
-                                        <SelectItem value="Surabaya">Surabaya</SelectItem>
-                                        <SelectItem value="Bandung">Bandung</SelectItem>
-                                        <SelectItem value="Tangerang">Tangerang</SelectItem>
-                                        <SelectItem value="Medan">Medan</SelectItem>
-                                        <SelectItem value="Pusat">Kantor Pusat</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <Input 
+                                    list="branches-datalist" 
+                                    value={formNewBranch} 
+                                    onChange={(e) => setFormNewBranch(e.target.value)} 
+                                    placeholder="Ketik atau pilih cabang baru..."
+                                    className="rounded-lg border-gray-200"
+                                />
+                                <datalist id="branches-datalist">
+                                    {existingBranches.map(b => (
+                                        <option key={b} value={b} />
+                                    ))}
+                                </datalist>
                             </div>
                         ) : (
                             <div className="space-y-1.5">
                                 <label className="text-xs font-black text-gray-500 uppercase">Jabatan Baru <span className="text-red-500">*</span></label>
-                                <Select value={formNewPosition} onValueChange={setFormNewPosition}>
-                                    <SelectTrigger className="rounded-lg border-gray-200">
-                                        <SelectValue placeholder="Pilih Jabatan Baru..." />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-lg">
-                                        <SelectItem value="Manager">Manager</SelectItem>
-                                        <SelectItem value="Supervisor">Supervisor</SelectItem>
-                                        <SelectItem value="Admin Store">Admin Store</SelectItem>
-                                        <SelectItem value="Cashier">Cashier</SelectItem>
-                                        <SelectItem value="Kurir">Kurir</SelectItem>
-                                        <SelectItem value="Staff">Staff</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <Input 
+                                    list="positions-datalist" 
+                                    value={formNewPosition} 
+                                    onChange={(e) => setFormNewPosition(e.target.value)} 
+                                    placeholder="Ketik atau pilih jabatan baru..."
+                                    className="rounded-lg border-gray-200"
+                                />
+                                <datalist id="positions-datalist">
+                                    {existingPositions.map(p => (
+                                        <option key={p} value={p} />
+                                    ))}
+                                </datalist>
                             </div>
                         )}
 
@@ -694,36 +695,34 @@ export default function MutationManagementPage() {
                             {formType === "mutasi" ? (
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-black text-gray-500 uppercase">Cabang Baru <span className="text-red-500">*</span></label>
-                                    <Select value={formNewBranch} onValueChange={setFormNewBranch}>
-                                        <SelectTrigger className="rounded-lg border-gray-200">
-                                            <SelectValue placeholder="Pilih Cabang Baru..." />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-lg">
-                                            <SelectItem value="Jakarta">Jakarta</SelectItem>
-                                            <SelectItem value="Surabaya">Surabaya</SelectItem>
-                                            <SelectItem value="Bandung">Bandung</SelectItem>
-                                            <SelectItem value="Tangerang">Tangerang</SelectItem>
-                                            <SelectItem value="Medan">Medan</SelectItem>
-                                            <SelectItem value="Pusat">Kantor Pusat</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                    <Input 
+                                        list="branches-datalist" 
+                                        value={formNewBranch} 
+                                        onChange={(e) => setFormNewBranch(e.target.value)} 
+                                        placeholder="Ketik atau pilih cabang baru..."
+                                        className="rounded-lg border-gray-200"
+                                    />
+                                    <datalist id="branches-datalist">
+                                        {existingBranches.map(b => (
+                                            <option key={b} value={b} />
+                                        ))}
+                                    </datalist>
                                 </div>
                             ) : (
                                 <div className="space-y-1.5">
                                     <label className="text-xs font-black text-gray-500 uppercase">Jabatan Baru <span className="text-red-500">*</span></label>
-                                    <Select value={formNewPosition} onValueChange={setFormNewPosition}>
-                                        <SelectTrigger className="rounded-lg border-gray-200">
-                                            <SelectValue placeholder="Pilih Jabatan Baru..." />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-lg">
-                                            <SelectItem value="Manager">Manager</SelectItem>
-                                            <SelectItem value="Supervisor">Supervisor</SelectItem>
-                                            <SelectItem value="Admin Store">Admin Store</SelectItem>
-                                            <SelectItem value="Cashier">Cashier</SelectItem>
-                                            <SelectItem value="Kurir">Kurir</SelectItem>
-                                            <SelectItem value="Staff">Staff</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                    <Input 
+                                        list="positions-datalist" 
+                                        value={formNewPosition} 
+                                        onChange={(e) => setFormNewPosition(e.target.value)} 
+                                        placeholder="Ketik atau pilih jabatan baru..."
+                                        className="rounded-lg border-gray-200"
+                                    />
+                                    <datalist id="positions-datalist">
+                                        {existingPositions.map(p => (
+                                            <option key={p} value={p} />
+                                        ))}
+                                    </datalist>
                                 </div>
                             )}
 

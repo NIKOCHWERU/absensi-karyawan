@@ -165,6 +165,7 @@ export default function AdminEmployeeList() {
         }
     });
 
+    const [searchTerm, setSearchTerm] = useState("");
     const [sortField, setSortField] = useState<string>('fullName');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
@@ -177,7 +178,16 @@ export default function AdminEmployeeList() {
         }
     };
 
-    const sortedEmployees = [...employees].sort((a, b) => {
+    const filteredEmployees = employees.filter(emp => {
+        if (!searchTerm) return true;
+        const lowerTerm = searchTerm.toLowerCase();
+        return emp.fullName.toLowerCase().includes(lowerTerm) || 
+               (emp.nik && emp.nik.toLowerCase().includes(lowerTerm)) ||
+               (emp.position && emp.position.toLowerCase().includes(lowerTerm)) ||
+               (emp.branch && emp.branch.toLowerCase().includes(lowerTerm));
+    });
+
+    const sortedEmployees = [...filteredEmployees].sort((a, b) => {
         const valA = (a as any)[sortField]?.toString().toLowerCase() || '';
         const valB = (b as any)[sortField]?.toString().toLowerCase() || '';
         
@@ -378,12 +388,10 @@ export default function AdminEmployeeList() {
                     <div className="relative flex-1 max-w-sm">
                         <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                         <Input 
-                            placeholder="Cari karyawan..." 
+                            placeholder="Cari nama, NIK, jabatan, cabang..." 
                             className="pl-9" 
-                            onChange={(e) => {
-                                // Search already works via TanStack query if handled correctly, 
-                                // but here we might need a local search state if we want to filter the `sortedEmployees`
-                            }} 
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)} 
                         />
                     </div>
                 </div>
