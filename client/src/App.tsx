@@ -31,6 +31,10 @@ import AdminShiftPage from "@/pages/admin/AdminShiftPage";
 import AdminManageAdminsPage from "@/pages/admin/AdminManageAdminsPage";
 import AdminProfilePage from "@/pages/admin/AdminProfilePage";
 import StatusPendingPage from "@/pages/employee/StatusPendingPage";
+import ResignManagementPage from "@/pages/admin/ResignManagementPage";
+import ResignHistoryPage from "@/pages/admin/ResignHistoryPage";
+import MutationManagementPage from "@/pages/admin/MutationManagementPage";
+import MutationHistoryPage from "@/pages/admin/MutationHistoryPage";
 import NotFound from "@/pages/not-found";
 import InstallAppBanner from "@/components/InstallAppBanner";
 
@@ -140,6 +144,18 @@ function Router() {
       </Route>
       <Route path="/admin/leave-history">
         <ProtectedRoute component={() => <AdminLayout><AdminLeaveHistory /></AdminLayout>} adminOnly />
+      </Route>
+      <Route path="/admin/resign-management">
+        <ProtectedRoute component={() => <AdminLayout><ResignManagementPage /></AdminLayout>} adminOnly />
+      </Route>
+      <Route path="/admin/resign-history">
+        <ProtectedRoute component={() => <AdminLayout><ResignHistoryPage /></AdminLayout>} adminOnly />
+      </Route>
+      <Route path="/admin/mutation-management">
+        <ProtectedRoute component={() => <AdminLayout><MutationManagementPage /></AdminLayout>} adminOnly />
+      </Route>
+      <Route path="/admin/mutation-history">
+        <ProtectedRoute component={() => <AdminLayout><MutationHistoryPage /></AdminLayout>} adminOnly />
       </Route>
       <Route path="/admin/profile">
         <ProtectedRoute component={() => <AdminLayout><AdminProfilePage /></AdminLayout>} adminOnly />

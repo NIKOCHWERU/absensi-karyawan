@@ -141,6 +141,34 @@ export const pushSubscriptions = mysqlTable("push_subscriptions", {
   userIdIdx: index("idx_push_sub_user_id").on(table.userId),
 }));
 
+// Resignations Table
+export const resignations = mysqlTable("resignations", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("user_id").notNull(),
+  resignDate: date("resign_date").notNull(),
+  reason: text("reason").notNull(),
+  documentUrl: varchar("document_url", { length: 512 }),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  userIdIdx: index("idx_resignations_user_id").on(table.userId),
+}));
+
+// Mutations, Promotions, Demotions Table
+export const mutations = mysqlTable("mutations", {
+  id: int("id").primaryKey().autoincrement(),
+  userId: int("user_id").notNull(),
+  type: mysqlEnum("type", ["mutasi", "promosi", "demosi"]).notNull(),
+  oldBranch: varchar("old_branch", { length: 100 }),
+  newBranch: varchar("new_branch", { length: 100 }),
+  oldPosition: varchar("old_position", { length: 100 }),
+  newPosition: varchar("new_position", { length: 100 }),
+  documentUrl: varchar("document_url", { length: 512 }),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  userIdIdx: index("idx_mutations_user_id").on(table.userId),
+}));
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   attendanceRecords: many(attendance),
@@ -148,6 +176,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   complaints: many(complaints),
   leaveRequests: many(leaveRequests),
   pushSubscriptions: many(pushSubscriptions),
+  resignations: many(resignations),
+  mutations: many(mutations),
 }));
 
 export const shiftsRelations = relations(shifts, ({ many }) => ({
@@ -187,6 +217,20 @@ export const complaintPhotosRelations = relations(complaintPhotos, ({ one }) => 
   }),
 }));
 
+export const resignationsRelations = relations(resignations, ({ one }) => ({
+  user: one(users, {
+    fields: [resignations.userId],
+    references: [users.id],
+  }),
+}));
+
+export const mutationsRelations = relations(mutations, ({ one }) => ({
+  user: one(users, {
+    fields: [mutations.userId],
+    references: [users.id],
+  }),
+}));
+
 // Schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertShiftSchema = createInsertSchema(shifts).omit({ id: true });
@@ -196,6 +240,8 @@ export const insertComplaintSchema = createInsertSchema(complaints).omit({ id: t
 export const insertComplaintPhotoSchema = createInsertSchema(complaintPhotos).omit({ id: true });
 export const insertLeaveRequestSchema = createInsertSchema(leaveRequests).omit({ id: true, createdAt: true });
 export const insertPushSubscriptionSchema = createInsertSchema(pushSubscriptions).omit({ id: true, createdAt: true });
+export const insertResignationSchema = createInsertSchema(resignations).omit({ id: true, createdAt: true });
+export const insertMutationSchema = createInsertSchema(mutations).omit({ id: true, createdAt: true });
 
 // Types
 export type User = typeof users.$inferSelect;
@@ -214,3 +260,7 @@ export type LeaveRequest = typeof leaveRequests.$inferSelect;
 export type InsertLeaveRequest = z.infer<typeof insertLeaveRequestSchema>;
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type InsertPushSubscription = z.infer<typeof insertPushSubscriptionSchema>;
+export type Resignation = typeof resignations.$inferSelect;
+export type InsertResignation = z.infer<typeof insertResignationSchema>;
+export type Mutation = typeof mutations.$inferSelect;
+export type InsertMutation = z.infer<typeof insertMutationSchema>;

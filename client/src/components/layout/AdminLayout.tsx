@@ -11,6 +11,8 @@ import {
     Image as ImageIcon,
     ShieldCheck,
     UserCog,
+    UserMinus,
+    Megaphone,
     Menu,
     X,
     Calendar,
@@ -161,6 +163,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                         {!sidebarCollapsed && <span>Dashboard</span>}
                                     </button>
                                 </li>
+                            </ul>
+                        </div>
+
+                        {/* Section: Manajemen Karyawan */}
+                        <div>
+                            {!sidebarCollapsed ? (
+                                <p className="px-3 mb-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest lg:animate-in lg:fade-in duration-200">
+                                    Manajemen Karyawan
+                                </p>
+                            ) : (
+                                <div className="border-t border-gray-100 my-4" />
+                            )}
+                            <ul className="space-y-1">
                                 <li>
                                     <button
                                         onClick={() => setLocation("/admin/employees")}
@@ -171,37 +186,44 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                         {!sidebarCollapsed && <span>Daftar Karyawan</span>}
                                     </button>
                                 </li>
-                            </ul>
-                        </div>
-
-                        {/* Section: Attendance & Leave */}
-                        <div>
-                            {!sidebarCollapsed ? (
-                                <p className="px-3 mb-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest lg:animate-in lg:fade-in duration-200">
-                                    Absensi & Cuti
-                                </p>
-                            ) : (
-                                <div className="border-t border-gray-100 my-4" />
-                            )}
-                            <ul className="space-y-1">
                                 <li>
                                     <button
-                                        onClick={() => setLocation("/admin/recap")}
-                                        className={getLinkClass("/admin/recap")}
-                                        title={sidebarCollapsed ? "Rekap Absensi" : undefined}
+                                        onClick={() => setLocation("/admin/resign-management")}
+                                        className={getLinkClass("/admin/resign-management")}
+                                        title={sidebarCollapsed ? "Manajemen Resign" : undefined}
                                     >
-                                        <Clock className="h-4.5 w-4.5 shrink-0" />
-                                        {!sidebarCollapsed && <span>Rekap Absensi</span>}
+                                        <UserMinus className="h-4.5 w-4.5 shrink-0" />
+                                        {!sidebarCollapsed && <span>Manajemen Resign</span>}
                                     </button>
                                 </li>
                                 <li>
                                     <button
-                                        onClick={() => setLocation("/admin/attendance-history")}
-                                        className={getLinkClass("/admin/attendance-history")}
-                                        title={sidebarCollapsed ? "Riwayat Absensi" : undefined}
+                                        onClick={() => setLocation("/admin/resign-history")}
+                                        className={getLinkClass("/admin/resign-history")}
+                                        title={sidebarCollapsed ? "Riwayat Resign" : undefined}
                                     >
-                                        <ImageIcon className="h-4.5 w-4.5 shrink-0" />
-                                        {!sidebarCollapsed && <span>Riwayat Absensi</span>}
+                                        <History className="h-4.5 w-4.5 shrink-0" />
+                                        {!sidebarCollapsed && <span>Riwayat Resign</span>}
+                                    </button>
+                                </li>
+                                <li>
+                                    <button
+                                        onClick={() => setLocation("/admin/mutation-management")}
+                                        className={getLinkClass("/admin/mutation-management")}
+                                        title={sidebarCollapsed ? "Manajemen Karir" : undefined}
+                                    >
+                                        <UserCog className="h-4.5 w-4.5 shrink-0" />
+                                        {!sidebarCollapsed && <span className="truncate">Manajemen Mutasi & Promosi</span>}
+                                    </button>
+                                </li>
+                                <li>
+                                    <button
+                                        onClick={() => setLocation("/admin/mutation-history")}
+                                        className={getLinkClass("/admin/mutation-history")}
+                                        title={sidebarCollapsed ? "Riwayat Karir" : undefined}
+                                    >
+                                        <History className="h-4.5 w-4.5 shrink-0" />
+                                        {!sidebarCollapsed && <span>Riwayat Mutasi & Promosi</span>}
                                     </button>
                                 </li>
                                 <li>
@@ -242,71 +264,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                         {!sidebarCollapsed && <span>Riwayat Cuti</span>}
                                     </button>
                                 </li>
-                                <li>
-                                    <button
-                                        onClick={() => setLocation("/admin/attendance-summary")}
-                                        className={getLinkClass("/admin/attendance-summary")}
-                                        title={sidebarCollapsed ? "Ringkasan Absensi" : undefined}
-                                    >
-                                        <FileText className="h-4.5 w-4.5 shrink-0" />
-                                        {!sidebarCollapsed && <span className="truncate">Ringkasan Absensi</span>}
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
-
-                        {/* Section: Management & Setting */}
-                        <div>
-                            {!sidebarCollapsed ? (
-                                <p className="px-3 mb-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest lg:animate-in lg:fade-in duration-200">
-                                    Manajemen
-                                </p>
-                            ) : (
-                                <div className="border-t border-gray-100 my-4" />
-                            )}
-                            <ul className="space-y-1">
-                                <li>
-                                    <button
-                                        onClick={() => setLocation("/admin/info-board")}
-                                        className={getLinkClass("/admin/info-board")}
-                                        title={sidebarCollapsed ? "Papan Informasi" : undefined}
-                                    >
-                                        <FileText className="h-4.5 w-4.5 shrink-0" />
-                                        {!sidebarCollapsed && <span>Papan Informasi</span>}
-                                    </button>
-                                </li>
-
-                                {(user?.role === 'superadmin' || user?.role === 'admin') && (
-                                    <li>
-                                        <button
-                                            onClick={() => setLocation("/admin/complaints")}
-                                            className={getLinkClass("/admin/complaints")}
-                                            title={sidebarCollapsed ? `Pengaduan Karyawan (${pendingComplaintsCount})` : undefined}
-                                        >
-                                            {sidebarCollapsed ? (
-                                                <>
-                                                    <MessageSquare className="h-4.5 w-4.5 shrink-0" />
-                                                    {pendingComplaintsCount > 0 && (
-                                                        <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white animate-pulse" />
-                                                    )}
-                                                </>
-                                            ) : (
-                                                <div className="flex items-center justify-between w-full">
-                                                    <div className="flex items-center gap-3">
-                                                        <MessageSquare className="h-4.5 w-4.5 shrink-0" />
-                                                        <span>Pengaduan Karyawan</span>
-                                                    </div>
-                                                    {pendingComplaintsCount > 0 && (
-                                                        <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">
-                                                            {pendingComplaintsCount}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </button>
-                                    </li>
-                                )}
-
                                 <li>
                                     <button
                                         onClick={() => setLocation("/admin/verification")}
@@ -350,6 +307,103 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 )}
                             </ul>
                         </div>
+
+                        {/* Section: Manajemen Absen */}
+                        <div>
+                            {!sidebarCollapsed ? (
+                                <p className="px-3 mb-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest lg:animate-in lg:fade-in duration-200">
+                                    Manajemen Absen
+                                </p>
+                            ) : (
+                                <div className="border-t border-gray-100 my-4" />
+                            )}
+                            <ul className="space-y-1">
+                                <li>
+                                    <button
+                                        onClick={() => setLocation("/admin/recap")}
+                                        className={getLinkClass("/admin/recap")}
+                                        title={sidebarCollapsed ? "Rekap Absensi" : undefined}
+                                    >
+                                        <Clock className="h-4.5 w-4.5 shrink-0" />
+                                        {!sidebarCollapsed && <span>Rekap Absensi</span>}
+                                    </button>
+                                </li>
+                                <li>
+                                    <button
+                                        onClick={() => setLocation("/admin/attendance-history")}
+                                        className={getLinkClass("/admin/attendance-history")}
+                                        title={sidebarCollapsed ? "Riwayat Absensi" : undefined}
+                                    >
+                                        <ImageIcon className="h-4.5 w-4.5 shrink-0" />
+                                        {!sidebarCollapsed && <span>Riwayat Absensi</span>}
+                                    </button>
+                                </li>
+                                <li>
+                                    <button
+                                        onClick={() => setLocation("/admin/attendance-summary")}
+                                        className={getLinkClass("/admin/attendance-summary")}
+                                        title={sidebarCollapsed ? "Ringkasan Absensi" : undefined}
+                                    >
+                                        <FileText className="h-4.5 w-4.5 shrink-0" />
+                                        {!sidebarCollapsed && <span className="truncate">Ringkasan Absensi</span>}
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+
+                        {/* Section: Papan Informasi */}
+                        <div>
+                            {!sidebarCollapsed ? (
+                                <p className="px-3 mb-2.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest lg:animate-in lg:fade-in duration-200">
+                                    Papan Informasi
+                                </p>
+                            ) : (
+                                <div className="border-t border-gray-100 my-4" />
+                            )}
+                            <ul className="space-y-1">
+                                <li>
+                                    <button
+                                        onClick={() => setLocation("/admin/info-board")}
+                                        className={getLinkClass("/admin/info-board")}
+                                        title={sidebarCollapsed ? "Papan Informasi" : undefined}
+                                    >
+                                        <Megaphone className="h-4.5 w-4.5 shrink-0" />
+                                        {!sidebarCollapsed && <span>Papan Informasi</span>}
+                                    </button>
+                                </li>
+
+                                {(user?.role === 'superadmin' || user?.role === 'admin') && (
+                                    <li>
+                                        <button
+                                            onClick={() => setLocation("/admin/complaints")}
+                                            className={getLinkClass("/admin/complaints")}
+                                            title={sidebarCollapsed ? `Pengaduan Karyawan (${pendingComplaintsCount})` : undefined}
+                                        >
+                                            {sidebarCollapsed ? (
+                                                <>
+                                                    <MessageSquare className="h-4.5 w-4.5 shrink-0" />
+                                                    {pendingComplaintsCount > 0 && (
+                                                        <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white animate-pulse" />
+                                                    )}
+                                                </>
+                                            ) : (
+                                                <div className="flex items-center justify-between w-full">
+                                                    <div className="flex items-center gap-3">
+                                                        <MessageSquare className="h-4.5 w-4.5 shrink-0" />
+                                                        <span>Pengaduan Karyawan</span>
+                                                    </div>
+                                                    {pendingComplaintsCount > 0 && (
+                                                        <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">
+                                                            {pendingComplaintsCount}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </button>
+                                    </li>
+                                )}
+                            </ul>
+                        </div>
                     </nav>
                 </div>
 
@@ -371,7 +425,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </aside>
 
             {/* Main Page Area Container */}
-            <div className="relative flex flex-grow flex-col overflow-y-auto overflow-x-hidden">
+            <div className="relative flex flex-grow flex-col overflow-y-hidden overflow-x-hidden">
                 {/* Header */}
                 <header className="sticky top-0 z-30 flex w-full bg-white border-b border-gray-100 px-4 sm:px-6 h-16 shrink-0 items-center justify-between shadow-xs">
                     {/* Header Left Side */}
@@ -495,7 +549,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </header>
 
                 {/* Page Content Viewport */}
-                <main className="flex-1 overflow-auto bg-gray-50/40 p-4 md:p-6 lg:p-8">
+                <main className="flex-1 overflow-y-auto bg-gray-50/40 p-4 md:p-6 lg:p-8">
                     {children}
                 </main>
             </div>

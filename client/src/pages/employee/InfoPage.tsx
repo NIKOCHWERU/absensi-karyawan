@@ -9,7 +9,6 @@ import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import 'react-quill/dist/quill.snow.css';
 
 interface Announcement {
   id: number;

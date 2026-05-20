@@ -7,7 +7,9 @@ import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import multer from "multer";
 import { uploadFile } from "./services/googleDrive";
-import { User as DbUser } from "@shared/schema";
+import { User as DbUser, resignations, mutations, users } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
 import { format } from "date-fns";
@@ -204,6 +206,278 @@ export async function registerRoutes(
     } catch (err: any) {
       console.error("Admin Profile Update Error:", err);
       res.status(500).json({ message: "Gagal memperbarui profil admin: " + err.message });
+    }
+  });
+
+  // --- Resignation Admin Routes ---
+  app.get("/api/admin/resignations", isAuthenticated, async (req, res) => {
+    if (!isAdminRole(req)) return res.sendStatus(403);
+    try {
+      const list = await db.select({
+        id: resignations.id,
+        userId: resignations.userId,
+        resignDate: resignations.resignDate,
+        reason: resignations.reason,
+        documentUrl: resignations.documentUrl,
+        createdAt: resignations.createdAt,
+        user: {
+          fullName: users.fullName,
+          nik: users.nik,
+          branch: users.branch,
+          position: users.position
+        }
+      })
+      .from(resignations)
+      .innerJoin(users, eq(resignations.userId, users.id))
+      .orderBy(desc(resignations.resignDate));
+      
+      res.json(list);
+    } catch (err: any) {
+      console.error("Fetch Resignations Error:", err);
+      res.status(500).json({ message: "Gagal memuat data resign: " + err.message });
+    }
+  });
+
+  app.post("/api/admin/resignations", isAuthenticated, upload.single('document'), async (req, res) => {
+    if (!isAdminRole(req)) return res.sendStatus(403);
+    try {
+      const { userId, resignDate, reason } = req.body;
+      if (!userId || !resignDate || !reason) {
+        return res.status(400).json({ message: "Data tidak lengkap. Harap isi semua field." });
+      }
+
+      let documentUrl: string | null = null;
+      if (req.file) {
+        const docDir = path.join(uploadsDir, 'documents');
+        if (!fs.existsSync(docDir)) fs.mkdirSync(docDir, { recursive: true });
+        
+        const filename = `resign-${userId}-${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+        fs.writeFileSync(path.join(docDir, filename), req.file.buffer);
+        documentUrl = `/uploads/documents/${filename}`;
+      }
+
+      const [result] = await db.insert(resignations).values({
+        userId: parseInt(userId),
+        resignDate,
+        reason,
+        documentUrl
+      });
+
+      // Update employee's employment status to 'Resigned'
+      await db.update(users)
+        .set({ employmentStatus: "Resigned" })
+        .where(eq(users.id, parseInt(userId)));
+
+      res.status(201).json({ id: result.insertId, message: "Karyawan berhasil diatur resign." });
+    } catch (err: any) {
+      console.error("Create Resignation Error:", err);
+      res.status(500).json({ message: "Gagal mencatat resign: " + err.message });
+    }
+  });
+
+  app.patch("/api/admin/resignations/:id", isAuthenticated, upload.single('document'), async (req, res) => {
+    if (!isAdminRole(req)) return res.sendStatus(403);
+    try {
+      const { id } = req.params;
+      const { resignDate, reason } = req.body;
+
+      const [existing] = await db.select().from(resignations).where(eq(resignations.id, parseInt(id)));
+      if (!existing) {
+        return res.status(404).json({ message: "Data resign tidak ditemukan." });
+      }
+
+      const updates: any = {};
+      if (resignDate) updates.resignDate = resignDate;
+      if (reason) updates.reason = reason;
+
+      if (req.file) {
+        const docDir = path.join(uploadsDir, 'documents');
+        if (!fs.existsSync(docDir)) fs.mkdirSync(docDir, { recursive: true });
+        
+        const filename = `resign-${existing.userId}-${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+        fs.writeFileSync(path.join(docDir, filename), req.file.buffer);
+        updates.documentUrl = `/uploads/documents/${filename}`;
+      }
+
+      await db.update(resignations).set(updates).where(eq(resignations.id, parseInt(id)));
+      res.json({ message: "Data resign berhasil diperbarui." });
+    } catch (err: any) {
+      console.error("Update Resignation Error:", err);
+      res.status(500).json({ message: "Gagal memperbarui data resign: " + err.message });
+    }
+  });
+
+  app.delete("/api/admin/resignations/:id", isAuthenticated, async (req, res) => {
+    if (!isAdminRole(req)) return res.sendStatus(403);
+    try {
+      const { id } = req.params;
+      const [existing] = await db.select().from(resignations).where(eq(resignations.id, parseInt(id)));
+      if (!existing) {
+        return res.status(404).json({ message: "Data resign tidak ditemukan." });
+      }
+
+      // Revert employee employment status back to 'Kontrak' or active as a fallback
+      await db.update(users)
+        .set({ employmentStatus: "Kontrak" })
+        .where(eq(users.id, existing.userId));
+
+      await db.delete(resignations).where(eq(resignations.id, parseInt(id)));
+      res.json({ message: "Data resign berhasil dihapus." });
+    } catch (err: any) {
+      console.error("Delete Resignation Error:", err);
+      res.status(500).json({ message: "Gagal menghapus data resign: " + err.message });
+    }
+  });
+
+  // --- Mutation Admin Routes ---
+  app.get("/api/admin/mutations", isAuthenticated, async (req, res) => {
+    if (!isAdminRole(req)) return res.sendStatus(403);
+    try {
+      const list = await db.select({
+        id: mutations.id,
+        userId: mutations.userId,
+        type: mutations.type,
+        oldBranch: mutations.oldBranch,
+        newBranch: mutations.newBranch,
+        oldPosition: mutations.oldPosition,
+        newPosition: mutations.newPosition,
+        documentUrl: mutations.documentUrl,
+        notes: mutations.notes,
+        createdAt: mutations.createdAt,
+        user: {
+          fullName: users.fullName,
+          nik: users.nik
+        }
+      })
+      .from(mutations)
+      .innerJoin(users, eq(mutations.userId, users.id))
+      .orderBy(desc(mutations.createdAt));
+      
+      res.json(list);
+    } catch (err: any) {
+      console.error("Fetch Mutations Error:", err);
+      res.status(500).json({ message: "Gagal memuat data mutasi: " + err.message });
+    }
+  });
+
+  app.post("/api/admin/mutations", isAuthenticated, upload.single('document'), async (req, res) => {
+    if (!isAdminRole(req)) return res.sendStatus(403);
+    try {
+      const { userId, type, newBranch, newPosition, notes } = req.body;
+      if (!userId || !type) {
+        return res.status(400).json({ message: "Data tidak lengkap. Harap pilih karyawan dan tipe aksi." });
+      }
+
+      const [employee] = await db.select().from(users).where(eq(users.id, parseInt(userId)));
+      if (!employee) {
+        return res.status(404).json({ message: "Karyawan tidak ditemukan." });
+      }
+
+      const oldBranch = employee.branch || "Pusat";
+      const oldPosition = employee.position || "Staff";
+
+      let documentUrl: string | null = null;
+      if (req.file) {
+        const docDir = path.join(uploadsDir, 'documents');
+        if (!fs.existsSync(docDir)) fs.mkdirSync(docDir, { recursive: true });
+        
+        const filename = `mutation-${userId}-${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+        fs.writeFileSync(path.join(docDir, filename), req.file.buffer);
+        documentUrl = `/uploads/documents/${filename}`;
+      }
+
+      // Insert mutation record
+      const [result] = await db.insert(mutations).values({
+        userId: parseInt(userId),
+        type,
+        oldBranch,
+        newBranch: type === 'mutasi' ? newBranch : null,
+        oldPosition,
+        newPosition: (type === 'promosi' || type === 'demosi') ? newPosition : null,
+        documentUrl,
+        notes
+      });
+
+      // Update employee branch or position
+      const userUpdates: any = {};
+      if (type === 'mutasi' && newBranch) {
+        userUpdates.branch = newBranch;
+      } else if ((type === 'promosi' || type === 'demosi') && newPosition) {
+        userUpdates.position = newPosition;
+      }
+
+      if (Object.keys(userUpdates).length > 0) {
+        await db.update(users).set(userUpdates).where(eq(users.id, parseInt(userId)));
+      }
+
+      res.status(201).json({ id: result.insertId, message: "Mutasi/Promosi/Demosi karyawan berhasil disimpan." });
+    } catch (err: any) {
+      console.error("Create Mutation Error:", err);
+      res.status(500).json({ message: "Gagal menyimpan mutasi: " + err.message });
+    }
+  });
+
+  app.patch("/api/admin/mutations/:id", isAuthenticated, upload.single('document'), async (req, res) => {
+    if (!isAdminRole(req)) return res.sendStatus(403);
+    try {
+      const { id } = req.params;
+      const { type, newBranch, newPosition, notes } = req.body;
+
+      const [existing] = await db.select().from(mutations).where(eq(mutations.id, parseInt(id)));
+      if (!existing) {
+        return res.status(404).json({ message: "Data mutasi tidak ditemukan." });
+      }
+
+      const updates: any = {};
+      if (type) updates.type = type;
+      if (newBranch) updates.newBranch = newBranch;
+      if (newPosition) updates.newPosition = newPosition;
+      if (notes) updates.notes = notes;
+
+      if (req.file) {
+        const docDir = path.join(uploadsDir, 'documents');
+        if (!fs.existsSync(docDir)) fs.mkdirSync(docDir, { recursive: true });
+        
+        const filename = `mutation-${existing.userId}-${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+        fs.writeFileSync(path.join(docDir, filename), req.file.buffer);
+        updates.documentUrl = `/uploads/documents/${filename}`;
+      }
+
+      await db.update(mutations).set(updates).where(eq(mutations.id, parseInt(id)));
+
+      // Update employee active branch or position too if they match
+      const userUpdates: any = {};
+      if (type === 'mutasi' && newBranch) {
+        userUpdates.branch = newBranch;
+      } else if ((type === 'promosi' || type === 'demosi') && newPosition) {
+        userUpdates.position = newPosition;
+      }
+
+      if (Object.keys(userUpdates).length > 0) {
+        await db.update(users).set(userUpdates).where(eq(users.id, existing.userId));
+      }
+
+      res.json({ message: "Data mutasi berhasil diperbarui." });
+    } catch (err: any) {
+      console.error("Update Mutation Error:", err);
+      res.status(500).json({ message: "Gagal memperbarui mutasi: " + err.message });
+    }
+  });
+
+  app.delete("/api/admin/mutations/:id", isAuthenticated, async (req, res) => {
+    if (!isAdminRole(req)) return res.sendStatus(403);
+    try {
+      const { id } = req.params;
+      const [existing] = await db.select().from(mutations).where(eq(mutations.id, parseInt(id)));
+      if (!existing) {
+        return res.status(404).json({ message: "Data mutasi tidak ditemukan." });
+      }
+
+      await db.delete(mutations).where(eq(mutations.id, parseInt(id)));
+      res.json({ message: "Data mutasi berhasil dihapus." });
+    } catch (err: any) {
+      console.error("Delete Mutation Error:", err);
+      res.status(500).json({ message: "Gagal menghapus mutasi: " + err.message });
     }
   });
 
