@@ -13,7 +13,9 @@ import { calculateDailyTotal, formatDuration } from "@/lib/attendance";
 
 export default function RecapPage() {
   const { user } = useAuth();
-  const [reportType, setReportType] = useState<'daily' | 'monthly'>('monthly');
+  const [reportType, setReportType] = useState<'daily' | 'monthly' | 'custom'>('monthly');
+  const [customStartDate, setCustomStartDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  const [customEndDate, setCustomEndDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [targetDate, setTargetDate] = useState(new Date()); // For daily view
   const [currentDate, setCurrentDate] = useState(new Date()); // Tracks the "display month"
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
@@ -21,10 +23,14 @@ export default function RecapPage() {
   const [selectedRecord, setSelectedRecord] = useState<Attendance | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Fetch for current display month (format YYYY-MM)
-  // Always fetch current target month to ensure we have data for daily view too
+  // Fetch for current display month or custom range
   const monthStr = format(reportType === 'daily' ? targetDate : currentDate, 'yyyy-MM');
-  const { data: attendanceData, isLoading } = useMonthlyAttendance(monthStr, user?.id);
+  const { data: attendanceData, isLoading } = useMonthlyAttendance({
+      month: reportType !== 'custom' ? monthStr : undefined,
+      startDate: reportType === 'custom' ? customStartDate : undefined,
+      endDate: reportType === 'custom' ? customEndDate : undefined,
+      userId: user?.id
+  });
 
   const handlePrev = () => {
     if (reportType === 'daily') setTargetDate(d => subDays(d, 1));
@@ -49,6 +55,16 @@ export default function RecapPage() {
   const filteredData = attendanceData?.filter(record => {
     if (reportType === 'daily') {
       return format(new Date(record.date), 'yyyy-MM-dd') === format(targetDate, 'yyyy-MM-dd');
+    }
+
+    if (reportType === 'custom') {
+      const date = new Date(record.date);
+      date.setHours(0, 0, 0, 0);
+      const sDate = new Date(customStartDate);
+      sDate.setHours(0, 0, 0, 0);
+      const eDate = new Date(customEndDate);
+      eDate.setHours(23, 59, 59, 999);
+      return date >= sDate && date <= eDate;
     }
 
     if (viewMode === 'month') return true;
@@ -124,6 +140,12 @@ export default function RecapPage() {
             >
               Bulanan
             </button>
+            <button
+              onClick={() => setReportType('custom')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${reportType === 'custom' ? 'bg-white text-primary shadow-sm' : 'text-white/70 hover:text-white'}`}
+            >
+              Kustom
+            </button>
           </div>
         </div>
       </div>
@@ -173,6 +195,25 @@ export default function RecapPage() {
           </div>
         )}
 
+        {/* Custom Range Selector */}
+        {reportType === 'custom' && (
+          <div className="relative z-10 bg-white p-4 rounded-2xl shadow-sm border border-border flex items-center justify-between gap-3">
+              <input 
+                  type="date" 
+                  className="w-full text-xs h-10 border rounded-lg px-2 text-center font-semibold bg-gray-50 focus:ring-primary focus:border-primary text-gray-700"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+              />
+              <span className="font-bold text-gray-400">-</span>
+              <input 
+                  type="date" 
+                  className="w-full text-xs h-10 border rounded-lg px-2 text-center font-semibold bg-gray-50 focus:ring-primary focus:border-primary text-gray-700"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+              />
+          </div>
+        )}
+
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-white p-4 rounded-xl border border-border shadow-sm">
@@ -198,7 +239,7 @@ export default function RecapPage() {
           <div className="p-4 border-b border-border bg-gray-50 flex items-center gap-2">
             <CalendarIcon className="w-4 h-4 text-muted-foreground" />
             <h3 className="font-bold text-sm text-foreground">
-              {reportType === 'daily' ? 'Sesi Absensi Hari Ini' : 'Detail Riwayat Bulanan'}
+              {reportType === 'daily' ? 'Sesi Absensi Hari Ini' : reportType === 'custom' ? 'Detail Riwayat Kustom' : 'Detail Riwayat Bulanan'}
             </h3>
           </div>
           <div className="divide-y divide-border">

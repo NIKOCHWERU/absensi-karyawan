@@ -1017,12 +1017,14 @@ export async function registerRoutes(
     const qUserId = req.query.userId;
     const parsedUserId = qUserId ? Number(Array.isArray(qUserId) ? qUserId[0] : qUserId) : undefined;
     const monthStr = req.query.month ? (Array.isArray(req.query.month) ? req.query.month[0] as string : req.query.month as string) : undefined;
+    const startDateStr = req.query.startDate ? (Array.isArray(req.query.startDate) ? req.query.startDate[0] as string : req.query.startDate as string) : undefined;
+    const endDateStr = req.query.endDate ? (Array.isArray(req.query.endDate) ? req.query.endDate[0] as string : req.query.endDate as string) : undefined;
 
     const isAdmin = isAdminRole(req);
     const userId = isAdmin ? parsedUserId : req.user!.id;
     const month = monthStr;
 
-    const records = await storage.getAttendanceHistory(userId, month);
+    const records = await storage.getAttendanceHistory(userId, month, startDateStr, endDateStr);
     res.json(records);
   });
 

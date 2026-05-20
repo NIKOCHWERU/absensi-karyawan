@@ -125,14 +125,17 @@ export class DatabaseStorage implements IStorage {
     await db.delete(attendance).where(eq(attendance.id, id));
   }
 
-  async getAttendanceHistory(userId?: number, monthStr?: string): Promise<Attendance[]> {
+  async getAttendanceHistory(userId?: number, monthStr?: string, startDateStr?: string, endDateStr?: string): Promise<Attendance[]> {
     const conditions = [];
 
     if (userId) {
       conditions.push(eq(attendance.userId, userId));
     }
 
-    if (monthStr) {
+    if (startDateStr && endDateStr) {
+      conditions.push(gte(attendance.date, new Date(`${startDateStr}T00:00:00`)));
+      conditions.push(lte(attendance.date, new Date(`${endDateStr}T23:59:59`)));
+    } else if (monthStr) {
       const [year, month] = monthStr.split('-').map(Number);
 
       // Use standard calendar month: 1st to the last day of the month
@@ -140,7 +143,7 @@ export class DatabaseStorage implements IStorage {
 
       // Find last day of month
       const lastDay = new Date(year, month, 0).getDate();
-      const endDate = new Date(`${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`);
+      const endDate = new Date(`${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}T23:59:59`);
 
       conditions.push(gte(attendance.date, startDate));
       conditions.push(lte(attendance.date, endDate));
@@ -344,7 +347,7 @@ export interface IStorage {
   getAttendanceSessionsByUserAndDate(userId: number, date: string): Promise<Attendance[]>;
   updateAttendance(id: number, updates: Partial<Attendance>): Promise<Attendance>;
   deleteAttendance(id: number): Promise<void>;
-  getAttendanceHistory(userId?: number, monthStr?: string): Promise<Attendance[]>;
+  getAttendanceHistory(userId?: number, monthStr?: string, startDateStr?: string, endDateStr?: string): Promise<Attendance[]>;
 
   // Announcement methods
   createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement>;

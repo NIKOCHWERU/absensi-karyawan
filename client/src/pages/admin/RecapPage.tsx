@@ -505,7 +505,52 @@ export default function RecapPage() {
                     <p className="text-sm text-gray-500">Ekspor laporan rekap kehadiran bulanan secara lengkap untuk penggajian.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                    <Select value={reportType} onValueChange={(val: any) => setReportType(val)}>
+                        <SelectTrigger className="w-[140px] bg-white h-10 font-medium">
+                            <SelectValue placeholder="Pilih Periode" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="daily">Harian</SelectItem>
+                            <SelectItem value="weekly">Mingguan</SelectItem>
+                            <SelectItem value="monthly">Bulanan</SelectItem>
+                            <SelectItem value="custom">Rentang Khusus</SelectItem>
+                        </SelectContent>
+                    </Select>
                     
+                    {reportType === "custom" ? (
+                        <div className="flex items-center gap-2 bg-white p-1 rounded-lg border border-gray-200 h-10">
+                            <Input 
+                                type="date" 
+                                className="h-8 text-xs border-none w-32 focus-visible:ring-0 shadow-none" 
+                                value={customStartDate} 
+                                onChange={(e) => setCustomStartDate(e.target.value)} 
+                            />
+                            <span className="text-gray-400 font-bold">-</span>
+                            <Input 
+                                type="date" 
+                                className="h-8 text-xs border-none w-32 focus-visible:ring-0 shadow-none" 
+                                value={customEndDate} 
+                                onChange={(e) => setCustomEndDate(e.target.value)} 
+                            />
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-1 h-10">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100" onClick={handlePrev}>
+                                <ChevronLeft className="h-4 w-4" />
+                            </Button>
+                            <div className="text-sm font-bold px-2 min-w-[120px] text-center text-gray-700">
+                                {reportType === 'daily' 
+                                    ? format(targetDate, "dd MMM yyyy", { locale: id })
+                                    : reportType === 'weekly'
+                                    ? `${format(startOfWeek(targetDate, { weekStartsOn: 1 }), "dd MMM")} - ${format(endOfWeek(targetDate, { weekStartsOn: 1 }), "dd MMM")}`
+                                    : format(targetDate, "MMM yyyy", { locale: id })
+                                }
+                            </div>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100" onClick={handleNext}>
+                                <ChevronRight className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </div>
 
