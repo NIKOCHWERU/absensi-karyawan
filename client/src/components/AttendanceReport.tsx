@@ -24,7 +24,7 @@ export function AttendanceReport({ date, records, users }: AttendanceReportProps
         return `/uploads/${value}`;
     };
 
-    const calculateDuration = (checkIn: string | null, checkOut: string | null) => {
+    const calculateDuration = (checkIn: Date | string | null, checkOut: Date | string | null) => {
         if (!checkIn || !checkOut) return "-";
         const start = new Date(checkIn);
         const end = new Date(checkOut);

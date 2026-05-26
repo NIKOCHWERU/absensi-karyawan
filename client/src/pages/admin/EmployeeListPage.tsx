@@ -949,88 +949,7 @@ export default function AdminEmployeeList() {
                     })()}
                 </DialogContent>
             </Dialog>
-        </div>
-    );
-}
 
-// Helper Components for the Detail View
-function Section({ title, icon, children }: any) {
-    return (
-        <div className="space-y-3 animate-in fade-in slide-in-from-left-4 duration-500">
-            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider border-b border-primary/10 pb-1">
-                {icon}
-                {title}
-            </div>
-            <div className="bg-slate-50/50 rounded-xl p-4 border border-slate-100 space-y-2.5 shadow-sm">
-                {children}
-            </div>
-        </div>
-    );
-}
-
-function DataRow({ label, value }: { label: string; value?: string | null }) {
-    return (
-        <div className="flex flex-col sm:flex-row sm:justify-between text-sm py-0.5 border-b border-slate-100/50 last:border-0">
-            <span className="text-slate-400 text-xs">{label}</span>
-            <span className="font-semibold text-slate-800 tracking-tight">{value || '-'}</span>
-        </div>
-    );
-}
-
-function DocumentBox({ label, url, isDrive }: { label: string; url?: string | null; isDrive?: boolean }) {
-    // Extract ID if it's a Drive URL or use proxy
-    const getImageUrl = (url: string) => {
-        if (!url) return "";
-        if (url.startsWith("/uploads")) return url;
-        if (url.startsWith("http")) {
-            const id = url.includes('/d/') ? url.split('/d/')[1].split('/')[0] : url;
-            return `/api/images/${id}`;
-        }
-        return `/api/images/${url}`; 
-    };
-
-    const displayUrl = url ? getImageUrl(url) : null;
-    const isLocal = url?.startsWith('/uploads');
-    const openUrl = url && (url.startsWith('http') || isLocal) 
-        ? url 
-        : (url ? `https://drive.google.com/file/d/${url}/view` : undefined);
-
-    return (
-        <div className="space-y-2 group">
-            <p className="text-[10px] font-bold uppercase tracking-tight text-slate-400 flex justify-between items-center px-1">
-                {label}
-            </p>
-            <div className="h-32 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 group relative shadow-sm ring-primary/0 group-hover:ring-primary/20 transition-all group-hover:shadow-md">
-                {url ? (
-                    <>
-                        <img 
-                            src={displayUrl || ""} 
-                            className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-500" 
-                            onError={(e) => {
-                                (e.target as any).style.display = 'none';
-                                if ((e.target as any).nextSibling) (e.target as any).nextSibling.style.display = 'flex';
-                            }}
-                        />
-                        <div className={`hidden absolute inset-0 items-center justify-center bg-slate-50 ${isDrive ? 'flex' : ''}`}>
-                            <ImageIcon className="w-8 h-8 text-primary/30" />
-                        </div>
-                        <div 
-                            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-all duration-300 cursor-pointer text-white p-2 scale-95 group-hover:scale-100"
-                            onClick={() => window.open(openUrl || displayUrl || "", '_blank')}
-                        >
-                            <Eye className="w-5 h-5 mb-1" />
-                            <span className="text-[9px] font-bold uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full">
-                                {isLocal ? 'Lihat Foto' : 'Buka Drive'}
-                            </span>
-                        </div>
-                    </>
-                ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-slate-300 gap-1">
-                        <ImageOff className="w-6 h-6 opacity-30" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest">Kosong</span>
-                    </div>
-                )}
-            
             {/* Upload CSV Modal */}
             <Dialog open={csvOpen} onOpenChange={setCsvOpen}>
                 <DialogContent className="max-w-md">
@@ -1380,7 +1299,89 @@ function DocumentBox({ label, url, isDrive }: { label: string; url?: string | nu
                         </form>
                     </Form>
                 </DialogContent>
-            </Dialog></div>
+            </Dialog>
+        </div>
+    );
+}
+
+// Helper Components for the Detail View
+function Section({ title, icon, children }: any) {
+    return (
+        <div className="space-y-3 animate-in fade-in slide-in-from-left-4 duration-500">
+            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider border-b border-primary/10 pb-1">
+                {icon}
+                {title}
+            </div>
+            <div className="bg-slate-50/50 rounded-xl p-4 border border-slate-100 space-y-2.5 shadow-sm">
+                {children}
+            </div>
+        </div>
+    );
+}
+
+function DataRow({ label, value }: { label: string; value?: string | null }) {
+    return (
+        <div className="flex flex-col sm:flex-row sm:justify-between text-sm py-0.5 border-b border-slate-100/50 last:border-0">
+            <span className="text-slate-400 text-xs">{label}</span>
+            <span className="font-semibold text-slate-800 tracking-tight">{value || '-'}</span>
+        </div>
+    );
+}
+
+function DocumentBox({ label, url, isDrive }: { label: string; url?: string | null; isDrive?: boolean }) {
+    // Extract ID if it's a Drive URL or use proxy
+    const getImageUrl = (url: string) => {
+        if (!url) return "";
+        if (url.startsWith("/uploads")) return url;
+        if (url.startsWith("http")) {
+            const id = url.includes('/d/') ? url.split('/d/')[1].split('/')[0] : url;
+            return `/api/images/${id}`;
+        }
+        return `/api/images/${url}`; 
+    };
+
+    const displayUrl = url ? getImageUrl(url) : null;
+    const isLocal = url?.startsWith('/uploads');
+    const openUrl = url && (url.startsWith('http') || isLocal) 
+        ? url 
+        : (url ? `https://drive.google.com/file/d/${url}/view` : undefined);
+
+    return (
+        <div className="space-y-2 group">
+            <p className="text-[10px] font-bold uppercase tracking-tight text-slate-400 flex justify-between items-center px-1">
+                {label}
+            </p>
+            <div className="h-32 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 group relative shadow-sm ring-primary/0 group-hover:ring-primary/20 transition-all group-hover:shadow-md">
+                {url ? (
+                    <>
+                        <img 
+                            src={displayUrl || ""} 
+                            className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-500" 
+                            onError={(e) => {
+                                (e.target as any).style.display = 'none';
+                                if ((e.target as any).nextSibling) (e.target as any).nextSibling.style.display = 'flex';
+                            }}
+                        />
+                        <div className={`hidden absolute inset-0 items-center justify-center bg-slate-50 ${isDrive ? 'flex' : ''}`}>
+                            <ImageIcon className="w-8 h-8 text-primary/30" />
+                        </div>
+                        <div 
+                            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-all duration-300 cursor-pointer text-white p-2 scale-95 group-hover:scale-100"
+                            onClick={() => window.open(openUrl || displayUrl || "", '_blank')}
+                        >
+                            <Eye className="w-5 h-5 mb-1" />
+                            <span className="text-[9px] font-bold uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full">
+                                {isLocal ? 'Lihat Foto' : 'Buka Drive'}
+                            </span>
+                        </div>
+                    </>
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-slate-300 gap-1">
+                        <ImageOff className="w-6 h-6 opacity-30" />
+                        <span className="text-[10px] font-bold uppercase tracking-widest">Kosong</span>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

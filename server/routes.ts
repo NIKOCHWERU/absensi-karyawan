@@ -278,7 +278,7 @@ export async function registerRoutes(
   app.patch("/api/admin/resignations/:id", isAuthenticated, upload.single('document'), async (req, res) => {
     if (!isAdminRole(req)) return res.sendStatus(403);
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { resignDate, reason } = req.body;
 
       const [existing] = await db.select().from(resignations).where(eq(resignations.id, parseInt(id)));
@@ -310,7 +310,7 @@ export async function registerRoutes(
   app.delete("/api/admin/resignations/:id", isAuthenticated, async (req, res) => {
     if (!isAdminRole(req)) return res.sendStatus(403);
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const [existing] = await db.select().from(resignations).where(eq(resignations.id, parseInt(id)));
       if (!existing) {
         return res.status(404).json({ message: "Data resign tidak ditemukan." });
@@ -394,7 +394,7 @@ export async function registerRoutes(
   app.patch("/api/admin/warning-letters/:id", isAuthenticated, upload.single('document'), async (req, res) => {
     if (!isAdminRole(req)) return res.sendStatus(403);
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { type, startDate, endDate, notes } = req.body;
       
       const [existing] = await db.select().from(warningLetters).where(eq(warningLetters.id, parseInt(id)));
@@ -427,7 +427,7 @@ export async function registerRoutes(
   app.delete("/api/admin/warning-letters/:id", isAuthenticated, async (req, res) => {
     if (!isAdminRole(req)) return res.sendStatus(403);
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       await db.delete(warningLetters).where(eq(warningLetters.id, parseInt(id)));
       res.json({ message: "Data SP berhasil dihapus." });
     } catch (err: any) {
@@ -528,7 +528,7 @@ export async function registerRoutes(
   app.patch("/api/admin/mutations/:id", isAuthenticated, upload.single('document'), async (req, res) => {
     if (!isAdminRole(req)) return res.sendStatus(403);
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { type, newBranch, newPosition, notes } = req.body;
 
       const [existing] = await db.select().from(mutations).where(eq(mutations.id, parseInt(id)));
@@ -575,7 +575,7 @@ export async function registerRoutes(
   app.delete("/api/admin/mutations/:id", isAuthenticated, async (req, res) => {
     if (!isAdminRole(req)) return res.sendStatus(403);
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const [existing] = await db.select().from(mutations).where(eq(mutations.id, parseInt(id)));
       if (!existing) {
         return res.status(404).json({ message: "Data mutasi tidak ditemukan." });
@@ -1491,6 +1491,18 @@ export async function registerRoutes(
     
     // Support either direct ID or a full URL extract
     const cleanId = id.includes('/d/') ? id.split('/d/')[1].split('/')[0] : id;
+    
+    // Server-side local disk caching for Google Drive thumbnails
+    const cacheDir = path.join(process.cwd(), 'uploads', 'gdrive-cache');
+    if (!fs.existsSync(cacheDir)) {
+      fs.mkdirSync(cacheDir, { recursive: true });
+    }
+    const cachedFilePath = path.join(cacheDir, `${cleanId}.jpg`);
+    
+    if (fs.existsSync(cachedFilePath)) {
+      return res.sendFile(cachedFilePath);
+    }
+
     const driveUrl = `https://drive.google.com/thumbnail?id=${cleanId}&sz=w800`;
 
     const handleRequest = (url: string, redirectCount = 0) => {
@@ -1504,8 +1516,26 @@ export async function registerRoutes(
         if ((proxyRes.statusCode === 301 || proxyRes.statusCode === 302) && proxyRes.headers.location) {
           return handleRequest(proxyRes.headers.location, redirectCount + 1);
         }
+        
+        if (proxyRes.statusCode !== 200) {
+          res.status(proxyRes.statusCode || 404).send("File not found");
+          return;
+        }
+
         res.setHeader('Content-Type', proxyRes.headers['content-type'] || 'image/jpeg');
-        proxyRes.pipe(res);
+        
+        const chunks: any[] = [];
+        proxyRes.on('data', (chunk) => {
+          chunks.push(chunk);
+        });
+        
+        proxyRes.on('end', () => {
+          const buffer = Buffer.concat(chunks);
+          fs.writeFile(cachedFilePath, buffer, (err) => {
+            if (err) console.error("Cache write error:", err);
+          });
+          res.send(buffer);
+        });
       }).on('error', (err) => {
         console.error("Error proxying image from Drive:", err);
         res.status(404).send("File not found");
@@ -1856,7 +1886,7 @@ export async function registerRoutes(
     if (!isAdminRole(req)) return res.sendStatus(401);
 
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(req.params.id as string);
       if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
 
       const updates: any = {};
@@ -2174,7 +2204,7 @@ export async function registerRoutes(
         status: status || 'present',
         notes: notes || null,
         shift: shift || userProfile?.shift || '-',
-        sessionNumber,
+        sessionNumber: 1,
         checkIn: toDate(date, checkIn) || new Date(date + 'T00:00:00+07:00'),
         checkOut: toDate(date, checkOut) || null,
         breakStart: toDate(date, breakStart) || null,
