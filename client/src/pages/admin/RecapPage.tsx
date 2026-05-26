@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { User, Attendance } from "@shared/schema";
 import { format, subMonths, addMonths, isSameMonth, setDate, isAfter, isBefore, isEqual, startOfWeek, endOfWeek, startOfDay, endOfDay, subDays, addDays } from "date-fns";
 import { id } from "date-fns/locale";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -84,6 +84,14 @@ export default function RecapPage() {
     const [sortField, setSortField] = useState<'date' | 'name'>('date');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 50;
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchName, reportType, targetDate, customStartDate, customEndDate]);
+
     const getUserName = (userId: number) => {
         return users?.find(u => u.id === userId)?.fullName || null;
     };
@@ -127,6 +135,10 @@ export default function RecapPage() {
                 return timeB - timeA;
             }
         });
+
+    const totalPages = Math.ceil(processedData.length / itemsPerPage) || 1;
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedData = processedData.slice(startIndex, startIndex + itemsPerPage);
 
     const toggleSort = (field: 'date' | 'name') => {
         if (sortField === field) {
@@ -521,14 +533,14 @@ export default function RecapPage() {
                         <div className="flex items-center gap-2 bg-white p-1 rounded-lg border border-gray-200 h-10">
                             <Input 
                                 type="date" 
-                                className="h-8 text-xs border-none w-32 focus-visible:ring-0 shadow-none" 
+                                className="h-8 text-xs border-none w-36 focus-visible:ring-0 shadow-none" 
                                 value={customStartDate} 
                                 onChange={(e) => setCustomStartDate(e.target.value)} 
                             />
                             <span className="text-gray-400 font-bold">-</span>
                             <Input 
                                 type="date" 
-                                className="h-8 text-xs border-none w-32 focus-visible:ring-0 shadow-none" 
+                                className="h-8 text-xs border-none w-36 focus-visible:ring-0 shadow-none" 
                                 value={customEndDate} 
                                 onChange={(e) => setCustomEndDate(e.target.value)} 
                             />
@@ -538,7 +550,7 @@ export default function RecapPage() {
                             <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100" onClick={handlePrev}>
                                 <ChevronLeft className="h-4 w-4" />
                             </Button>
-                            <div className="text-sm font-bold px-2 min-w-[120px] text-center text-gray-700">
+                            <div className="text-sm font-bold px-2 min-w-[180px] text-center text-gray-700">
                                 {reportType === 'daily' 
                                     ? format(targetDate, "dd MMM yyyy", { locale: id })
                                     : reportType === 'weekly'
@@ -594,7 +606,8 @@ export default function RecapPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
-                                    {processedData.map((row, index) => {
+                                    {paginatedData.map((row, relativeIndex) => {
+                                        const index = startIndex + relativeIndex;
                                         const { netWorkMins: sessionNetMins } = calculateDailyTotal([row]);
                                         const dateStr = safeFormatDate(row.date, "yyyy-MM-dd");
                                         const key = `${dateStr}-${row.userId}`;
@@ -670,6 +683,39 @@ export default function RecapPage() {
                                 </tbody>
                             </table>
                         </div>
+                        {/* Pagination Controls */}
+                        {totalPages > 1 && (
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-100 bg-white px-6 py-4">
+                                <div className="text-sm text-gray-500 font-medium">
+                                    Menampilkan <span className="font-bold text-gray-800">{startIndex + 1}</span> - <span className="font-bold text-gray-800">{Math.min(startIndex + itemsPerPage, processedData.length)}</span> dari <span className="font-bold text-gray-800">{processedData.length}</span> baris
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 px-3 rounded-lg font-bold"
+                                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                        disabled={currentPage === 1}
+                                    >
+                                        <ChevronLeft className="h-4 w-4 mr-1" />
+                                        Sebelumnya
+                                    </Button>
+                                    <div className="text-sm font-bold px-3 text-gray-700 min-w-[120px] text-center">
+                                        Halaman {currentPage} dari {totalPages}
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 px-3 rounded-lg font-bold"
+                                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                        disabled={currentPage === totalPages}
+                                    >
+                                        Selanjutnya
+                                        <ChevronRight className="h-4 w-4 ml-1" />
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
