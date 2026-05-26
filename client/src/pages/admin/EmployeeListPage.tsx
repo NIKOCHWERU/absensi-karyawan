@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { User, Attendance } from "@shared/schema";
+import { User, Attendance, Shift } from "@shared/schema";
 import { z } from "zod";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -118,6 +118,8 @@ export default function AdminEmployeeList() {
     });
 
     const employees = users?.filter(u => u.role === 'employee') || [];
+    const existingBranches = Array.from(new Set(employees.map(u => u.branch).filter(Boolean))) as string[];
+    const existingPositions = Array.from(new Set(employees.map(u => u.position).filter(Boolean))) as string[];
     const { user } = useAuth();
 
     // Create a more flexible schema for the form

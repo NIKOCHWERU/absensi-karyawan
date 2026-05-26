@@ -41,6 +41,8 @@ export default function AttendanceHistoryPage() {
     const [sortField, setSortField] = useState<'date' | 'name'>('date');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     const [isExporting, setIsExporting] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 50;
 
     const toggleSort = (field: 'date' | 'name') => {
         if (sortField === field) {
@@ -49,6 +51,7 @@ export default function AttendanceHistoryPage() {
             setSortField(field);
             setSortOrder(field === 'date' ? 'desc' : 'asc');
         }
+        setCurrentPage(1);
     };
 
     let startDate: Date;
@@ -145,6 +148,9 @@ export default function AttendanceHistoryPage() {
         }
     }) || [];
 
+    const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
+    const paginatedData = filteredRecords.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
     const getDriveViewLink = (url: string | null) => {
         if (!url) return null;
         if (url.includes('drive.google.com')) return url;
@@ -170,12 +176,14 @@ export default function AttendanceHistoryPage() {
         if (reportType === "daily") setTargetDate(d => subDays(d, 1));
         else if (reportType === "weekly") setTargetDate(d => subDays(d, 7));
         else setTargetDate(d => subMonths(d, 1));
+        setCurrentPage(1);
     };
 
     const handleNext = () => {
         if (reportType === "daily") setTargetDate(d => addDays(d, 1));
         else if (reportType === "weekly") setTargetDate(d => addDays(d, 7));
         else setTargetDate(d => addMonths(d, 1));
+        setCurrentPage(1);
     };
 
     const handleExport = async () => {
@@ -196,12 +204,7 @@ export default function AttendanceHistoryPage() {
             if (!url) return '';
             if (url.startsWith('data:')) return url;
             
-            let resolvedUrl = url;
-            if (!url.includes('/') && !url.includes('.') && url.length > 20) {
-                resolvedUrl = `/api/images/${url}`;
-            } else if (!url.startsWith('http')) {
-                resolvedUrl = `/uploads/${url}`;
-            }
+            let resolvedUrl = getPhotoUrl(url);
             
             if (imageCache[resolvedUrl]) return imageCache[resolvedUrl];
             
@@ -376,12 +379,7 @@ export default function AttendanceHistoryPage() {
                 let photosHtml = '<div class="photo-grid">';
                 const addPhoto = (url: string | null, label: string) => {
                     if (url) {
-                        let resolvedUrl = url;
-                        if (!url.includes('/') && !url.includes('.') && url.length > 20) {
-                            resolvedUrl = `/api/images/${url}`;
-                        } else if (!url.startsWith('http') && !url.startsWith('data:')) {
-                            resolvedUrl = `/uploads/${url}`;
-                        }
+                        let resolvedUrl = getPhotoUrl(url);
 
                         const b64 = imageCache[resolvedUrl] || (url.startsWith('data:') ? url : '');
                         if (b64) {
@@ -536,7 +534,7 @@ export default function AttendanceHistoryPage() {
                     <p className="text-sm text-gray-500">Pantau waktu masuk, pulang, status keterlambatan, dan log GPS presensi karyawan.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                    <Select value={reportType} onValueChange={(val: any) => setReportType(val)}>
+                    <Select value={reportType} onValueChange={(val: any) => { setReportType(val); setCurrentPage(1); }}>
                         <SelectTrigger className="w-[140px] bg-white h-10 font-medium">
                             <SelectValue placeholder="Pilih Periode" />
                         </SelectTrigger>
@@ -552,16 +550,16 @@ export default function AttendanceHistoryPage() {
                         <div className="flex items-center gap-2 bg-white p-1 rounded-lg border border-gray-200 h-10">
                             <Input 
                                 type="date" 
-                                className="h-8 text-xs border-none w-32 focus-visible:ring-0 shadow-none" 
+                                className="h-8 text-xs border-none w-36 focus-visible:ring-0 shadow-none" 
                                 value={customStartDate} 
-                                onChange={(e) => setCustomStartDate(e.target.value)} 
+                                onChange={(e) => { setCustomStartDate(e.target.value); setCurrentPage(1); }} 
                             />
                             <span className="text-gray-400 font-bold">-</span>
                             <Input 
                                 type="date" 
-                                className="h-8 text-xs border-none w-32 focus-visible:ring-0 shadow-none" 
+                                className="h-8 text-xs border-none w-36 focus-visible:ring-0 shadow-none" 
                                 value={customEndDate} 
-                                onChange={(e) => setCustomEndDate(e.target.value)} 
+                                onChange={(e) => { setCustomEndDate(e.target.value); setCurrentPage(1); }} 
                             />
                         </div>
                     ) : (
@@ -604,7 +602,7 @@ export default function AttendanceHistoryPage() {
                                 <Input
                                     placeholder="Cari Nama Karyawan..."
                                     value={searchName}
-                                    onChange={(e) => setSearchName(e.target.value)}
+                                    onChange={(e) => { setSearchName(e.target.value); setCurrentPage(1); }}
                                     className="h-8 text-xs pl-9 w-full md:w-64"
                                 />
                             </div>
@@ -643,11 +641,11 @@ export default function AttendanceHistoryPage() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100 bg-white">
-                                        {filteredRecords.map((record, index) => {
+                                        {paginatedData.map((record, index) => {
                                             const emp = getEmployee(record.userId);
                                             const recordDateStr = format(new Date(record.date), 'EEEE, d MMMM yyyy', { locale: id });
 
-                                            const prevRecord = index > 0 ? filteredRecords[index - 1] : null;
+                                            const prevRecord = index > 0 ? paginatedData[index - 1] : null;
                                             const prevEmpName = prevRecord ? getEmployee(prevRecord.userId)?.fullName : null;
                                             const prevDateStr = prevRecord ? format(new Date(prevRecord.date), 'EEEE, d MMMM yyyy', { locale: id }) : null;
                                             const isContinuation = emp?.fullName === prevEmpName && recordDateStr === prevDateStr;
@@ -805,6 +803,54 @@ export default function AttendanceHistoryPage() {
                                         })}
                                     </tbody>
                                 </table>
+                            </div>
+                        )}
+                        
+                        {/* Pagination Controls */}
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50/50">
+                                <span className="text-xs text-gray-500 font-medium">
+                                    Halaman {currentPage} dari {totalPages}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                        disabled={currentPage === 1}
+                                        className="h-8 text-xs px-3"
+                                    >
+                                        Sebelumnya
+                                    </Button>
+                                    <div className="flex items-center gap-1">
+                                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                            .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                                            .map((p, i, arr) => (
+                                                <div key={p} className="flex items-center">
+                                                    {i > 0 && arr[i - 1] !== p - 1 && (
+                                                        <span className="px-2 text-gray-400">...</span>
+                                                    )}
+                                                    <Button
+                                                        variant={currentPage === p ? "default" : "outline"}
+                                                        size="sm"
+                                                        onClick={() => setCurrentPage(p)}
+                                                        className={`h-8 w-8 p-0 ${currentPage === p ? 'bg-green-600 hover:bg-green-700 text-white border-green-600' : ''}`}
+                                                    >
+                                                        {p}
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                        disabled={currentPage === totalPages}
+                                        className="h-8 text-xs px-3"
+                                    >
+                                        Selanjutnya
+                                    </Button>
+                                </div>
                             </div>
                         )}
                     </div>
