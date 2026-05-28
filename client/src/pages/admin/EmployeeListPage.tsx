@@ -1197,7 +1197,7 @@ export default function AdminEmployeeList() {
                                                         <SelectItem value="-">-</SelectItem>
                                                         {shifts.map((s) => (
                                                             <SelectItem key={s.id} value={s.name}>
-                                                                {s.name} ({s.checkIn} - {s.checkOut})
+                                                                {s.name} ({s.checkInTime} - {s.checkOutTime})
                                                             </SelectItem>
                                                         ))}
                                                     </SelectContent>
