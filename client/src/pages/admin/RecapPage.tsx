@@ -505,10 +505,263 @@ export default function RecapPage() {
         }, 5000);
     };
 
+    const handleBulkExport = async () => {
+        const dates: Date[] = [];
+        let curr = new Date(startDate);
+        const end = new Date(endDate);
+        while (curr <= end) {
+            dates.push(new Date(curr));
+            curr = addDays(curr, 1);
+        }
+
+        if (dates.length === 0) {
+            toast({
+                title: "Info",
+                description: "Tidak ada data untuk rentang tanggal yang dipilih.",
+            });
+            return;
+        }
+
+        toast({
+            title: "Export Massal Dimulai",
+            description: `Mengekspor ${dates.length} laporan harian secara massal. Harap izinkan download multipel jika diminta browser.`,
+        });
+
+        let logoDataUrl = '';
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            const logoRes = await fetch('/logo_elok_buah.jpg', { signal: controller.signal });
+            clearTimeout(timeoutId);
+            
+            const logoBlob = await logoRes.blob();
+            logoDataUrl = await new Promise<string>((resolve) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = () => resolve('');
+                reader.readAsDataURL(logoBlob);
+            });
+        } catch (_) { }
+
+        for (let i = 0; i < dates.length; i++) {
+            const d1 = dates[i];
+            const d2 = addDays(d1, 1);
+            
+            const dayStr1 = format(d1, "d");
+            const monthStr1 = format(d1, "MMMM", { locale: id }).toLowerCase();
+            const dayStr2 = format(d2, "d");
+            const monthStr2 = format(d2, "MMMM", { locale: id }).toLowerCase();
+            const yearStr = format(d1, "yyyy");
+            
+            const fileName = `${dayStr1} ${monthStr1} - ${dayStr2} ${monthStr2} ${yearStr}.html`;
+
+            const dayRecords = allAttendance?.filter(row => {
+                if (!getUserName(row.userId)) return false;
+                const rowDate = new Date(row.date);
+                return format(rowDate, "yyyy-MM-dd") === format(d1, "yyyy-MM-dd");
+            }) || [];
+
+            const filteredDayRecords = dayRecords
+                .filter(row => {
+                    const name = (getUserName(row.userId) || '').toLowerCase();
+                    return name.includes(searchName.toLowerCase());
+                })
+                .sort((a, b) => {
+                    const nameA = (getUserName(a.userId) || '').toLowerCase();
+                    const nameB = (getUserName(b.userId) || '').toLowerCase();
+                    if (nameA < nameB) return -1;
+                    if (nameA > nameB) return 1;
+                    return 0;
+                });
+
+            const localDailyTotals = new Map<string, { mins: number; complete: boolean }>();
+            filteredDayRecords.forEach(row => {
+                const dateKey = format(new Date(row.date), "yyyy-MM-dd");
+                const key = `${dateKey}-${row.userId}`;
+                if (!localDailyTotals.has(key)) {
+                    const userDayRecords = filteredDayRecords.filter(r => r.userId === row.userId);
+                    const { netWorkMins, hasAllCheckOuts } = calculateDailyTotal(userDayRecords);
+                    localDailyTotals.set(key, { mins: netWorkMins, complete: hasAllCheckOuts });
+                }
+            });
+
+            const html = `<!DOCTYPE html>
+<html>
+<head>
+  <title>${fileName}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #1e293b; background: white; padding: 28px 36px; }
+    .letterhead { display: flex; align-items: center; gap: 16px; padding-bottom: 10px; }
+    .logo-img { width: 60px; height: 60px; object-fit: contain; }
+    .company-block h1 { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; }
+    .company-block .tagline { font-size: 10px; color: #64748b; margin-top: 2px; }
+    .hr-thick { border: none; border-top: 2px solid #cbd5e1; margin: 6px 0 2px; }
+    .hr-thin  { border: none; border-top: 1px solid #e2e8f0; margin-bottom: 18px; }
+    .report-meta { text-align: center; margin-bottom: 20px; }
+    .report-meta h2 { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; color: #1e293b; }
+    .report-meta .sub { font-size: 10.5px; margin-top: 4px; color: #475569; }
+    table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+    thead tr { background-color: #f8fafc; }
+    th { color: #374151; font-weight: 700; text-align: left; padding: 8px 8px; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 2px solid #1e293b; border-right: 1px solid #e2e8f0; white-space: nowrap; }
+    th.c { text-align: center; }
+    td { padding: 7px 8px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; vertical-align: middle; white-space: nowrap; }
+    tbody tr:nth-child(even) { background-color: #f8fafc; }
+    .col-no   { text-align: center; color: #94a3b8; font-size: 10px; }
+    .col-date { color: #374151; font-weight: 600; }
+    .col-name { color: #1d4ed8; font-weight: 600; }
+    .col-time { font-family: ui-monospace, Consolas, monospace; font-size: 11px; text-align: center; }
+    .t-in   { color: #15803d; font-weight: 700; }
+    .t-brk  { color: #b45309; font-weight: 700; }
+    .t-out  { color: #b91c1c; font-weight: 700; }
+    .t-dash { color: #94a3b8; }
+    .col-work { font-size: 11px; font-weight: 700; color: #1e293b; }
+    .col-brk  { text-align: center; font-size: 11px; font-weight: 700; color: #ea580c; }
+    .col-stat { text-align: center; font-weight: 700; font-size: 11px; }
+    .st-hadir { color: #16a34a; }
+    .st-telat { color: #ea580c; }
+    .st-sakit { color: #2563eb; }
+    .st-izin  { color: #7c3aed; }
+    .st-cuti  { color: #0d9488; }
+    .st-alpha { color: #dc2626; }
+    .col-note { font-size: 10.5px; color: #475569; white-space: normal; max-width: 200px; }
+    .note-late { color: #dc2626; font-size: 10px; }
+    .note-warn { color: #ca8a04; font-weight: 600; }
+    .signature-section { margin-top: 48px; display: flex; justify-content: space-between; padding: 0 24px; }
+    .sig-box { text-align: center; width: 160px; }
+    .sig-label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #374151; margin-bottom: 64px; }
+    .sig-name { font-size: 11px; font-weight: 800; border-top: 1.5px solid #374151; padding-top: 6px; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; }
+    .footer { margin-top: 18px; font-size: 8.5px; color: #94a3b8; border-top: 1px dashed #cbd5e1; padding-top: 8px; }
+    .btn-wrap { text-align: center; margin-top: 20px; }
+    .download-btn { display: inline-flex; align-items: center; gap: 8px; background: #1d4ed8; color: #fff; border: none; padding: 10px 28px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; letter-spacing: 0.5px; text-decoration: none; }
+    @media print {
+      body { padding: 12px 16px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .btn-wrap { display: none !important; }
+      tr { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="letterhead">
+    <img src="${logoDataUrl}" class="logo-img" alt="Logo" />
+    <div class="company-block">
+      <h1>PT Elok Jaya Abadhi</h1>
+      <p class="tagline">Sistem Manajemen Kehadiran Digital</p>
+    </div>
+  </div>
+  <hr class="hr-thick" />
+  <hr class="hr-thin" />
+  <div class="report-meta">
+    <h2>Laporan Rekapitulasi Absensi Harian</h2>
+    <p class="sub">Periode: ${format(d1, "EEEE, d MMMM yyyy", { locale: id })}</p>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th class="c" style="width:28px;">No</th>
+        <th style="width:130px;">Hari & Tanggal</th>
+        <th style="width:130px;">Nama Karyawan</th>
+        <th class="c" style="width:62px;">Masuk</th>
+        <th class="c" style="width:62px;">Istirahat</th>
+        <th class="c" style="width:62px;">Selesai</th>
+        <th class="c" style="width:62px;">Pulang</th>
+        <th style="width:80px;">Jam Kerja</th>
+        <th class="c" style="width:80px;">Total Istirahat</th>
+        <th class="c" style="width:62px;">Status</th>
+        <th>Keterangan</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${filteredDayRecords.length === 0 ? `
+        <tr>
+          <td colSpan="11" style="text-align:center;padding:20px;color:#94a3b8;">Tidak ada data absensi untuk hari ini.</td>
+        </tr>
+      ` : filteredDayRecords.map((row, index) => {
+            const dateStr = format(new Date(row.date), "yyyy-MM-dd");
+            const breakMins = calculateDuration(row.breakStart, row.breakEnd);
+            const key = `${dateStr}-${row.userId}`;
+            const dailyEntry = localDailyTotals.get(key);
+            const dailyTotalMins = dailyEntry?.mins ?? 0;
+            const prevRow = index > 0 ? filteredDayRecords[index - 1] : null;
+            const isSameDayAndUser = !!(prevRow && format(new Date(prevRow.date), "yyyy-MM-dd") === dateStr && prevRow.userId === row.userId);
+            const statusLabel = row.status === 'present' ? 'Hadir' : row.status === 'late' ? 'Telat' : row.status === 'sick' ? 'Sakit' : row.status === 'permission' ? 'Izin' : row.status === 'cuti' ? 'Cuti' : row.status === 'absent' ? 'Alpha' : (row.status || '-');
+            const statusClass = row.status === 'present' ? 'st-hadir' : row.status === 'late' ? 'st-telat' : row.status === 'sick' ? 'st-sakit' : row.status === 'permission' ? 'st-izin' : row.status === 'cuti' ? 'st-cuti' : row.status === 'absent' ? 'st-alpha' : '';
+            const inTime = row.checkIn ? format(new Date(row.checkIn), 'HH:mm') : '-';
+            const brkTime = row.breakStart ? format(new Date(row.breakStart), 'HH:mm') : '-';
+            const brkEnd = row.breakEnd ? format(new Date(row.breakEnd), 'HH:mm') : '-';
+            const outTime = row.checkOut ? format(new Date(row.checkOut), 'HH:mm') : '-';
+            const isNoBreak = (inTime !== '-' && outTime !== '-' && brkTime === '-' && brkEnd === '-');
+            const jamKerja = !isSameDayAndUser ? (dailyTotalMins > 0 ? formatDuration(dailyTotalMins) : '-') : '';
+            let keterangan = row.notes ? row.notes : '-';
+            if (!row.checkOut) keterangan = row.notes ? row.notes + ' <br><span class="note-warn">(Belum Pulang)</span>' : '<span class="note-warn">Belum Pulang</span>';
+            else if (isNoBreak) keterangan = row.notes ? row.notes + ' <br><span class="note-warn">(Tanpa Istirahat)</span>' : '<span class="note-warn">Tanpa Istirahat</span>';
+            const lateNote = row.status === 'late' && (row as any).lateReason ? `<br><span class="note-late">[Telat: ${(row as any).lateReason}]</span>` : '';
+            return `<tr>
+          <td class="col-no">${isSameDayAndUser ? '<span style="color:#cbd5e1;">↳</span>' : (index + 1)}</td>
+          <td class="col-date" style="font-size:9.5px;">${isSameDayAndUser ? '' : format(new Date(row.date), 'EEEE, d MMMM yyyy', { locale: id })}</td>
+          <td class="col-name">
+              ${isSameDayAndUser ? '' : `
+                   <div style="line-height:1.2;">
+                       <b style="color:#1d4ed8;font-size:11.5px;">${getUserName(row.userId) || '-'}</b><br/>
+                       ${(row.shift && row.shift.toLowerCase().trim() !== '-' && row.shift.toLowerCase().trim() !== 'management') 
+                           ? `<span style="color:#16a34a;font-size:9px;font-weight:bold;text-transform:uppercase;">${row.shift}</span><br/>` 
+                           : '<span style="color:#94a3b8;font-size:9px;font-style:italic;">Belum Tercatat</span><br/>'}
+                       <span style="color:#64748b;font-size:9px;">NIK: ${users?.find(u => u.id === row.userId)?.nik || users?.find(u => u.id === row.userId)?.username || '-'}</span>
+                   </div>
+              `}
+          </td>
+          <td class="col-time ${inTime === '-' ? 't-dash' : 't-in'}">${inTime}</td>
+          <td class="col-time ${brkTime === '-' ? 't-dash' : 't-brk'}">${brkTime}</td>
+          <td class="col-time ${brkEnd === '-' ? 't-dash' : 't-brk'}">${brkEnd}</td>
+          <td class="col-time ${outTime === '-' ? 't-dash' : 't-out'}">${outTime}</td>
+          <td class="col-work">${jamKerja}</td>
+          <td class="col-brk">${breakMins > 0 ? formatDuration(breakMins) : '-'}</td>
+          <td class="col-stat"><span class="${statusClass}">${statusLabel}</span></td>
+          <td class="col-note">${keterangan}${lateNote}</td>
+        </tr>`;
+        }).join('')}
+    </tbody>
+  </table>
+  <div class="signature-section">
+    <div class="sig-box"><p class="sig-label">Checked By</p><div class="sig-name">NIKO</div></div>
+    <div class="sig-box"><p class="sig-label">Approved By</p><div class="sig-name">CLAVERINA</div></div>
+  </div>
+  <div class="footer">Dokumen ini dicetak secara otomatis oleh Sistem Absensi PT ELOK JAYA ABADHI &mdash; ${format(new Date(), "d MMMM yyyy, HH:mm", { locale: id })} WIB</div>
+  <div class="btn-wrap"><a id="dl-btn" class="download-btn" href="#">&#11015;&nbsp; Download File</a></div>
+  <script>
+    var _fn = "${fileName}";
+    document.title = _fn;
+    window.onload = function() {
+      var btn = document.getElementById('dl-btn');
+      if (btn) { btn.href = window.location.href; btn.download = _fn; }
+      setTimeout(function() { window.print(); }, 600);
+    };
+  </script>
+</body>
+</html>`;
+
+            const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+            const blobUrl = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = blobUrl;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(blobUrl);
+            }, 5000);
+
+            await new Promise(resolve => setTimeout(resolve, 350));
+        }
+    };
+
     return (
         <div className="w-full">
             
-
             <div className="space-y-6">
             {/* Header Section */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -536,14 +789,14 @@ export default function RecapPage() {
                                 className="h-8 text-xs border-none w-36 focus-visible:ring-0 shadow-none" 
                                 value={customStartDate} 
                                 onChange={(e) => setCustomStartDate(e.target.value)} 
-                            />
+                                                    />
                             <span className="text-gray-400 font-bold">-</span>
                             <Input 
                                 type="date" 
                                 className="h-8 text-xs border-none w-36 focus-visible:ring-0 shadow-none" 
                                 value={customEndDate} 
                                 onChange={(e) => setCustomEndDate(e.target.value)} 
-                            />
+                                                    />
                         </div>
                     ) : (
                         <div className="flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-1 h-10">
@@ -583,6 +836,11 @@ export default function RecapPage() {
                             <Button variant="outline" className="gap-2 bg-green-50 text-green-700 border-green-200 hover:bg-green-100 h-10 font-bold" onClick={() => handleOpenManualModal()}>
                                 <Plus className="h-4 w-4" /> Input Manual
                             </Button>
+                            {reportType === "custom" && (
+                                <Button variant="outline" className="gap-2 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 h-10 font-bold shadow-sm" onClick={handleBulkExport}>
+                                    <FileDown className="h-4 w-4" /> Export Harian Massal
+                                </Button>
+                            )}
                             <Button variant="outline" className="gap-2 h-10 font-bold shadow-sm" onClick={handleExport}>
                                 <FileDown className="h-4 w-4" /> Export HTML
                             </Button>

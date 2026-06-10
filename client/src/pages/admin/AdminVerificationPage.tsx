@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2, Check, X, Eye, User as UserIcon, Calendar, MapPin, Phone, Mail, CreditCard, Building, Briefcase, ImageIcon } from "lucide-react";
+import { Loader2, Check, X, Eye, User as UserIcon, Calendar, MapPin, Phone, Mail, CreditCard, Building, Briefcase, ImageIcon, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -59,6 +59,29 @@ export default function AdminVerificationPage() {
       toast({ title: "Gagal", description: err.message, variant: "destructive" });
     }
   });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error("Gagal menghapus pendaftaran karyawan");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/unverified-employees"] });
+      toast({ title: "Berhasil", description: "Pendaftaran karyawan telah dihapus secara permanen." });
+    },
+    onError: (err: any) => {
+      toast({ title: "Gagal", description: err.message, variant: "destructive" });
+    }
+  });
+
+  const handleDeleteUser = (userId: number) => {
+    if (confirm("Apakah Anda yakin ingin menghapus pendaftaran karyawan ini secara permanen dari sistem?")) {
+      deleteUserMutation.mutate(userId);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -155,6 +178,15 @@ export default function AdminVerificationPage() {
                     <X className="w-4 h-4" />
                   </Button>
                 )}
+                <Button 
+                  variant="outline"
+                  className="h-9 border-red-100 hover:bg-red-50 text-red-600" 
+                  onClick={() => handleDeleteUser(emp.id)}
+                  disabled={deleteUserMutation.isPending}
+                  title="Hapus Pendaftaran (Permanen)"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               </CardFooter>
             </Card>
           ))}

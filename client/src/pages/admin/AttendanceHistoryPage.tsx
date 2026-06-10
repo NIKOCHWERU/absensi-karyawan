@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { User, Attendance } from "@shared/schema";
 import { useLocation } from "wouter";
@@ -32,6 +33,7 @@ function getPhotoUrl(value: string | null): string {
 
 export default function AttendanceHistoryPage() {
     const [, setLocation] = useLocation();
+    const { toast } = useToast();
     const { logout } = useAuth();
     const [targetDate, setTargetDate] = useState(new Date());
     const [reportType, setReportType] = useState<"daily" | "weekly" | "monthly" | "custom">("daily");
@@ -494,6 +496,333 @@ export default function AttendanceHistoryPage() {
         }
     };
 
+    const handleBulkExport = async () => {
+        const dates: Date[] = [];
+        let curr = new Date(startDate);
+        const end = new Date(endDate);
+        while (curr <= end) {
+            dates.push(new Date(curr));
+            curr = addDays(curr, 1);
+        }
+
+        if (dates.length === 0) {
+            toast({
+                title: "Info",
+                description: "Tidak ada data untuk rentang tanggal yang dipilih.",
+            });
+            return;
+        }
+
+        toast({
+            title: "Export Massal Dimulai",
+            description: `Mengekspor ${dates.length} laporan foto harian secara massal. Harap izinkan download multipel jika diminta browser.`,
+        });
+
+        const imageCache: Record<string, string> = {};
+        const fetchImageBase64 = async (url: string, retries = 2) => {
+            if (!url) return '';
+            if (url.startsWith('data:')) return url;
+            
+            let resolvedUrl = getPhotoUrl(url);
+            
+            if (imageCache[resolvedUrl]) return imageCache[resolvedUrl];
+            
+            for (let i = 0; i <= retries; i++) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000); 
+
+                    const res = await fetch(resolvedUrl, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    const blob = await res.blob();
+                    const b64 = await new Promise<string>((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result as string);
+                        reader.onerror = () => resolve('');
+                        reader.readAsDataURL(blob);
+                    });
+                    if (b64) {
+                        imageCache[resolvedUrl] = b64;
+                        return b64;
+                    }
+                } catch (e) {
+                    console.warn(`Export fetch attempt ${i + 1} failed for ${resolvedUrl}:`, e);
+                    if (i === retries) return '';
+                    await new Promise(r => setTimeout(r, 1000)); 
+                }
+            }
+            return '';
+        };
+
+        setIsExporting(true);
+        try {
+            // Fetch logo
+            let logoDataUrl = '';
+            try {
+                const logoRes = await fetch('/logo_elok_buah.jpg');
+                const logoBlob = await logoRes.blob();
+                logoDataUrl = await new Promise<string>((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result as string);
+                    reader.readAsDataURL(logoBlob);
+                });
+            } catch (_) { }
+
+            // Loop through each day and export
+            for (let dIdx = 0; dIdx < dates.length; dIdx++) {
+                const d1 = dates[dIdx];
+                const d2 = addDays(d1, 1);
+                
+                const dayStr1 = format(d1, "d");
+                const monthStr1 = format(d1, "MMMM", { locale: id }).toLowerCase();
+                const dayStr2 = format(d2, "d");
+                const monthStr2 = format(d2, "MMMM", { locale: id }).toLowerCase();
+                const yearStr = format(d1, "yyyy");
+                
+                const fileName = `${dayStr1} ${monthStr1} - ${dayStr2} ${monthStr2} ${yearStr}.html`;
+
+                const dayRecords = attendanceHistory?.filter(att => {
+                    const emp = getEmployee(att.userId);
+                    if (!emp) return false;
+                    
+                    if (searchName && !emp.fullName.toLowerCase().includes(searchName.toLowerCase())) return false;
+                    
+                    const attDate = new Date(att.date);
+                    return format(attDate, "yyyy-MM-dd") === format(d1, "yyyy-MM-dd");
+                }).sort((a, b) => {
+                    const nameA = getEmployee(a.userId)?.fullName || '';
+                    const nameB = getEmployee(b.userId)?.fullName || '';
+                    if (nameA !== nameB) return nameA.localeCompare(nameB);
+                    const timeA = a.checkIn ? new Date(a.checkIn).getTime() : 0;
+                    const timeB = b.checkIn ? new Date(b.checkIn).getTime() : 0;
+                    return timeA - timeB;
+                }) || [];
+
+                const dayUniqueUrls = new Set<string>();
+                dayRecords.forEach(r => {
+                    if (r.checkInPhoto) dayUniqueUrls.add(r.checkInPhoto);
+                    if (r.breakStartPhoto) dayUniqueUrls.add(r.breakStartPhoto);
+                    if (r.breakEndPhoto) dayUniqueUrls.add(r.breakEndPhoto);
+                    if (r.checkOutPhoto) dayUniqueUrls.add(r.checkOutPhoto);
+                    if ((r as any).lateReasonPhoto) dayUniqueUrls.add((r as any).lateReasonPhoto);
+                });
+
+                const urlArray = Array.from(dayUniqueUrls);
+                const chunkSize = 10;
+                for (let k = 0; k < urlArray.length; k += chunkSize) {
+                    const chunk = urlArray.slice(k, k + chunkSize);
+                    await Promise.all(chunk.map(url => fetchImageBase64(url)));
+                }
+
+                let html = `<!DOCTYPE html>
+<html>
+<head>
+  <title>${fileName}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #1e293b; background: white; padding: 28px 36px; }
+    .letterhead { display: flex; align-items: center; gap: 16px; padding-bottom: 10px; }
+    .logo-img { width: 60px; height: 60px; object-fit: contain; }
+    .company-block h1 { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; }
+    .company-block .tagline { font-size: 10px; color: #64748b; margin-top: 2px; }
+    .hr-thick { border: none; border-top: 2px solid #cbd5e1; margin: 6px 0 2px; }
+    .hr-thin  { border: none; border-top: 1px solid #e2e8f0; margin-bottom: 18px; }
+    .report-meta { text-align: center; margin-bottom: 20px; }
+    .report-meta h2 { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; color: #1e293b; }
+    .report-meta .sub { font-size: 10.5px; margin-top: 4px; color: #475569; }
+    table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+    thead tr { background-color: #f8fafc; }
+    th { color: #374151; font-weight: 700; text-align: left; padding: 8px 8px; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 2px solid #1e293b; border-right: 1px solid #e2e8f0; }
+    th.c { text-align: center; }
+    td { padding: 8px 8px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; vertical-align: top; }
+    tbody tr:nth-child(even) { background-color: #f8fafc; }
+    .photo-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .photo-item { width: 100px; text-align: center; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px; background: white; }
+    .photo-img { width: 100%; height: 90px; object-fit: cover; border-radius: 2px; }
+    .photo-label { font-size: 8px; font-weight: bold; color: #64748b; margin-top: 2px; text-transform: uppercase; }
+    .status-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 9px; text-transform: uppercase; margin-bottom: 4px; }
+    .st-hadir { background: #dcfce7; color: #16a34a; }
+    .st-telat { background: #ffedd5; color: #ea580c; }
+    .st-sakit { background: #dbeafe; color: #2563eb; }
+    .st-izin  { background: #f3e8ff; color: #7c3aed; }
+    .st-cuti  { background: #ccfbf1; color: #0d9488; }
+    .st-alpha { background: #fee2e2; color: #dc2626; }
+    .st-unknown { background: #f1f5f9; color: #475569; }
+    .btn-wrap { text-align: center; margin-top: 20px; }
+    .download-btn { display: inline-flex; align-items: center; gap: 8px; background: #1d4ed8; color: #fff; border: none; padding: 10px 28px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; }
+    @media print {
+      body { padding: 12px 16px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .btn-wrap { display: none !important; }
+      tr { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="letterhead">
+    <img src="${logoDataUrl}" class="logo-img" alt="Logo" />
+    <div class="company-block">
+      <h1>PT Elok Jaya Abadhi</h1>
+      <p class="tagline">Sistem Manajemen Kehadiran Digital</p>
+    </div>
+  </div>
+  <hr class="hr-thick" />
+  <hr class="hr-thin" />
+  <div class="report-meta">
+    <h2>Laporan Riwayat & Foto Absensi Harian</h2>
+    <p class="sub">Periode: ${format(d1, "EEEE, d MMMM yyyy", { locale: id })}</p>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th class="c" style="width:24px;">No</th>
+        <th style="width:110px;">Hari & Tanggal</th>
+        <th style="width:110px;">Nama Karyawan</th>
+        <th style="width:140px;">Waktu Absen</th>
+        <th style="width:120px;">Status & Keterangan</th>
+        <th>Bukti Foto (Visual)</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+                if (dayRecords.length === 0) {
+                    html += `<tr><td colspan="6" style="text-align:center;padding:20px;color:#94a3b8;">Tidak ada data absensi untuk hari ini.</td></tr>`;
+                }
+
+                let lastShownName = "";
+                let lastShownDate = "";
+                for (let j = 0; j < dayRecords.length; j++) {
+                    const r = dayRecords[j];
+                    const emp = getEmployee(r.userId);
+                    const currentName = emp?.fullName || '-';
+                    const currentDateStr = format(new Date(r.date), 'EEEE, d MMMM yyyy', { locale: id });
+
+                    const isContinuation = currentName === lastShownName && currentDateStr === lastShownDate;
+                    lastShownName = currentName;
+                    lastShownDate = currentDateStr;
+
+                    const sts = isContinuation && r.status === 'late' ? 'present' : (r.status || '-');
+                    const statusLabel = sts === 'present' ? 'Hadir' : sts === 'late' ? 'Telat' : sts === 'sick' ? 'Sakit' : sts === 'permission' ? 'Izin' : sts === 'cuti' ? 'Cuti' : sts === 'absent' ? 'Alpha' : sts;
+                    const statusClass = sts === 'present' ? 'st-hadir' : sts === 'late' ? 'st-telat' : sts === 'sick' ? 'st-sakit' : sts === 'permission' ? 'st-izin' : sts === 'cuti' ? 'st-cuti' : sts === 'absent' ? 'st-alpha' : 'st-unknown';
+
+                    const tIn = r.checkIn ? format(new Date(r.checkIn), 'HH:mm') : '-';
+                    const tBrkS = r.breakStart ? format(new Date(r.breakStart), 'HH:mm') : '-';
+                    const tBrkE = r.breakEnd ? format(new Date(r.breakEnd), 'HH:mm') : '-';
+                    const tOut = r.checkOut ? format(new Date(r.checkOut), 'HH:mm') : '-';
+
+                    let photosHtml = '<div class="photo-grid">';
+                    const addPhoto = (url: string | null, label: string) => {
+                        if (url) {
+                            let resolvedUrl = getPhotoUrl(url);
+                            const b64 = imageCache[resolvedUrl] || (url.startsWith('data:') ? url : '');
+                            if (b64) {
+                                photosHtml += `<div class="photo-item"><img src="${b64}" class="photo-img"/><div class="photo-label">${label}</div></div>`;
+                            } else {
+                                photosHtml += `<div class="photo-item"><div style="height:65px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:9px;">No Image</div><div class="photo-label">${label}</div></div>`;
+                            }
+                        }
+                    };
+
+                    addPhoto(r.checkInPhoto, 'Masuk');
+                    addPhoto(r.breakStartPhoto, 'Mulai Ist.');
+                    addPhoto(r.breakEndPhoto, 'Selesai Ist.');
+                    addPhoto(r.checkOutPhoto, 'Pulang');
+                    addPhoto((r as any).lateReasonPhoto, 'Bukti Telat');
+                    photosHtml += '</div>';
+
+                    if (photosHtml === '<div class="photo-grid"></div>') {
+                        photosHtml = '<span style="color:#94a3b8;font-style:italic;font-size:9px;">Tidak ada bukti foto</span>';
+                    }
+
+                    const { duration, cleanNotes } = parsePermitInfo(r.notes);
+                    let extraNotes = '';
+                    if (cleanNotes) extraNotes += `<div style="margin-top:2px;color:#475569;font-size:9.5px;line-height:1.3;"><b>Cat:\n</b> ${cleanNotes}</div>`;
+                    if (sts === 'late' && (r as any).lateReason) extraNotes += `<div style="margin-top:2px;color:#c2410c;font-size:9.5px;line-height:1.3;"><b>Alasan Telat:\n</b> ${(r as any).lateReason}</div>`;
+
+                    const checkInLoc = r.checkInLocation || '-';
+
+                    html += `<tr>
+                    <td class="c">${isContinuation ? '<span style="color:#cbd5e1;font-weight:bold;">↳</span>' : (j + 1)}</td>
+                    <td style="font-size:9.5px;color:#475569;">${isContinuation ? '' : currentDateStr}</td>
+                    <td>
+                        ${isContinuation ? '' : `
+                            <div style="line-height:1.2;">
+                                <b style="color:#1d4ed8;font-size:11.5px;">${currentName}</b><br/>
+                                ${(r.shift && r.shift.toLowerCase().trim() !== '-' && r.shift.toLowerCase().trim() !== 'management') 
+                                    ? `<span style="color:#94a3b8;font-size:9.5px;font-weight:bold;text-transform:uppercase;">${r.shift}</span><br/>` 
+                                    : '<span style="color:#94a3b8;font-size:9.5px;font-style:italic;">Belum Tercatat</span><br/>'}
+                                <span style="color:#94a3b8;font-size:9.5px;">NIK: ${emp?.nik || emp?.username || '-'}</span>
+                            </div>
+                        `}
+                        <div style="margin-top:4px;">
+                            <span style="color:#94a3b8; font-size: 9px; font-style: italic;">Sesi ${r.sessionNumber || 1}</span>
+                        </div>
+                    </td>
+                    <td>
+                      <div style="font-family:monospace;font-size:10.5px;line-height:1.4;">
+                        IN : <span style="color:#16a34a;font-weight:bold;">${tIn}</span><br/>
+                        BRK: <span style="color:#d97706;font-weight:bold;">${tBrkS}</span> - <span style="color:#2563eb;font-weight:bold;">${tBrkE}</span><br/>
+                        OUT: <span style="color:#dc2626;font-weight:bold;">${tOut}</span><br/>
+                        ${duration > 0 ? `PERMIT: <span style="color:#7c3aed;font-weight:bold;">${duration} Jam</span><br/>` : ''}
+                        <div style="border-top:1px solid #eee; margin-top:4px; padding-top:4px; font-weight:bold;">
+                          ${(() => {
+                            const { netWorkMins } = calculateDailyTotal([r]);
+                            return netWorkMins > 0 ? `TOTAL: ${formatDuration(netWorkMins)}` : 'TIDAK LENGKAP';
+                        })()}
+                        </div>
+                      </div>
+                      <div style="margin-top:8px; font-size:8.5px; color:#64748b; line-height:1.2; max-width:140px; word-break:break-word; background:#f8fafc; padding:4px; border-radius:4px;">
+                        <span style="font-weight:bold; color:#475569; display:block; margin-bottom:2px; text-transform:uppercase; font-size:8px;">LOKASI MASUK:</span>
+                        ${checkInLoc || '-'}
+                      </div>
+                    </td>
+                    <td>
+                      <span class="status-badge ${statusClass}">${statusLabel}</span>
+                      ${extraNotes}
+                    </td>
+                    <td>${photosHtml}</td>
+                </tr>`;
+                }
+
+                html += `
+        </tbody >
+      </table >
+      <div class="btn-wrap"><a id="dl-btn" class="download-btn" href="#">&#11015;&nbsp; Download File</a></div>
+      <script>
+        var _fn = "${fileName}";
+        document.title = _fn;
+        window.onload = function() {
+          var btn = document.getElementById('dl-btn');
+          if (btn) { btn.href = window.location.href; btn.download = _fn; }
+          setTimeout(function() { window.print(); }, 600);
+        };
+      </script>
+    </body>
+    </html>`;
+
+                const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+                const blobUrl = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = blobUrl;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(blobUrl);
+                }, 5000);
+
+                await new Promise(resolve => setTimeout(resolve, 350));
+            }
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     const PhotoThumbnail = ({ url, label, location }: { url: string | null, label: string, location?: string | null }) => {
         if (!url) return null;
 
@@ -586,6 +915,24 @@ export default function AttendanceHistoryPage() {
                         onClick={() => setLocation("/admin/recap")}
                     >
                         Lihat Rekap Absen
+                    </Button>
+                    {reportType === "custom" && (
+                        <Button 
+                            variant="outline" 
+                            className="gap-2 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 h-10 font-bold shadow-sm" 
+                            onClick={handleBulkExport}
+                            disabled={isExporting}
+                        >
+                            <FileDown className="h-4 w-4" /> Export Foto Massal
+                        </Button>
+                    )}
+                    <Button 
+                        variant="outline" 
+                        className="gap-2 h-10 font-bold shadow-sm" 
+                        onClick={handleExport}
+                        disabled={isExporting}
+                    >
+                        <FileDown className="h-4 w-4" /> Export Foto
                     </Button>
                 </div>
             </div>

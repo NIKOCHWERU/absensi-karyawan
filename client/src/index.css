@@ -46,6 +46,16 @@
   /* Green ring */
 
   --radius: 1rem;
+
+  /* Sidebar Theme Colors (matching green theme) */
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 20 14% 4%;
+  --sidebar-primary: 122 39% 49%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 122 39% 96%;
+  --sidebar-accent-foreground: 122 39% 20%;
+  --sidebar-border: 30 20% 90%;
+  --sidebar-ring: 122 39% 49%;
 }
 
 @layer base {

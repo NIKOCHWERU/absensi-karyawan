@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import {
@@ -13,12 +13,14 @@ import {
     TrendingDown,
     Building,
     Briefcase,
-    Clock
+    Clock,
+    Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 interface MutationHistoryItem {
     id: number;
@@ -40,10 +42,42 @@ interface MutationHistoryItem {
 export default function MutationHistoryPage() {
     const [, setLocation] = useLocation();
     const [searchTerm, setSearchTerm] = useState("");
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
 
     const { data: mutationsList = [], isLoading } = useQuery<MutationHistoryItem[]>({
         queryKey: ["/api/admin/mutations"],
     });
+
+    const deleteMutation = useMutation({
+        mutationFn: async (id: number) => {
+            const res = await fetch(`/api/admin/mutations/${id}`, {
+                method: 'DELETE',
+            });
+            if (!res.ok) throw new Error("Gagal menghapus riwayat mutasi");
+            return res.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["/api/admin/mutations"] });
+            toast({
+                title: "Berhasil",
+                description: "Riwayat mutasi telah dihapus.",
+            });
+        },
+        onError: (err: any) => {
+            toast({
+                title: "Gagal",
+                description: err.message,
+                variant: "destructive",
+            });
+        }
+    });
+
+    const handleDeleteMutation = (id: number) => {
+        if (confirm("Apakah Anda yakin ingin menghapus catatan mutasi/promosi ini?")) {
+            deleteMutation.mutate(id);
+        }
+    };
 
     const filteredMutations = mutationsList.filter((m) => {
         const name = m.user?.fullName?.toLowerCase() || "";
@@ -166,12 +200,24 @@ export default function MutationHistoryPage() {
                                             </div>
                                             
                                             {/* Type and Date Badges */}
-                                            <div className="flex flex-col items-start sm:items-end">
-                                                <span className={`inline-flex items-center gap-1 px-3 py-1 border rounded-full text-xs font-bold uppercase shadow-2xs ${actionMeta.colorClass}`}>
-                                                    {actionMeta.icon}
-                                                    {actionMeta.label}
-                                                </span>
-                                                <span className="text-[10px] text-gray-400 flex items-center gap-1 mt-1 font-bold">
+                                            <div className="flex flex-col items-start sm:items-end gap-1.5">
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`inline-flex items-center gap-1 px-3 py-1 border rounded-full text-xs font-bold uppercase shadow-2xs ${actionMeta.colorClass}`}>
+                                                        {actionMeta.icon}
+                                                        {actionMeta.label}
+                                                    </span>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="rounded-lg text-red-600 border-red-100 hover:bg-red-50 h-7 w-7 p-0 flex items-center justify-center cursor-pointer"
+                                                        onClick={() => handleDeleteMutation(item.id)}
+                                                        disabled={deleteMutation.isPending}
+                                                        title="Hapus Riwayat Mutasi"
+                                                    >
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                </div>
+                                                <span className="text-[10px] text-gray-400 flex items-center gap-1 font-bold">
                                                     <Clock className="w-3 h-3" />
                                                     {recordDate}
                                                 </span>

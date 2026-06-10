@@ -7,7 +7,7 @@ import { z } from "zod";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import multer from "multer";
 import { uploadFile } from "./services/googleDrive";
-import { User as DbUser, resignations, mutations, warningLetters, users } from "@shared/schema";
+import { User as DbUser, resignations, mutations, warningLetters, users, leaveRequests } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
 import fs from "fs";
@@ -73,6 +73,53 @@ export async function registerRoutes(
   // Helper: check if user is admin or superadmin
   const isAdminRole = (req: Request) =>
     req.isAuthenticated() && (req.user!.role === 'admin' || req.user!.role === 'superadmin');
+
+  // --- Employee: Fetch own notifications/documents ---
+  app.get("/api/employee/documents", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+
+      const userMutations = await db
+        .select()
+        .from(mutations)
+        .where(eq(mutations.userId, userId))
+        .orderBy(desc(mutations.createdAt));
+
+      const userWarningLetters = await db
+        .select()
+        .from(warningLetters)
+        .where(eq(warningLetters.userId, userId))
+        .orderBy(desc(warningLetters.createdAt));
+
+      const userResignations = await db
+        .select()
+        .from(resignations)
+        .where(eq(resignations.userId, userId))
+        .orderBy(desc(resignations.createdAt));
+
+      res.json({
+        mutations: userMutations,
+        warningLetters: userWarningLetters,
+        resignations: userResignations
+      });
+    } catch (err: any) {
+      console.error("Fetch Employee Documents Error:", err);
+      res.status(500).json({ message: "Gagal mengambil dokumen karyawan: " + err.message });
+    }
+  });
+
+  // --- Admin: Delete leave request ---
+  app.delete("/api/admin/leave-requests/:id", isAuthenticated, async (req, res) => {
+    if (!isAdminRole(req)) return res.sendStatus(403);
+    try {
+      const id = parseInt(req.params.id as string);
+      await db.delete(leaveRequests).where(eq(leaveRequests.id, id));
+      res.json({ message: "Permohonan cuti berhasil dihapus." });
+    } catch (err: any) {
+      console.error("Delete Leave Request Error:", err);
+      res.status(500).json({ message: "Gagal menghapus permohonan cuti: " + err.message });
+    }
+  });
 
   // Helper: Normalize user data for create/update
   const normalizeUserData = (data: any) => {

@@ -7,8 +7,9 @@ import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, User, Camera, MapPin, Coffee, LogOut, X, Check, RefreshCw, SwitchCamera, Zap, ChevronRight, Stethoscope, Umbrella, FileText, Timer, Bell, Info, AlertTriangle } from "lucide-react";
+import { Loader2, User, Camera, MapPin, Coffee, LogOut, X, Check, RefreshCw, SwitchCamera, Zap, ChevronRight, Stethoscope, Umbrella, FileText, Timer, Bell, Info, AlertTriangle, Download } from "lucide-react";
 import { format } from "date-fns";
+import { id } from "date-fns/locale";
 import { motion } from "framer-motion";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -124,6 +125,124 @@ export default function EmployeeDashboard() {
     const { user } = useAuth();
     const { today, activeSession, todaySessions, sessionCount, completedSessions, isLoadingToday, clockIn, clockOut, breakStart, breakEnd, permit, resume, isPending } = useAttendance();
     const { toast } = useToast();
+ 
+    const { data: employeeDocs } = useQuery<{
+        mutations: any[];
+        warningLetters: any[];
+        resignations: any[];
+    }>({
+        queryKey: ["/api/employee/documents"],
+    });
+
+    const [currentNotification, setCurrentNotification] = useState<{
+        id: number;
+        type: "mutasi" | "promosi" | "demosi" | "warningLetter" | "resignation";
+        title: string;
+        date: string;
+        notes: string;
+        documentUrl: string | null;
+        raw: any;
+    } | null>(null);
+
+    useEffect(() => {
+        if (!employeeDocs) return;
+        const cutoff = new Date("2026-06-10T04:00:00.000Z");
+
+        // Load dismissed notifications from localStorage
+        let dismissed: Record<string, number[]> = {
+            mutations: [],
+            warningLetters: [],
+            resignations: []
+        };
+        try {
+            const saved = localStorage.getItem("dismissed_employee_docs");
+            if (saved) dismissed = JSON.parse(saved);
+        } catch (_) {}
+
+        // Find first undismissed mutation
+        const newMutation = employeeDocs.mutations.find(m => {
+            const isFuture = new Date(m.createdAt) > cutoff;
+            const isDismissed = dismissed.mutations?.includes(m.id);
+            return isFuture && !isDismissed;
+        });
+        if (newMutation) {
+            setCurrentNotification({
+                id: newMutation.id,
+                type: newMutation.type,
+                title: newMutation.type === 'promosi' ? 'Promosi Jabatan' : newMutation.type === 'demosi' ? 'Demosi Jabatan' : 'Mutasi Cabang',
+                date: format(new Date(newMutation.createdAt), "d MMMM yyyy", { locale: id }),
+                notes: newMutation.notes || "",
+                documentUrl: newMutation.documentUrl,
+                raw: newMutation
+            });
+            return;
+        }
+
+        // Find first undismissed warning letter (SP)
+        const newSP = employeeDocs.warningLetters.find(sp => {
+            const isFuture = new Date(sp.createdAt) > cutoff;
+            const isDismissed = dismissed.warningLetters?.includes(sp.id);
+            return isFuture && !isDismissed;
+        });
+        if (newSP) {
+            setCurrentNotification({
+                id: newSP.id,
+                type: 'warningLetter',
+                title: `Surat Peringatan (${newSP.type})`,
+                date: format(new Date(newSP.createdAt), "d MMMM yyyy", { locale: id }),
+                notes: newSP.notes || "",
+                documentUrl: newSP.documentUrl,
+                raw: newSP
+            });
+            return;
+        }
+
+        // Find first undismissed resignation (PHK/layoff)
+        const newResign = employeeDocs.resignations.find(r => {
+            const isFuture = new Date(r.createdAt) > cutoff;
+            const isDismissed = dismissed.resignations?.includes(r.id);
+            return isFuture && !isDismissed;
+        });
+        if (newResign) {
+            setCurrentNotification({
+                id: newResign.id,
+                type: 'resignation',
+                title: 'Pemberitahuan Pemutusan Hubungan Kerja (Resign/PHK)',
+                date: format(new Date(newResign.createdAt), "d MMMM yyyy", { locale: id }),
+                notes: newResign.reason || "",
+                documentUrl: newResign.documentUrl,
+                raw: newResign
+            });
+            return;
+        }
+
+        setCurrentNotification(null);
+    }, [employeeDocs]);
+
+    const handleDismissNotification = () => {
+        if (!currentNotification) return;
+
+        let dismissed: Record<string, number[]> = {
+            mutations: [],
+            warningLetters: [],
+            resignations: []
+        };
+        try {
+            const saved = localStorage.getItem("dismissed_employee_docs");
+            if (saved) dismissed = JSON.parse(saved);
+        } catch (_) {}
+
+        const key = currentNotification.type === 'warningLetter' ? 'warningLetters' :
+                    currentNotification.type === 'resignation' ? 'resignations' : 'mutations';
+
+        if (!dismissed[key]) dismissed[key] = [];
+        if (!dismissed[key].includes(currentNotification.id)) {
+            dismissed[key].push(currentNotification.id);
+        }
+
+        localStorage.setItem("dismissed_employee_docs", JSON.stringify(dismissed));
+        setCurrentNotification(null);
+    };
 
     const [permitOpen, setPermitOpen] = useState(false);
     const [permitNote, setPermitNote] = useState("");
@@ -1154,7 +1273,74 @@ export default function EmployeeDashboard() {
                 </DialogContent>
             </Dialog>
 
-            {/* Off Day Confirmation Modal */}
+            {/* Employee Document Notification Popup */}
+            <Dialog open={currentNotification !== null} onOpenChange={(open) => !open && handleDismissNotification()}>
+                <DialogContent className="rounded-3xl max-w-xs md:max-w-md p-6 bg-white border border-gray-100 shadow-xl">
+                    <DialogHeader>
+                        <div className="mx-auto w-14 h-14 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mb-3">
+                            <FileText className="w-7 h-7" />
+                        </div>
+                        <DialogTitle className="text-center text-lg font-bold text-gray-950">
+                            {currentNotification?.title}
+                        </DialogTitle>
+                        <DialogDescription className="text-center text-xs text-slate-400 mt-0.5">
+                            Tanggal Dokumen: {currentNotification?.date}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {currentNotification && (
+                        <div className="space-y-4 my-2">
+                            {currentNotification.type === 'warningLetter' && (
+                                <div className="text-xs bg-slate-50 p-4 rounded-2xl border border-slate-100 text-slate-700 space-y-1.5">
+                                    <p><strong>Masa Berlaku:</strong> {format(new Date(currentNotification.raw.startDate), "d MMM yyyy")} - {format(new Date(currentNotification.raw.endDate), "d MMM yyyy")}</p>
+                                </div>
+                            )}
+
+                            {['mutasi', 'promosi', 'demosi'].includes(currentNotification.type) && (
+                                <div className="text-xs bg-slate-50 p-4 rounded-2xl border border-slate-100 text-slate-700 space-y-1.5">
+                                    {currentNotification.type === 'mutasi' ? (
+                                        <>
+                                            <p><strong>Cabang Lama:</strong> {currentNotification.raw.oldBranch || '-'}</p>
+                                            <p><strong>Cabang Baru:</strong> {currentNotification.raw.newBranch || '-'}</p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <p><strong>Jabatan Lama:</strong> {currentNotification.raw.oldPosition || '-'}</p>
+                                            <p><strong>Jabatan Baru:</strong> {currentNotification.raw.newPosition || '-'}</p>
+                                        </>
+                                    )}
+                                </div>
+                            )}
+
+                            {currentNotification.notes && (
+                                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-1">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Keterangan / Alasan</span>
+                                    <p className="text-xs text-slate-600 leading-relaxed font-medium italic">"{currentNotification.notes}"</p>
+                                </div>
+                            )}
+
+                            {currentNotification.documentUrl && (
+                                <Button
+                                    asChild
+                                    className="w-full h-12 rounded-2xl font-bold bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-2"
+                                >
+                                    <a href={currentNotification.documentUrl} target="_blank" rel="noopener noreferrer">
+                                        <Download className="w-4 h-4" /> Download Dokumen SK
+                                    </a>
+                                </Button>
+                            )}
+
+                            <Button
+                                className="w-full h-12 rounded-2xl font-bold bg-blue-600 hover:bg-blue-700 text-white"
+                                onClick={handleDismissNotification}
+                            >
+                                Saya Mengerti &amp; Tutup
+                            </Button>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+
             <Dialog open={isOffDayOpen} onOpenChange={setIsOffDayOpen}>
                 <DialogContent className="rounded-3xl max-w-xs md:max-w-md p-6">
                     <DialogHeader>
