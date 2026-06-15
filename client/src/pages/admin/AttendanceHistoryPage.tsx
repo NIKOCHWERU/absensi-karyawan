@@ -31,6 +31,20 @@ function getPhotoUrl(value: string | null): string {
     return `/uploads/${value}`;
 }
 
+const loadHtml2Pdf = () => {
+    return new Promise<any>((resolve, reject) => {
+        if ((window as any).html2pdf) {
+            resolve((window as any).html2pdf);
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+        script.onload = () => resolve((window as any).html2pdf);
+        script.onerror = () => reject(new Error("Gagal memuat script html2pdf"));
+        document.head.appendChild(script);
+    });
+};
+
 export default function AttendanceHistoryPage() {
     const [, setLocation] = useLocation();
     const { toast } = useToast();
@@ -513,9 +527,24 @@ export default function AttendanceHistoryPage() {
             return;
         }
 
+        setIsExporting(true);
+        
+        let html2pdf: any;
+        try {
+            html2pdf = await loadHtml2Pdf();
+        } catch (err) {
+            toast({
+                title: "Error",
+                description: "Gagal memuat engine pembuat PDF.",
+                variant: "destructive"
+            });
+            setIsExporting(false);
+            return;
+        }
+
         toast({
             title: "Export Massal Dimulai",
-            description: `Mengekspor ${dates.length} laporan foto harian secara massal. Harap izinkan download multipel jika diminta browser.`,
+            description: `Mengekspor ${dates.length} laporan foto harian dalam format PDF secara massal. Harap izinkan download multipel jika diminta browser.`,
         });
 
         const imageCache: Record<string, string> = {};
@@ -556,7 +585,6 @@ export default function AttendanceHistoryPage() {
             return '';
         };
 
-        setIsExporting(true);
         try {
             // Fetch logo
             let logoDataUrl = '';
@@ -576,12 +604,12 @@ export default function AttendanceHistoryPage() {
                 const d2 = addDays(d1, 1);
                 
                 const dayStr1 = format(d1, "d");
-                const monthStr1 = format(d1, "MMMM", { locale: id }).toLowerCase();
+                const monthStr1 = format(d1, "MMMM", { locale: id }).toUpperCase();
                 const dayStr2 = format(d2, "d");
-                const monthStr2 = format(d2, "MMMM", { locale: id }).toLowerCase();
+                const monthStr2 = format(d2, "MMMM", { locale: id }).toUpperCase();
                 const yearStr = format(d1, "yyyy");
                 
-                const fileName = `${dayStr1} ${monthStr1} - ${dayStr2} ${monthStr2} ${yearStr}.html`;
+                const docTitle = `REKAP ABSENSI FOTO NON MANAJEMEN ${dayStr1} ${monthStr1} - ${dayStr2} ${monthStr2} ${yearStr} PT EJA`;
 
                 const dayRecords = attendanceHistory?.filter(att => {
                     const emp = getEmployee(att.userId);
@@ -616,10 +644,13 @@ export default function AttendanceHistoryPage() {
                     await Promise.all(chunk.map(url => fetchImageBase64(url)));
                 }
 
+                let lastShownName = "";
+                let lastShownDate = "";
+
                 let html = `<!DOCTYPE html>
 <html>
 <head>
-  <title>${fileName}</title>
+  <title>${docTitle}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #1e293b; background: white; padding: 28px 36px; }
@@ -647,11 +678,16 @@ export default function AttendanceHistoryPage() {
     .st-telat { background: #ffedd5; color: #ea580c; }
     .st-sakit { background: #dbeafe; color: #2563eb; }
     .st-izin  { background: #f3e8ff; color: #7c3aed; }
-    .st-cuti  { background: #ccfbf1; color: #0d9488; }
+    .st-cuti  { background: #e0f2fe; color: #0369a1; }
     .st-alpha { background: #fee2e2; color: #dc2626; }
-    .st-unknown { background: #f1f5f9; color: #475569; }
+    .st-unknown { background: #f1f5f9; color: #64748b; }
+    .signature-section { margin-top: 48px; display: flex; justify-content: space-between; padding: 0 24px; }
+    .sig-box { text-align: center; width: 160px; }
+    .sig-label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #374151; margin-bottom: 64px; }
+    .sig-name { font-size: 11px; font-weight: 800; border-top: 1.5px solid #374151; padding-top: 6px; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; }
+    .footer { margin-top: 18px; font-size: 8.5px; color: #94a3b8; border-top: 1px dashed #cbd5e1; padding-top: 8px; }
     .btn-wrap { text-align: center; margin-top: 20px; }
-    .download-btn { display: inline-flex; align-items: center; gap: 8px; background: #1d4ed8; color: #fff; border: none; padding: 10px 28px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; }
+    .download-btn { display: inline-flex; align-items: center; gap: 8px; background: #1d4ed8; color: #fff; border: none; padding: 10px 28px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; letter-spacing: 0.5px; text-decoration: none; }
     @media print {
       body { padding: 12px 16px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .btn-wrap { display: none !important; }
@@ -670,153 +706,149 @@ export default function AttendanceHistoryPage() {
   <hr class="hr-thick" />
   <hr class="hr-thin" />
   <div class="report-meta">
-    <h2>Laporan Riwayat & Foto Absensi Harian</h2>
+    <h2>Laporan Absensi Foto Harian</h2>
     <p class="sub">Periode: ${format(d1, "EEEE, d MMMM yyyy", { locale: id })}</p>
   </div>
   <table>
     <thead>
       <tr>
-        <th class="c" style="width:24px;">No</th>
-        <th style="width:110px;">Hari & Tanggal</th>
-        <th style="width:110px;">Nama Karyawan</th>
-        <th style="width:140px;">Waktu Absen</th>
-        <th style="width:120px;">Status & Keterangan</th>
-        <th>Bukti Foto (Visual)</th>
+        <th class="c" style="width:28px;">No</th>
+        <th style="width:130px;">Hari & Tanggal</th>
+        <th style="width:180px;">Nama Karyawan</th>
+        <th style="width:180px;">Waktu & Jam Kerja</th>
+        <th>Status & Catatan</th>
+        <th style="width:220px;">Bukti Absen</th>
       </tr>
     </thead>
-    <tbody>`;
+    <tbody>
+      ${dayRecords.length === 0 ? `
+        <tr>
+          <td colSpan="6" style="text-align:center;padding:20px;color:#94a3b8;">Tidak ada data absensi untuk hari ini.</td>
+        </tr>
+      ` : dayRecords.map((r, j) => {
+            const currentName = getEmployee(r.userId)?.fullName || '-';
+            const emp = getEmployee(r.userId);
+            const currentDateStr = format(new Date(r.date), 'EEEE, d MMMM yyyy', { locale: id });
 
-                if (dayRecords.length === 0) {
-                    html += `<tr><td colspan="6" style="text-align:center;padding:20px;color:#94a3b8;">Tidak ada data absensi untuk hari ini.</td></tr>`;
-                }
+            const isContinuation = currentName === lastShownName && currentDateStr === lastShownDate;
+            lastShownName = currentName;
+            lastShownDate = currentDateStr;
 
-                let lastShownName = "";
-                let lastShownDate = "";
-                for (let j = 0; j < dayRecords.length; j++) {
-                    const r = dayRecords[j];
-                    const emp = getEmployee(r.userId);
-                    const currentName = emp?.fullName || '-';
-                    const currentDateStr = format(new Date(r.date), 'EEEE, d MMMM yyyy', { locale: id });
+            const sts = isContinuation && r.status === 'late' ? 'present' : (r.status || '-');
+            const statusLabel = sts === 'present' ? 'Hadir' : sts === 'late' ? 'Telat' : sts === 'sick' ? 'Sakit' : sts === 'permission' ? 'Izin' : sts === 'cuti' ? 'Cuti' : sts === 'absent' ? 'Alpha' : sts;
+            const statusClass = sts === 'present' ? 'st-hadir' : sts === 'late' ? 'st-telat' : sts === 'sick' ? 'st-sakit' : sts === 'permission' ? 'st-izin' : sts === 'cuti' ? 'st-cuti' : sts === 'absent' ? 'st-alpha' : 'st-unknown';
 
-                    const isContinuation = currentName === lastShownName && currentDateStr === lastShownDate;
-                    lastShownName = currentName;
-                    lastShownDate = currentDateStr;
+            const tIn = r.checkIn ? format(new Date(r.checkIn), 'HH:mm') : '-';
+            const tBrkS = r.breakStart ? format(new Date(r.breakStart), 'HH:mm') : '-';
+            const tBrkE = r.breakEnd ? format(new Date(r.breakEnd), 'HH:mm') : '-';
+            const tOut = r.checkOut ? format(new Date(r.checkOut), 'HH:mm') : '-';
 
-                    const sts = isContinuation && r.status === 'late' ? 'present' : (r.status || '-');
-                    const statusLabel = sts === 'present' ? 'Hadir' : sts === 'late' ? 'Telat' : sts === 'sick' ? 'Sakit' : sts === 'permission' ? 'Izin' : sts === 'cuti' ? 'Cuti' : sts === 'absent' ? 'Alpha' : sts;
-                    const statusClass = sts === 'present' ? 'st-hadir' : sts === 'late' ? 'st-telat' : sts === 'sick' ? 'st-sakit' : sts === 'permission' ? 'st-izin' : sts === 'cuti' ? 'st-cuti' : sts === 'absent' ? 'st-alpha' : 'st-unknown';
-
-                    const tIn = r.checkIn ? format(new Date(r.checkIn), 'HH:mm') : '-';
-                    const tBrkS = r.breakStart ? format(new Date(r.breakStart), 'HH:mm') : '-';
-                    const tBrkE = r.breakEnd ? format(new Date(r.breakEnd), 'HH:mm') : '-';
-                    const tOut = r.checkOut ? format(new Date(r.checkOut), 'HH:mm') : '-';
-
-                    let photosHtml = '<div class="photo-grid">';
-                    const addPhoto = (url: string | null, label: string) => {
-                        if (url) {
-                            let resolvedUrl = getPhotoUrl(url);
-                            const b64 = imageCache[resolvedUrl] || (url.startsWith('data:') ? url : '');
-                            if (b64) {
-                                photosHtml += `<div class="photo-item"><img src="${b64}" class="photo-img"/><div class="photo-label">${label}</div></div>`;
-                            } else {
-                                photosHtml += `<div class="photo-item"><div style="height:65px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:9px;">No Image</div><div class="photo-label">${label}</div></div>`;
-                            }
-                        }
-                    };
-
-                    addPhoto(r.checkInPhoto, 'Masuk');
-                    addPhoto(r.breakStartPhoto, 'Mulai Ist.');
-                    addPhoto(r.breakEndPhoto, 'Selesai Ist.');
-                    addPhoto(r.checkOutPhoto, 'Pulang');
-                    addPhoto((r as any).lateReasonPhoto, 'Bukti Telat');
-                    photosHtml += '</div>';
-
-                    if (photosHtml === '<div class="photo-grid"></div>') {
-                        photosHtml = '<span style="color:#94a3b8;font-style:italic;font-size:9px;">Tidak ada bukti foto</span>';
+            let photosHtml = '<div class="photo-grid">';
+            const addPhoto = (url: string | null, label: string) => {
+                if (url) {
+                    let resolvedUrl = getPhotoUrl(url);
+                    const b64 = imageCache[resolvedUrl] || (url.startsWith('data:') ? url : '');
+                    if (b64) {
+                        photosHtml += `<div class="photo-item"><img src="${b64}" class="photo-img"/><div class="photo-label">${label}</div></div>`;
+                    } else {
+                        photosHtml += `<div class="photo-item"><div style="height:65px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:9px;">No Image</div><div class="photo-label">${label}</div></div>`;
                     }
+                }
+            };
 
-                    const { duration, cleanNotes } = parsePermitInfo(r.notes);
-                    let extraNotes = '';
-                    if (cleanNotes) extraNotes += `<div style="margin-top:2px;color:#475569;font-size:9.5px;line-height:1.3;"><b>Cat:\n</b> ${cleanNotes}</div>`;
-                    if (sts === 'late' && (r as any).lateReason) extraNotes += `<div style="margin-top:2px;color:#c2410c;font-size:9.5px;line-height:1.3;"><b>Alasan Telat:\n</b> ${(r as any).lateReason}</div>`;
+            addPhoto(r.checkInPhoto, 'Masuk');
+            addPhoto(r.breakStartPhoto, 'Mulai Ist.');
+            addPhoto(r.breakEndPhoto, 'Selesai Ist.');
+            addPhoto(r.checkOutPhoto, 'Pulang');
+            addPhoto((r as any).lateReasonPhoto, 'Bukti Telat');
+            photosHtml += '</div>';
 
-                    const checkInLoc = r.checkInLocation || '-';
+            if (photosHtml === '<div class="photo-grid"></div>') {
+                photosHtml = '<span style="color:#94a3b8;font-style:italic;font-size:9px;">Tidak ada bukti foto</span>';
+            }
 
-                    html += `<tr>
-                    <td class="c">${isContinuation ? '<span style="color:#cbd5e1;font-weight:bold;">↳</span>' : (j + 1)}</td>
-                    <td style="font-size:9.5px;color:#475569;">${isContinuation ? '' : currentDateStr}</td>
-                    <td>
-                        ${isContinuation ? '' : `
-                            <div style="line-height:1.2;">
-                                <b style="color:#1d4ed8;font-size:11.5px;">${currentName}</b><br/>
-                                ${(r.shift && r.shift.toLowerCase().trim() !== '-' && r.shift.toLowerCase().trim() !== 'management') 
-                                    ? `<span style="color:#94a3b8;font-size:9.5px;font-weight:bold;text-transform:uppercase;">${r.shift}</span><br/>` 
-                                    : '<span style="color:#94a3b8;font-size:9.5px;font-style:italic;">Belum Tercatat</span><br/>'}
-                                <span style="color:#94a3b8;font-size:9.5px;">NIK: ${emp?.nik || emp?.username || '-'}</span>
-                            </div>
-                        `}
-                        <div style="margin-top:4px;">
-                            <span style="color:#94a3b8; font-size: 9px; font-style: italic;">Sesi ${r.sessionNumber || 1}</span>
-                        </div>
-                    </td>
-                    <td>
-                      <div style="font-family:monospace;font-size:10.5px;line-height:1.4;">
-                        IN : <span style="color:#16a34a;font-weight:bold;">${tIn}</span><br/>
-                        BRK: <span style="color:#d97706;font-weight:bold;">${tBrkS}</span> - <span style="color:#2563eb;font-weight:bold;">${tBrkE}</span><br/>
-                        OUT: <span style="color:#dc2626;font-weight:bold;">${tOut}</span><br/>
-                        ${duration > 0 ? `PERMIT: <span style="color:#7c3aed;font-weight:bold;">${duration} Jam</span><br/>` : ''}
-                        <div style="border-top:1px solid #eee; margin-top:4px; padding-top:4px; font-weight:bold;">
-                          ${(() => {
-                            const { netWorkMins } = calculateDailyTotal([r]);
-                            return netWorkMins > 0 ? `TOTAL: ${formatDuration(netWorkMins)}` : 'TIDAK LENGKAP';
-                        })()}
-                        </div>
-                      </div>
-                      <div style="margin-top:8px; font-size:8.5px; color:#64748b; line-height:1.2; max-width:140px; word-break:break-word; background:#f8fafc; padding:4px; border-radius:4px;">
-                        <span style="font-weight:bold; color:#475569; display:block; margin-bottom:2px; text-transform:uppercase; font-size:8px;">LOKASI MASUK:</span>
-                        ${checkInLoc || '-'}
-                      </div>
-                    </td>
-                    <td>
-                      <span class="status-badge ${statusClass}">${statusLabel}</span>
-                      ${extraNotes}
-                    </td>
-                    <td>${photosHtml}</td>
-                </tr>`;
+            const { duration, cleanNotes } = parsePermitInfo(r.notes);
+            let extraNotes = '';
+            if (cleanNotes) extraNotes += `<div style="margin-top:2px;color:#475569;font-size:9.5px;line-height:1.3;"><b>Cat:\n</b> ${cleanNotes}</div>`;
+            if (sts === 'late' && (r as any).lateReason) extraNotes += `<div style="margin-top:2px;color:#c2410c;font-size:9.5px;line-height:1.3;"><b>Alasan Telat:\n</b> ${(r as any).lateReason}</div>`;
+
+            const checkInLoc = r.checkInLocation || '-';
+
+            return `<tr>
+            <td class="c">${isContinuation ? '<span style="color:#cbd5e1;font-weight:bold;">↳</span>' : (j + 1)}</td>
+            <td style="font-size:9.5px;color:#475569;">${isContinuation ? '' : currentDateStr}</td>
+            <td>
+                ${isContinuation ? '' : `
+                    <div style="line-height:1.2;">
+                        <b style="color:#1d4ed8;font-size:11.5px;">${currentName}</b><br/>
+                        ${(r.shift && r.shift.toLowerCase().trim() !== '-' && r.shift.toLowerCase().trim() !== 'management') 
+                            ? `<span style="color:#94a3b8;font-size:9.5px;font-weight:bold;text-transform:uppercase;">${r.shift}</span><br/>` 
+                            : '<span style="color:#94a3b8;font-size:9.5px;font-style:italic;">Belum Tercatat</span><br/>'}
+                        <span style="color:#94a3b8;font-size:9.5px;">NIK: ${emp?.nik || emp?.username || '-'}</span>
+                    </div>
+                `}
+                <div style="margin-top:4px;">
+                    <span style="color:#94a3b8; font-size: 9px; font-style: italic;">Sesi ${r.sessionNumber || 1}</span>
+                </div>
+            </td>
+            <td>
+              <div style="font-family:monospace;font-size:10.5px;line-height:1.4;">
+                IN : <span style="color:#16a34a;font-weight:bold;">${tIn}</span><br/>
+                BRK: <span style="color:#d97706;font-weight:bold;">${tBrkS}</span> - <span style="color:#2563eb;font-weight:bold;">${tBrkE}</span><br/>
+                OUT: <span style="color:#dc2626;font-weight:bold;">${tOut}</span><br/>
+                ${duration > 0 ? `PERMIT: <span style="color:#7c3aed;font-weight:bold;">${duration} Jam</span><br/>` : ''}
+                <div style="border-top:1px solid #eee; margin-top:4px; padding-top:4px; font-weight:bold;">
+                  ${(() => {
+                    const { netWorkMins } = calculateDailyTotal([r]);
+                    return netWorkMins > 0 ? `TOTAL: ${formatDuration(netWorkMins)}` : 'TIDAK LENGKAP';
+                })()}
+                </div>
+              </div>
+              <div style="margin-top:8px; font-size:8.5px; color:#64748b; line-height:1.2; max-width:140px; word-break:break-word; background:#f8fafc; padding:4px; border-radius:4px;">
+                <span style="font-weight:bold; color:#475569; display:block; margin-bottom:2px; text-transform:uppercase; font-size:8px;">LOKASI MASUK:</span>
+                ${checkInLoc || '-'}
+              </div>
+            </td>
+            <td>
+              <span class="status-badge ${statusClass}">${statusLabel}</span>
+              ${extraNotes}
+            </td>
+            <td>${photosHtml}</td>
+        </tr>`;
+        }).join('')}
+</tbody>
+</table>
+</body>
+</html>`;
+
+                const opt = {
+                    margin:       [10, 10, 10, 10],
+                    filename:     `${docTitle}.pdf`,
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { scale: 2, useCORS: true, logging: false },
+                    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+                };
+
+                const container = document.createElement('div');
+                container.style.position = 'absolute';
+                container.style.left = '-9999px';
+                container.style.top = '-9999px';
+                container.style.width = '794px';
+                container.style.backgroundColor = 'white';
+                container.innerHTML = html;
+
+                document.body.appendChild(container);
+
+                try {
+                    await html2pdf().set(opt).from(container).save();
+                } catch (e) {
+                    console.error("Gagal membuat PDF untuk tanggal", d1, e);
                 }
 
-                html += `
-        </tbody >
-      </table >
-      <div class="btn-wrap"><a id="dl-btn" class="download-btn" href="#">&#11015;&nbsp; Download File</a></div>
-      <script>
-        var _fn = "${fileName}";
-        document.title = _fn;
-        window.onload = function() {
-          var btn = document.getElementById('dl-btn');
-          if (btn) { btn.href = window.location.href; btn.download = _fn; }
-          setTimeout(function() { window.print(); }, 600);
-        };
-      </script>
-    </body>
-    </html>`;
+                document.body.removeChild(container);
 
-                const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-                const blobUrl = URL.createObjectURL(blob);
-                
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = blobUrl;
-                a.download = fileName;
-                document.body.appendChild(a);
-                a.click();
-                
-                setTimeout(() => {
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(blobUrl);
-                }, 5000);
-
-                await new Promise(resolve => setTimeout(resolve, 350));
+                await new Promise(resolve => setTimeout(resolve, 600));
             }
         } finally {
             setIsExporting(false);
@@ -923,7 +955,7 @@ export default function AttendanceHistoryPage() {
                             onClick={handleBulkExport}
                             disabled={isExporting}
                         >
-                            <FileDown className="h-4 w-4" /> Export Foto Massal
+                            <FileDown className="h-4 w-4" /> {isExporting ? "Mengekspor..." : "Export Foto Massal"}
                         </Button>
                     )}
                     <Button 

@@ -16,10 +16,25 @@ import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
+const loadHtml2Pdf = () => {
+    return new Promise<any>((resolve, reject) => {
+        if ((window as any).html2pdf) {
+            resolve((window as any).html2pdf);
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+        script.onload = () => resolve((window as any).html2pdf);
+        script.onerror = () => reject(new Error("Gagal memuat script html2pdf"));
+        document.head.appendChild(script);
+    });
+};
+
 export default function RecapPage() {
     const [, setLocation] = useLocation();
     const { toast } = useToast();
     const queryClient = useQueryClient();
+    const [isExporting, setIsExporting] = useState(false);
 
     const [targetDate, setTargetDate] = useState(new Date());
     const [selectedPhotoRecord, setSelectedPhotoRecord] = useState<Attendance | null>(null);
@@ -522,23 +537,33 @@ export default function RecapPage() {
             return;
         }
 
+        setIsExporting(true);
+        
+        let html2pdf: any;
+        try {
+            html2pdf = await loadHtml2Pdf();
+        } catch (err) {
+            toast({
+                title: "Error",
+                description: "Gagal memuat engine pembuat PDF.",
+                variant: "destructive"
+            });
+            setIsExporting(false);
+            return;
+        }
+
         toast({
             title: "Export Massal Dimulai",
-            description: `Mengekspor ${dates.length} laporan harian secara massal. Harap izinkan download multipel jika diminta browser.`,
+            description: `Mengekspor ${dates.length} laporan harian dalam format PDF secara massal. Harap izinkan download multipel jika diminta browser.`,
         });
 
         let logoDataUrl = '';
         try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000);
-            const logoRes = await fetch('/logo_elok_buah.jpg', { signal: controller.signal });
-            clearTimeout(timeoutId);
-            
+            const logoRes = await fetch('/logo_elok_buah.jpg');
             const logoBlob = await logoRes.blob();
             logoDataUrl = await new Promise<string>((resolve) => {
                 const reader = new FileReader();
                 reader.onload = () => resolve(reader.result as string);
-                reader.onerror = () => resolve('');
                 reader.readAsDataURL(logoBlob);
             });
         } catch (_) { }
@@ -548,12 +573,12 @@ export default function RecapPage() {
             const d2 = addDays(d1, 1);
             
             const dayStr1 = format(d1, "d");
-            const monthStr1 = format(d1, "MMMM", { locale: id }).toLowerCase();
+            const monthStr1 = format(d1, "MMMM", { locale: id }).toUpperCase();
             const dayStr2 = format(d2, "d");
-            const monthStr2 = format(d2, "MMMM", { locale: id }).toLowerCase();
+            const monthStr2 = format(d2, "MMMM", { locale: id }).toUpperCase();
             const yearStr = format(d1, "yyyy");
             
-            const fileName = `${dayStr1} ${monthStr1} - ${dayStr2} ${monthStr2} ${yearStr}.html`;
+            const docTitle = `REKAP ABSENSI NON MANAJEMEN ${dayStr1} ${monthStr1} - ${dayStr2} ${monthStr2} ${yearStr} PT EJA`;
 
             const dayRecords = allAttendance?.filter(row => {
                 if (!getUserName(row.userId)) return false;
@@ -588,7 +613,7 @@ export default function RecapPage() {
             const html = `<!DOCTYPE html>
 <html>
 <head>
-  <title>${fileName}</title>
+  <title>${docTitle}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #1e293b; background: white; padding: 28px 36px; }
@@ -727,36 +752,39 @@ export default function RecapPage() {
     <div class="sig-box"><p class="sig-label">Approved By</p><div class="sig-name">CLAVERINA</div></div>
   </div>
   <div class="footer">Dokumen ini dicetak secara otomatis oleh Sistem Absensi PT ELOK JAYA ABADHI &mdash; ${format(new Date(), "d MMMM yyyy, HH:mm", { locale: id })} WIB</div>
-  <div class="btn-wrap"><a id="dl-btn" class="download-btn" href="#">&#11015;&nbsp; Download File</a></div>
-  <script>
-    var _fn = "${fileName}";
-    document.title = _fn;
-    window.onload = function() {
-      var btn = document.getElementById('dl-btn');
-      if (btn) { btn.href = window.location.href; btn.download = _fn; }
-      setTimeout(function() { window.print(); }, 600);
-    };
-  </script>
 </body>
 </html>`;
 
-            const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-            const blobUrl = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = blobUrl;
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            
-            setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(blobUrl);
-            }, 5000);
+            const opt = {
+                margin:       [10, 10, 10, 10],
+                filename:     `${docTitle}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+            };
 
-            await new Promise(resolve => setTimeout(resolve, 350));
+            const container = document.createElement('div');
+            container.style.position = 'absolute';
+            container.style.left = '-9999px';
+            container.style.top = '-9999px';
+            container.style.width = '794px';
+            container.style.backgroundColor = 'white';
+            container.innerHTML = html;
+
+            document.body.appendChild(container);
+
+            try {
+                await html2pdf().set(opt).from(container).save();
+            } catch (e) {
+                console.error("Gagal membuat PDF untuk tanggal", d1, e);
+            }
+
+            document.body.removeChild(container);
+
+            await new Promise(resolve => setTimeout(resolve, 600));
         }
+        setIsExporting(false);
     };
 
     return (
@@ -837,8 +865,13 @@ export default function RecapPage() {
                                 <Plus className="h-4 w-4" /> Input Manual
                             </Button>
                             {reportType === "custom" && (
-                                <Button variant="outline" className="gap-2 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 h-10 font-bold shadow-sm" onClick={handleBulkExport}>
-                                    <FileDown className="h-4 w-4" /> Export Harian Massal
+                                <Button 
+                                    variant="outline" 
+                                    className="gap-2 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 h-10 font-bold shadow-sm" 
+                                    onClick={handleBulkExport}
+                                    disabled={isExporting}
+                                >
+                                    <FileDown className="h-4 w-4" /> {isExporting ? "Mengekspor..." : "Export Harian Massal"}
                                 </Button>
                             )}
                             <Button variant="outline" className="gap-2 h-10 font-bold shadow-sm" onClick={handleExport}>
