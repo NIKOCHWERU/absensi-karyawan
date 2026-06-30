@@ -9,23 +9,33 @@ Cukup salin seluruh teks di bawah garis pembatas, lalu sesuaikan nilai parameter
 ```markdown
 Kamu adalah AI Coding Assistant ahli. Tugasmu adalah membangun Aplikasi Web Progresif (PWA) Sistem Manajemen Absensi Karyawan dari awal dengan spesifikasi teknis dan fungsional yang dijabarkan di bawah ini.
 
-### [KONFIGURASI TEMPLATE]
-Silakan sesuaikan parameter berikut sebelum mulai membangun:
-- NAMA_PT = "PT ELOK JAYA ABADHI"
-- SINGKATAN_PT = "PT EJA"
-- DESKRIPSI_PWA = "Aplikasi Absensi Karyawan PT Elok Jaya Abadhi. Solusi absensi modern, cepat, dan akurat dengan fitur GPS dan pengenalan wajah."
-- TEMA_WARNA_CSS = {
-    "PRIMARY_HSL": "122 39% 49%",     /* Hijau Utama (#4CAF50) */
-    "SECONDARY_HSL": "122 39% 65%",   /* Hijau Muda */
-    "ACCENT_HSL": "122 39% 49%",
-    "BACKGROUND_HSL": "30 50% 98%",   /* Krem Hangat */
-    "SIDEBAR_ACCENT_HSL": "122 39% 96%"
-  }
-- FITUR_TAMBAHAN = [
-    "Cetak slip pengajuan cuti berformat PDF rapi dari browser klien.",
-    "Notifikasi pop-up otomatis di dasbor karyawan jika menerima berkas administrasi baru (Mutasi, Resign, SP).",
-    "Pendeteksian Fake GPS berbasis tingkat akurasi koordinat (0 atau 1 meter) di browser."
-  ]
+### [KONFIGURASI BERKAS .env]
+Semua nama instansi, warna tema, dan deskripsi aplikasi wajib dimuat secara dinamis dari berkas konfigurasi lingkungan `.env` agar admin dapat mengubah identitas aplikasi tanpa menyentuh kode program. Contoh konfigurasi `.env` adalah sebagai berikut:
+
+```env
+# PENGATURAN IDENTITAS PERUSAHAAN (Wajib berawalan VITE_ agar dapat diakses oleh React + Vite)
+VITE_NAMA_PT="PT ELOK JAYA ABADHI"
+VITE_SINGKATAN_PT="PT EJA"
+VITE_DESKRIPSI_PWA="Aplikasi Absensi Karyawan PT Elok Jaya Abadhi. Solusi absensi modern, cepat, dan akurat dengan fitur GPS dan pengenalan wajah."
+
+# PENGATURAN TEMA WARNA UTAMA APLIKASI (Format koordinat HSL untuk CSS)
+VITE_THEME_PRIMARY_HSL="122 39% 49%"       # Hijau Utama (#4CAF50)
+VITE_THEME_SECONDARY_HSL="122 39% 65%"     # Hijau Muda
+VITE_THEME_ACCENT_HSL="122 39% 49%"        # Warna Aksen
+VITE_THEME_BACKGROUND_HSL="30 50% 98%"     # Krem Hangat (Latar Belakang)
+VITE_THEME_SIDEBAR_ACCENT_HSL="122 39% 96%" # Hijau Highlight Sidebar/Card
+
+# NOTIFIKASI WEB PUSH API
+VAPID_PUBLIC_KEY="YOUR_PUBLIC_VAPID_KEY"
+VAPID_PRIVATE_KEY="YOUR_PRIVATE_VAPID_KEY"
+
+# PENYIMPANAN DATABASE (MYSQL) & GOOGLE DRIVE API
+DATABASE_URL="mysql://user:password@localhost:3306/attendance_db"
+GDRIVE_CLIENT_ID="YOUR_GDRIVE_CLIENT_ID"
+GDRIVE_CLIENT_SECRET="YOUR_GDRIVE_CLIENT_SECRET"
+GDRIVE_REFRESH_TOKEN="YOUR_GDRIVE_REFRESH_TOKEN"
+GDRIVE_FOLDER_ID="YOUR_GDRIVE_FOLDER_ID"
+```
 
 ---
 
@@ -60,14 +70,14 @@ Aplikasi wajib menerapkan aturan bisnis berikut:
 - **Evaluasi Keterlambatan**: Status "Telat" hanya dievaluasi pada sesi pertama absensi masuk hari itu berdasarkan jam batas shift karyawan. Jika terlambat, karyawan wajib memasukkan alasan dan foto bukti sebelum tombol snap absensi terbuka.
 - **Sesi Kehadiran Kerja**: Mendukung pencatatan kehadiran hingga maksimal **5 sesi** per hari (untuk split shift atau kembali bekerja setelah izin keluar kantor). Sesi 2 hingga 5 selalu berstatus "present".
 - **Pemberitahuan Dasbor Karyawan**: Menampilkan modal dialog pemberitahuan di dasbor karyawan secara otomatis jika terdapat dokumen baru (Mutasi/SP/Resign) yang terbit setelah cutoff `2026-06-10 11:00 WIB`. Dismiss status disimpan di `localStorage`.
-- **PWA Setup**: Sediakan file `/manifest.json` dan `/sw.js` agar aplikasi dapat dipasang langsung di handphone karyawan dengan fungsi push notification.
+- **PWA Setup**: Sediakan file `/manifest.json` dan `/sw.js` agar aplikasi dapat dipasang langsung di handphone karyawan dengan fungsi push notification. Pastikan deskripsi aplikasi dimuat dinamis dari `.env` (`import.meta.env.VITE_DESKRIPSI_PWA`).
 
 ## 4. FITUR EKSPOR PDF MASSAL HARIAN
 - Sediakan fitur **Ekspor Harian Massal** pada halaman rekap admin saat filter rentang tanggal kustom dipilih.
 - Ekspor massal mengunduh file `.pdf` satu-per-satu per hari menggunakan pustaka `html2pdf.js` klien.
 - Nama file ekspor harus menggunakan format kapital penuh (*uppercase*) dengan nama bulan Indonesia kapital:
-  - Rekap Teks: `REKAP ABSENSI NON MANAJEMEN [D] [MONTH] - [D+1] [MONTH] [YEAR] [SINGKATAN_PT].pdf`
-  - Rekap Foto: `REKAP ABSENSI FOTO NON MANAJEMEN [D] [MONTH] - [D+1] [MONTH] [YEAR] [SINGKATAN_PT].pdf`
+  - Rekap Teks: `REKAP ABSENSI NON MANAJEMEN [D] [MONTH] - [D+1] [MONTH] [YEAR] [VITE_SINGKATAN_PT].pdf`
+  - Rekap Foto: `REKAP ABSENSI FOTO NON MANAJEMEN [D] [MONTH] - [D+1] [MONTH] [YEAR] [VITE_SINGKATAN_PT].pdf`
 - **Penanganan CORS Foto**: Untuk menghindari error CORS saat memuat foto bukti di PDF klien, buat endpoint `/api/images/:id` di backend yang bertindak sebagai proxy pengunduhan gambar Google Drive, lengkap dengan sistem penulisan *local cache* pada disk server (`uploads/gdrive-cache/`) demi menghemat kuota request API Google Drive.
 - Gunakan jeda waktu (*interval delay*) **600ms** antar file unduhan di klien agar browser tidak memblokir proses unduhan berturut-turut.
 
@@ -75,8 +85,9 @@ Aplikasi wajib menerapkan aturan bisnis berikut:
 - **Auto-Migration**: Pada file `server/index.ts`, tambahkan skrip pengecekan dan migrasi otomatis untuk mengubah tipe kolom, memastikan kolom NPM, BPJS, alasan telat, GPS palsu, dan tabel `leave_requests` dibuat otomatis jika belum tersedia di database MySQL tujuan saat server dijalankan.
 - **Auto-Backup**: Buat scheduler di server untuk menjalankan pencadangan database (`mysqldump`) setiap **30 menit** dan menyimpannya secara rapi di direktori `/backups` lokal server.
 
-## 6. FILOSOFI DESAIN & STYLING (CSS)
-- Gunakan skema warna dari `TEMA_WARNA_CSS` di dalam CSS Variable `:root` pada file `client/src/index.css`.
+## 6. FILOSOFI DESAIN & DINAMISASI TEMA (CSS)
+- **Injeksi Tema Dinamis**: Pada file inisialisasi frontend (`main.tsx` atau `App.tsx`), ambil nilai variabel tema warna dari `.env` (contoh: `import.meta.env.VITE_THEME_PRIMARY_HSL`) dan suntikkan ke elemen `:root` DOM secara dinamis menggunakan `document.documentElement.style.setProperty('--primary', value)` saat aplikasi dimuat pertama kali.
+- Gunakan variabel CSS tersebut (`var(--primary)`) pada file `client/src/index.css` agar seluruh styling Tailwind CSS dan vanilla CSS mengikuti warna yang diatur di `.env`.
 - Pastikan font Outfit dan DM Sans dimuat melalui Google Fonts.
 - Terapkan efek *glassmorphism* (`glass-panel`), bayangan melayang, transisi penekanan tombol halus, navigasi bawah khusus layar seluler karyawan, serta antarmuka dasbor admin hijau premium yang rapi.
 ```
