@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Loader2, Plus, Send, Image, Clock, CheckCircle, AlertCircle, X } from "lucide-react";
+import { Loader2, Plus, Send, Image, Clock, CheckCircle, AlertCircle, X, Download } from "lucide-react";
 import { format } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { motion } from "framer-motion";
@@ -350,6 +350,28 @@ export default function ComplaintPage() {
                                         )}
                                     </div>
                                 ))}
+                            </div>
+                        )}
+
+                        {/* Admin Feedback */}
+                        {((selectedComplaint as any)?.adminFeedback || (selectedComplaint as any)?.adminFeedbackFile) && (
+                            <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100 space-y-2 mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                <p className="text-xs font-bold text-blue-800 uppercase tracking-wider">Feedback dari Admin</p>
+                                {(selectedComplaint as any).adminFeedback && (
+                                    <p className="text-xs text-gray-700 whitespace-pre-wrap">{(selectedComplaint as any).adminFeedback}</p>
+                                )}
+                                {(selectedComplaint as any).adminFeedbackFile && (
+                                    <div className="pt-1">
+                                        <a
+                                            href={(selectedComplaint as any).adminFeedbackFile}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-bold bg-white px-3 py-1.5 rounded-lg border border-blue-200 shadow-sm"
+                                        >
+                                            <Download className="w-3.5 h-3.5" /> Lihat File Lampiran
+                                        </a>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

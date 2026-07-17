@@ -138,6 +138,13 @@ export async function registerRoutes(
       }
     });
 
+    if (updates.leaveQuota !== undefined && updates.leaveQuota !== null) {
+      updates.leaveQuota = parseInt(updates.leaveQuota, 10);
+      if (isNaN(updates.leaveQuota)) {
+        updates.leaveQuota = 12;
+      }
+    }
+
     // Normalize isAdmin and is_admin to numeric (1/0) for MySQL TINYINT compatibility
     const adminVal = updates.isAdmin !== undefined ? updates.isAdmin : updates.is_admin;
     if (adminVal !== undefined) {
@@ -2044,6 +2051,30 @@ export async function registerRoutes(
     res.json(list);
   });
 
+  // Employee: get unread resolved complaints for popup
+  app.get("/api/complaints/unread-resolved", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    try {
+      const list = await storage.getUnreadResolvedComplaints(req.user!.id);
+      res.json(list);
+    } catch (e: any) {
+      console.error(e);
+      res.status(500).json({ message: "Gagal memuat feedback pengaduan: " + e.message });
+    }
+  });
+
+  // Employee: mark complaint feedback as read
+  app.patch("/api/complaints/:id/read-feedback", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    try {
+      const updated = await storage.markComplaintFeedbackAsRead(parseInt(req.params.id));
+      res.json(updated);
+    } catch (e: any) {
+      console.error(e);
+      res.status(500).json({ message: "Gagal menandai dibaca: " + e.message });
+    }
+  });
+
   // Admin: get all complaints
   app.get("/api/admin/complaints", async (req, res) => {
     if (!isAdminRole(req)) return res.sendStatus(401);
@@ -2059,17 +2090,31 @@ export async function registerRoutes(
   });
 
   // Admin: update complaint status
-  app.patch("/api/admin/complaints/:id/status", async (req, res) => {
+  app.patch("/api/admin/complaints/:id/status", isAuthenticated, upload.single('feedbackFile'), async (req, res) => {
     if (!isAdminRole(req)) return res.sendStatus(401);
     try {
+      const complaintId = parseInt(req.params.id as string);
+      const { status, adminFeedback } = req.body;
+
+      let adminFeedbackFile: string | null = null;
+      if (req.file) {
+        const docDir = path.join(uploadsDir, 'documents');
+        if (!fs.existsSync(docDir)) fs.mkdirSync(docDir, { recursive: true });
+        const filename = `complaint-${complaintId}-${Date.now()}-${req.file.originalname.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+        fs.writeFileSync(path.join(docDir, filename), req.file.buffer);
+        adminFeedbackFile = `/uploads/documents/${filename}`;
+      }
+
       const updated = await storage.updateComplaintStatus(
-        parseInt(req.params.id),
-        req.body.status
+        complaintId,
+        status,
+        adminFeedback || null,
+        adminFeedbackFile
       );
       res.json(updated);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      res.status(500).json({ message: "Gagal update status" });
+      res.status(500).json({ message: "Gagal update status: " + e.message });
     }
   });
 
@@ -2085,7 +2130,8 @@ export async function registerRoutes(
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const year = new Date().getFullYear();
     const used = await storage.getApprovedLeaveDaysCount(req.user!.id, year);
-    res.json({ used, remaining: 12 - used, limit: 12 });
+    const limit = (req.user as any).leaveQuota ?? 12;
+    res.json({ used, remaining: limit - used, limit });
   });
 
   app.post(api.leave.create.path, async (req, res) => {
@@ -2105,8 +2151,9 @@ export async function registerRoutes(
       requestedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
     }
 
-    if (used + requestedDays > 12) {
-      return res.status(400).json({ message: `Sisa kuota cuti Anda tidak mencukupi. (Terpakai: ${used}/12, Diminta: ${requestedDays})` });
+    const limit = (req.user as any).leaveQuota ?? 12;
+    if (used + requestedDays > limit) {
+      return res.status(400).json({ message: `Sisa kuota cuti Anda tidak mencukupi. (Terpakai: ${used}/${limit}, Diminta: ${requestedDays})` });
     }
 
     const request = await storage.createLeaveRequest({

@@ -213,9 +213,37 @@ export class DatabaseStorage implements IStorage {
       .where(eq(complaintPhotos.complaintId, complaintId));
   }
 
-  async updateComplaintStatus(id: number, status: string): Promise<Complaint> {
+  async updateComplaintStatus(
+    id: number,
+    status: string,
+    adminFeedback: string | null = null,
+    adminFeedbackFile: string | null = null
+  ): Promise<Complaint> {
+    const updates: any = { status: status as any };
+    if (adminFeedback !== null) updates.adminFeedback = adminFeedback;
+    if (adminFeedbackFile !== null) updates.adminFeedbackFile = adminFeedbackFile;
+    if (status === "resolved") updates.isFeedbackRead = false;
+
     await db.update(complaints)
-      .set({ status: status as any })
+      .set(updates)
+      .where(eq(complaints.id, id));
+    const [record] = await db.select().from(complaints).where(eq(complaints.id, id));
+    return record!;
+  }
+
+  async getUnreadResolvedComplaints(userId: number): Promise<Complaint[]> {
+    return await db.select().from(complaints).where(
+      and(
+        eq(complaints.userId, userId),
+        eq(complaints.status, "resolved"),
+        eq(complaints.isFeedbackRead, false)
+      )
+    );
+  }
+
+  async markComplaintFeedbackAsRead(id: number): Promise<Complaint> {
+    await db.update(complaints)
+      .set({ isFeedbackRead: true })
       .where(eq(complaints.id, id));
     const [record] = await db.select().from(complaints).where(eq(complaints.id, id));
     return record!;
@@ -361,8 +389,11 @@ export interface IStorage {
   getComplaintsByUser(userId: number): Promise<Complaint[]>;
   getAllComplaints(): Promise<Complaint[]>;
   getComplaintPhotos(complaintId: number): Promise<ComplaintPhoto[]>;
-  updateComplaintStatus(id: number, status: string): Promise<Complaint>;
+  updateComplaintStatus(id: number, status: string, adminFeedback?: string | null, adminFeedbackFile?: string | null): Promise<Complaint>;
+  getUnreadResolvedComplaints(userId: number): Promise<Complaint[]>;
+  markComplaintFeedbackAsRead(id: number): Promise<Complaint>;
   getPendingComplaintsCount(): Promise<number>;
+
 
   // Leave Request methods
   createLeaveRequest(data: InsertLeaveRequest): Promise<LeaveRequest>;

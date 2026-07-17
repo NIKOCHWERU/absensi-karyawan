@@ -144,6 +144,7 @@ export default function AdminEmployeeList() {
         employmentStatus: z.string().optional(),
         registrationStatus: z.string().optional(),
         shift: z.string().nullable().optional(),
+        leaveQuota: z.coerce.number().min(0, "Jatah cuti minimal 0").default(12),
     });
 
     const form = useForm({
@@ -168,7 +169,8 @@ export default function AdminEmployeeList() {
             joinDate: "",
             employmentStatus: "Kontrak",
             registrationStatus: "approved",
-            shift: "-"
+            shift: "-",
+            leaveQuota: 12
         }
     });
 
@@ -375,7 +377,8 @@ export default function AdminEmployeeList() {
                                 joinDate: "",
                                 employmentStatus: "Kontrak",
                                 registrationStatus: "approved",
-                                shift: "-"
+                                shift: "-",
+                                leaveQuota: 12
                             });
                             setSelectedBpjsPhoto(null);
                             setSelectedNpwpPhoto(null);
@@ -525,7 +528,8 @@ export default function AdminEmployeeList() {
                                                         employmentStatus: (emp as any).employmentStatus || "Kontrak",
                                                         registrationStatus: (emp as any).registrationStatus || "approved",
                                                         shift: emp.shift || "-",
-                                                        email: emp.email || ""
+                                                        email: emp.email || "",
+                                                        leaveQuota: (emp as any).leaveQuota ?? 12
                                                     });
                                                     setOpen(true);
                                                 }}
@@ -862,6 +866,7 @@ export default function AdminEmployeeList() {
                                         <DataRow label="Cabang" value={toTitleCase((viewEmployee as any).branch)} />
                                         <DataRow label="Tahun bergabung" value={(viewEmployee as any).joinDate} />
                                         <DataRow label="Status Kerja" value={toTitleCase((viewEmployee as any).employmentStatus)} />
+                                        <DataRow label="Jatah Cuti Tahunan" value={`${(viewEmployee as any).leaveQuota ?? 12} Hari`} />
                                         <div className="flex justify-between items-center text-sm pt-1">
                                             <span className="text-slate-500">Status Data:</span>
                                             <Badge variant={
@@ -1220,6 +1225,19 @@ export default function AdminEmployeeList() {
                                                         <SelectItem value="rejected">Rejected</SelectItem>
                                                     </SelectContent>
                                                 </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-1 gap-4 pt-2">
+                                    <FormField
+                                        control={form.control}
+                                        name="leaveQuota"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Jatah Cuti Tahunan (Hari)</FormLabel>
+                                                <FormControl><Input type="number" {...field} /></FormControl>
                                                 <FormMessage />
                                             </FormItem>
                                         )}
