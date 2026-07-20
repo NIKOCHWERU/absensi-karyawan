@@ -14,9 +14,9 @@ Semua nama instansi, warna tema, dan deskripsi aplikasi wajib dimuat secara dina
 
 ```env
 # PENGATURAN IDENTITAS PERUSAHAAN (Wajib berawalan VITE_ agar dapat diakses oleh React + Vite)
-VITE_NAMA_PT="PT ELOK JAYA ABADHI"
-VITE_SINGKATAN_PT="PT EJA"
-VITE_DESKRIPSI_PWA="Aplikasi Absensi Karyawan PT Elok Jaya Abadhi. Solusi absensi modern, cepat, dan akurat dengan fitur GPS dan pengenalan wajah."
+VITE_NAMA_PT="PT ABCD"
+VITE_SINGKATAN_PT="PT ABCD"
+VITE_DESKRIPSI_PWA="Aplikasi Absensi Karyawan PT ABCD. Solusi absensi modern, cepat, dan akurat dengan fitur GPS dan pengenalan wajah."
 
 # PENGATURAN TEMA WARNA UTAMA APLIKASI (Format koordinat HSL untuk CSS)
 VITE_THEME_PRIMARY_HSL="122 39% 49%"       # Hijau Utama (#4CAF50)
@@ -90,6 +90,68 @@ Aplikasi wajib menerapkan aturan bisnis berikut:
 - Gunakan variabel CSS tersebut (`var(--primary)`) pada file `client/src/index.css` agar seluruh styling Tailwind CSS dan vanilla CSS mengikuti warna yang diatur di `.env`.
 - Pastikan font Outfit dan DM Sans dimuat melalui Google Fonts.
 - Terapkan efek *glassmorphism* (`glass-panel`), bayangan melayang, transisi penekanan tombol halus, navigasi bawah khusus layar seluler karyawan, serta antarmuka dasbor admin hijau premium yang rapi.
+## 7. RINCIAN ALUR & DETAIL FITUR LENGKAP
+
+Aplikasi ini wajib memiliki alur fitur lengkap berikut dari pendaftaran karyawan baru hingga sistem ekspor admin:
+
+### A. Alur Pendaftaran Karyawan Baru (Registrasi)
+1. **Formulir Registrasi Karyawan**: Menyediakan halaman registrasi publik yang dapat diakses oleh calon karyawan baru. Formulir ini meminta data wajib berikut:
+   - **Data Pribadi**: Nama Lengkap, NIK (Nomor Induk Kependudukan - unik), Alamat Email, Nomor Telepon, Tempat & Tanggal Lahir, Jenis Kelamin (Laki-laki / Perempuan), Agama, Alamat Tinggal Lengkap.
+   - **Dokumen Identitas**: Unggah Foto KTP, Unggah Foto NPWP, Unggah Foto BPJS (Disimpan langsung ke Google Drive melalui API).
+   - **Informasi Pekerjaan**: Cabang penempatan, Jabatan, Shift Kerja yang diinginkan, Nomor Rekening Bank, Tanggal Mulai Bekerja (Join Date), Status Kepegawaian (Kontrak / Tetap).
+2. **Status Awal (Pending)**: Setelah formulir diserahkan, status registrasi pengguna diatur ke `pending` dan mereka belum dapat masuk ke aplikasi sampai disetujui oleh Admin.
+
+### B. Otentikasi & Bypass Login Karyawan
+1. **Otentikasi Karyawan (NIK-Only)**: Untuk kemudahan operasional di lapangan, karyawan masuk hanya menggunakan NIK (tanpa password/password bypass).
+2. **Otentikasi Admin & Superadmin**: Wajib menggunakan username (email) dan kata sandi yang diverifikasi dengan hashing aman (bcrypt) oleh Passport.js.
+3. **Penyimpanan Sesi**: Menggunakan `express-session` dengan MySQL Store agar sesi login karyawan tidak hilang saat server di-restart.
+
+### C. Menu Verifikasi Karyawan oleh Admin
+1. **Review Berkas**: Admin memiliki halaman khusus untuk melihat seluruh daftar calon karyawan berstatus `pending`.
+2. **Pratinjau Dokumen**: Admin dapat mengeklik untuk mempratinjau KTP, NPWP, dan BPJS calon karyawan.
+3. **Persetujuan/Penolakan**: Admin dapat menyetujui (`approved`) agar akun aktif dan bisa login absensi, atau menolak (`rejected`) pendaftaran.
+4. **CRUD Hapus**: Admin dapat menghapus data registrasi yang ditolak secara permanen untuk membersihkan database.
+
+### D. Dasbor Karyawan & Pencatatan Kehadiran (5 Sesi)
+1. **Dasbor Utama**: Karyawan dapat melihat status hari ini, informasi jam shift saat ini, dan tombol aksi kehadiran.
+2. **Siklus Kehadiran 5 Sesi**: Mendukung pencatatan kehadiran hingga maksimal 5 sesi per hari:
+   - **Absen Masuk (Check-In)**: Sesi pertama hari itu. Dievaluasi apakah terlambat berdasarkan jam mulai shift. Jika terlambat, wajib mengunggah foto alasan keterlambatan dan mengetik deskripsi alasan keterlambatan sebelum tombol rekam absensi aktif.
+   - **Mulai Istirahat (Break Start)**: Mengambil foto wajah dan lokasi.
+   - **Selesai Istirahat (Break End)**: Mengambil foto wajah dan lokasi.
+   - **Absen Keluar (Check-Out)**: Selesai jam kerja hari itu.
+   - **Sesi Tambahan (Sesi 2 s.d. 5)**: Digunakan jika karyawan diizinkan keluar kantor untuk keperluan dinas dan ingin mencatatkan kehadiran kembali.
+3. **Perekaman Geolokasi & Foto Wajah**: Setiap aksi absensi wajib menyertakan koordinat GPS yang divalidasi ke alamat fisik menggunakan OpenStreetMap Nominatim API, serta mengambil foto wajah menggunakan webcam/kamera handphone.
+4. **Deteksi Fake GPS**: Deteksi otomatis client-side jika akurasi GPS bernilai 0 atau 1 meter (ciri Fake GPS emulator) atau variabel `mocked` bernilai true. Jika terdeteksi, tandai absensi tersebut dengan `isFakeGps = true`.
+
+### E. Popup Pemberitahuan Berkas Baru Karyawan
+1. **Notifikasi Otomatis**: Jika admin menerbitkan dokumen administrasi baru (Mutasi, Resign, atau SP) dengan tanggal pembuatan setelah `2026-06-10 11:00 WIB`, dasbor karyawan akan otomatis memunculkan modal dialog popup.
+2. **Pratinjau & Unduh**: Di dalam modal popup, karyawan dapat membaca detail dokumen, keterangan admin, dan tombol unduh berkas SK tersebut secara langsung.
+3. **Simpan Status Dismiss**: Karyawan dapat menutup popup modal, dan status "sudah dibaca" disimpan di `localStorage` agar modal tidak mengganggu aktivitas absensi berikutnya.
+
+### F. Kelola Administrasi Karyawan oleh Admin (Mutasi, SP, Resign, Cuti)
+1. **Manajemen Resign**: Formulir input resign karyawan dengan tanggal resign, alasan, dan unggah dokumen SK Resign.
+2. **Manajemen Mutasi & Promosi**: Formulir input jenis mutasi (mutasi, promosi, demosi), cabang lama/baru, jabatan lama/baru, keterangan, dan berkas SK.
+3. **Surat Peringatan (SP)**: Penerbitan SP1, SP2, SP3 beserta rentang masa berlaku surat dan berkas SK SP.
+4. **Kelola Cuti**:
+   - Pengajuan cuti terintegrasi dengan rentang tanggal atau tanggal terpisah.
+   - Tombol **Print Cuti** di admin yang membuka tab baru berisi template formulir bisnis HTML formal pengajuan cuti yang siap dicetak rapi ke printer fisik atau PDF browser.
+5. **Riwayat Administrasi & CRUD Hapus**: Setiap menu administrasi memiliki tab **Riwayat** yang menampilkan seluruh arsip masa lalu dalam bentuk kartu linimasa (*timeline*), lengkap dengan tombol **Hapus (Trash)** untuk menghapus data administrasi jika sudah terlalu lama.
+
+### G. Rekap Kehadiran & Ekspor Massal Harian Admin
+1. **Rekap Absensi**: Menampilkan status kehadiran seluruh karyawan dalam bentuk tabel interaktif.
+2. **Rekap Foto Absensi**: Menampilkan grid kolase foto-foto absensi masuk, istirahat, dan pulang karyawan untuk mempermudah audit visual kecocokan wajah.
+3. **Ekspor PDF Harian Massal**:
+   - Jika admin memilih rentang tanggal (misalnya: 4 Mei s.d. 1 Juni), sistem akan otomatis mengunduh file PDF harian satu per satu secara berurutan.
+   - Penamaan file PDF otomatis berformat huruf kapital penuh:
+     - `REKAP ABSENSI NON MANAJEMEN 4 MEI - 5 MEI 2026 [SINGKATAN_PT].pdf`
+     - `REKAP ABSENSI FOTO NON MANAJEMEN 4 MEI - 5 MEI 2026 [SINGKATAN_PT].pdf`
+     - Dan seterusnya per hari sampai tanggal akhir dengan jeda unduhan *600ms* per berkas agar tidak diblokir browser.
+4. **Proxy Gambar Google Drive Klien**: Endpoint `/api/images/:id` di backend bertindak sebagai bypass CORS gambar dan memelihara *local cache* gambar di disk server (`uploads/gdrive-cache/`) agar ekspor foto di klien tidak terhambat CORS dan menghemat kuota Google Drive API.
+
+### H. Layanan Otomatis Server & Backup
+1. **Auto-Migration Database**: Saat server Express dijalankan, ia akan otomatis memeriksa tabel MySQL dan melakukan penyesuaian kolom (seperti NPWP, BPJS, alasan telat, dsb.) secara otomatis sehingga tidak membutuhkan migrasi manual saat rilis.
+2. **Auto-Backup Database**: Scheduler internal server akan melakukan ekspor database menggunakan `mysqldump` secara berkala setiap **30 menit** dan menyimpannya di folder `/backups` untuk proteksi kehilangan data.
+
 ```
 
 Silakan bangun aplikasi dengan mengikuti setiap butir instruksi di atas secara konsisten dan lengkap!

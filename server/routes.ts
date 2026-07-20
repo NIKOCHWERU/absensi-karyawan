@@ -2083,17 +2083,19 @@ export async function registerRoutes(
 
   app.get(api.leave.balance.path, async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
+    const user = await storage.getUser(req.user!.id);
+    const remainingQuota = user?.remainingLeave ?? 12;
     const year = new Date().getFullYear();
     const used = await storage.getApprovedLeaveDaysCount(req.user!.id, year);
-    res.json({ used, remaining: 12 - used, limit: 12 });
+    res.json({ used, remaining: remainingQuota, limit: 12 });
   });
 
   app.post(api.leave.create.path, async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const { startDate, endDate, reason, selectedDates } = req.body;
 
-    const year = new Date(startDate).getFullYear();
-    const used = await storage.getApprovedLeaveDaysCount(req.user!.id, year);
+    const user = await storage.getUser(req.user!.id);
+    const currentRemaining = user?.remainingLeave ?? 12;
 
     let requestedDays = 0;
     if (selectedDates && Array.isArray(selectedDates)) {
@@ -2105,8 +2107,8 @@ export async function registerRoutes(
       requestedDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
     }
 
-    if (used + requestedDays > 12) {
-      return res.status(400).json({ message: `Sisa kuota cuti Anda tidak mencukupi. (Terpakai: ${used}/12, Diminta: ${requestedDays})` });
+    if (requestedDays > currentRemaining) {
+      return res.status(400).json({ message: `Sisa kuota cuti Anda tidak mencukupi. (Sisa cuti saat ini: ${currentRemaining} hari, Diminta: ${requestedDays} hari)` });
     }
 
     const request = await storage.createLeaveRequest({
@@ -2140,6 +2142,36 @@ export async function registerRoutes(
     res.json(requests);
   });
 
+  // Leave Quota Management Routes
+  app.patch("/api/admin/users/:id/leave-quota", async (req, res) => {
+    try {
+      if (!isAdminRole(req)) return res.sendStatus(401);
+      const userId = parseInt(String(req.params.id));
+      const { remainingLeave } = req.body;
+      const numValue = parseInt(String(remainingLeave));
+
+      if (isNaN(numValue) || numValue < 0 || numValue > 12) {
+        return res.status(400).json({ message: "Jumlah sisa cuti harus berupa angka antara 0 hingga 12 hari" });
+      }
+
+      const updatedUser = await storage.updateUser(userId, { remainingLeave: numValue });
+      res.json(updatedUser);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message || "Gagal meng-update sisa cuti" });
+    }
+  });
+
+  app.post("/api/admin/users/:id/reset-leave-quota", async (req, res) => {
+    try {
+      if (!isAdminRole(req)) return res.sendStatus(401);
+      const userId = parseInt(String(req.params.id));
+      const updatedUser = await storage.updateUser(userId, { remainingLeave: 12 });
+      res.json(updatedUser);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message || "Gagal me-reset sisa cuti" });
+    }
+  });
+
   app.get(api.admin.attendance.leave.list.path, async (req, res) => {
     if (!isAdminRole(req)) return res.sendStatus(401);
     const requests = await storage.getAllLeaveRequests();
@@ -2166,6 +2198,21 @@ export async function registerRoutes(
 
       // If approved, create attendance records automatically for those dates
       if (status === 'approved') {
+        const targetUser = await storage.getUser(request.userId);
+        if (targetUser) {
+          let reqDaysCount = 0;
+          if (request.selectedDates) {
+            reqDaysCount = request.selectedDates.split(',').filter(d => d.trim() !== '').length;
+          } else {
+            const start = new Date(request.startDate);
+            const end = new Date(request.endDate);
+            reqDaysCount = Math.round(Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+          }
+          const currentRem = targetUser.remainingLeave ?? 12;
+          const newRemaining = Math.max(0, currentRem - reqDaysCount);
+          await storage.updateUser(targetUser.id, { remainingLeave: newRemaining });
+        }
+
         const datesToProcess: string[] = [];
         if (request.selectedDates) {
           console.log(`[AdminLeaveUpdate] Processing selected dates list`);

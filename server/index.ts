@@ -78,6 +78,7 @@ import { initAutoBackup } from "./backup";
     await connection.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS bpjs VARCHAR(50)");
     await connection.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS npwp_photo_url VARCHAR(512)");
     await connection.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS bpjs_photo_url VARCHAR(512)");
+    await connection.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS remaining_leave INT DEFAULT 12");
 
     log("Running auto-migration for superadmin role...");
     try {

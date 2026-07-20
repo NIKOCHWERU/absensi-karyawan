@@ -32,6 +32,7 @@ export const users = mysqlTable("users", {
   registrationStatus: mysqlEnum("registration_status", ["unregistered", "pending", "approved", "rejected"]).notNull().default("unregistered"),
   joinDate: varchar("join_date", { length: 50 }),
   employmentStatus: varchar("employment_status", { length: 50 }), // e.g., Kontrak, Tetap
+  remainingLeave: int("remaining_leave").default(12),
 });
 
 export const shifts = mysqlTable("shifts", {
