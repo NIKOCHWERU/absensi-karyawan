@@ -822,23 +822,27 @@ export default function AttendanceHistoryPage() {
 </html>`;
 
                 const opt = {
-                    margin:       [10, 10, 10, 10],
+                    margin:       [8, 8, 8, 8],
                     filename:     `${docTitle}.pdf`,
                     image:        { type: 'jpeg', quality: 0.98 },
-                    html2canvas:  { scale: 2, useCORS: true, logging: false },
+                    html2canvas:  { scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: 0, windowWidth: 794 },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
                     pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
                 };
 
                 const container = document.createElement('div');
-                container.style.position = 'absolute';
-                container.style.left = '-9999px';
-                container.style.top = '-9999px';
+                container.style.position = 'fixed';
+                container.style.left = '0';
+                container.style.top = '0';
+                container.style.zIndex = '-99999';
                 container.style.width = '794px';
-                container.style.backgroundColor = 'white';
+                container.style.backgroundColor = '#ffffff';
+                container.style.pointerEvents = 'none';
+                container.style.opacity = '1';
                 container.innerHTML = html;
 
                 document.body.appendChild(container);
+                await new Promise(r => setTimeout(r, 150));
 
                 try {
                     await html2pdf().set(opt).from(container).save();
@@ -846,7 +850,9 @@ export default function AttendanceHistoryPage() {
                     console.error("Gagal membuat PDF untuk tanggal", d1, e);
                 }
 
-                document.body.removeChild(container);
+                if (container.parentNode) {
+                    container.parentNode.removeChild(container);
+                }
 
                 await new Promise(resolve => setTimeout(resolve, 600));
             }
