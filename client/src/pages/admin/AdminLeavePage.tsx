@@ -19,7 +19,9 @@ export default function AdminLeavePage() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
 
-    const [activeTab, setActiveTab] = useState<'requests' | 'quotas'>('requests');
+    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const initialTab = searchParams?.get('tab') === 'quotas' ? 'quotas' : 'requests';
+    const [activeTab, setActiveTab] = useState<'requests' | 'quotas'>(initialTab);
     const [searchQuery, setSearchQuery] = useState('');
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [manualQuotaInput, setManualQuotaInput] = useState<string>('12');

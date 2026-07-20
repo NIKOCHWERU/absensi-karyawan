@@ -449,6 +449,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             badge: pendingLeaveCount,
                         },
                         {
+                            title: "Kelola Jatah Cuti",
+                            url: "/admin/leave?tab=quotas",
+                            icon: Calendar,
+                        },
+                        {
                             title: "Riwayat Cuti",
                             url: "/admin/leave-history",
                             icon: History,

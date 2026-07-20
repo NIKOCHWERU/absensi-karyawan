@@ -247,6 +247,14 @@ export default function AdminDashboard() {
                                 {backupMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <DatabaseBackup className="w-4 h-4 mr-2" />}
                                 Backup Database
                             </Button>
+                            <Button
+                                variant="outline"
+                                className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 shadow-sm font-bold"
+                                onClick={() => setLocation("/admin/leave?tab=quotas")}
+                            >
+                                <CalendarDays className="w-4 h-4 mr-2" />
+                                Kelola Jatah Cuti
+                            </Button>
                         </div>
                         <Dialog>
                             <DialogTrigger asChild>
