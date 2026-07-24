@@ -102,14 +102,12 @@ export default function AttendanceSummaryPage() {
         return (isAfter(d, s) || isEqual(d, s)) && (isBefore(d, e) || isEqual(d, e));
     };
 
-    // Helper to calculate business days in range (Simple: Mon-Fri)
-    // Ideally this should use a holiday calendar, but for now just exclude weekends.
+    // Helper to calculate total calendar days in range (including weekends)
     const calculateWorkingDays = () => {
         let count = 0;
         let curDate = new Date(startDate);
         while (curDate <= endDate) {
-            const day = curDate.getDay();
-            if (day !== 0 && day !== 6) count++;
+            count++;
             curDate.setDate(curDate.getDate() + 1);
         }
         return count;
@@ -139,12 +137,10 @@ export default function AttendanceSummaryPage() {
         const cutoff = isBefore(today, endDate) ? today : endDate;
 
         while (iterDate <= cutoff) {
-            if (iterDate.getDay() !== 0 && iterDate.getDay() !== 6) { // Skip weekends
-                const dayStr = iterDate.toDateString();
-                const hasRecord = empAttendance.some(a => new Date(a.date).toDateString() === dayStr);
-                if (!hasRecord) {
-                    alphaCount++;
-                }
+            const dayStr = iterDate.toDateString();
+            const hasRecord = empAttendance.some(a => new Date(a.date).toDateString() === dayStr);
+            if (!hasRecord) {
+                alphaCount++;
             }
             iterDate.setDate(iterDate.getDate() + 1);
         }
