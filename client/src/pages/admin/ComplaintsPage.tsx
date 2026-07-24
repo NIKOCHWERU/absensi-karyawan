@@ -68,12 +68,20 @@ export default function AdminComplaintsPage() {
         refetchInterval: 5000,
     });
 
+    const [isResolveDialogOpen, setIsResolveDialogOpen] = useState(false);
+    const [feedbackText, setFeedbackText] = useState("");
+    const [feedbackFile, setFeedbackFile] = useState<File | null>(null);
+
     const statusMutation = useMutation({
-        mutationFn: async ({ id, status }: { id: number; status: string }) => {
+        mutationFn: async ({ id, status, adminFeedback, feedbackFile }: { id: number; status: string; adminFeedback?: string; feedbackFile?: File | null }) => {
+            const formData = new FormData();
+            formData.append("status", status);
+            if (adminFeedback) formData.append("adminFeedback", adminFeedback);
+            if (feedbackFile) formData.append("feedbackFile", feedbackFile);
+
             const res = await fetch(`/api/admin/complaints/${id}/status`, {
                 method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ status }),
+                body: formData,
                 credentials: "include",
             });
             if (!res.ok) throw new Error("Gagal update status");
@@ -83,6 +91,9 @@ export default function AdminComplaintsPage() {
             queryClient.invalidateQueries({ queryKey: ["/api/admin/complaints"] });
             toast({ title: "Status diperbarui", className: "bg-green-500 text-white" });
             setSelectedComplaint(null);
+            setIsResolveDialogOpen(false);
+            setFeedbackText("");
+            setFeedbackFile(null);
         },
         onError: (e: any) => {
             toast({ title: "Gagal", description: e.message, variant: "destructive" });
@@ -287,7 +298,7 @@ export default function AdminComplaintsPage() {
                                 </Button>
                                 <Button
                                     disabled={selectedComplaint?.status === "resolved" || statusMutation.isPending}
-                                    onClick={() => selectedComplaint && statusMutation.mutate({ id: selectedComplaint.id, status: "resolved" })}
+                                    onClick={() => setIsResolveDialogOpen(true)}
                                     variant="outline"
                                     size="sm"
                                     className="rounded-full text-green-700 border-green-200 hover:bg-green-50"
@@ -295,6 +306,56 @@ export default function AdminComplaintsPage() {
                                     <CheckCircle className="w-3 h-3 mr-1" /> Selesai
                                 </Button>
                             </div>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Resolve Complaint Dialog */}
+            <Dialog open={isResolveDialogOpen} onOpenChange={setIsResolveDialogOpen}>
+                <DialogContent className="rounded-xl max-w-md p-5">
+                    <DialogHeader>
+                        <DialogTitle className="text-lg font-bold">Selesaikan Pengaduan</DialogTitle>
+                        <DialogDescription>
+                            Berikan feedback keterangan dan file opsional untuk penyelesaian pengaduan ini.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 pt-2">
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500 uppercase">Keterangan / Feedback</label>
+                            <textarea
+                                value={feedbackText}
+                                onChange={(e) => setFeedbackText(e.target.value)}
+                                placeholder="Jelaskan tindakan penyelesaian..."
+                                className="w-full min-h-[100px] p-3 text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500 uppercase">File Lampiran (Opsional)</label>
+                            <input
+                                type="file"
+                                onChange={(e) => setFeedbackFile(e.target.files?.[0] || null)}
+                                className="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer"
+                            />
+                        </div>
+                        <div className="flex justify-end gap-2 pt-2">
+                            <Button variant="outline" className="rounded-xl" onClick={() => setIsResolveDialogOpen(false)}>Batal</Button>
+                            <Button
+                                disabled={statusMutation.isPending}
+                                onClick={() => {
+                                    if (selectedComplaint) {
+                                        statusMutation.mutate({
+                                            id: selectedComplaint.id,
+                                            status: "resolved",
+                                            adminFeedback: feedbackText,
+                                            feedbackFile: feedbackFile
+                                        });
+                                    }
+                                }}
+                                className="rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold"
+                            >
+                                {statusMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Selesaikan & Kirim"}
+                            </Button>
                         </div>
                     </div>
                 </DialogContent>

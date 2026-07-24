@@ -73,12 +73,17 @@ import { initAutoBackup } from "./backup";
     await connection.query("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS late_reason_photo VARCHAR(255)");
     await connection.query("ALTER TABLE attendance ADD COLUMN IF NOT EXISTS is_fake_gps BOOLEAN DEFAULT FALSE");
 
-    log("Running auto-migration for user profile photos and documents...");
     await connection.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS npwp VARCHAR(50)");
     await connection.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS bpjs VARCHAR(50)");
     await connection.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS npwp_photo_url VARCHAR(512)");
     await connection.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS bpjs_photo_url VARCHAR(512)");
     await connection.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS remaining_leave INT DEFAULT 12");
+    await connection.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS leave_quota INT DEFAULT 12 NOT NULL");
+
+    log("Running auto-migration for complaints feedback...");
+    await connection.query("ALTER TABLE complaints ADD COLUMN IF NOT EXISTS admin_feedback TEXT");
+    await connection.query("ALTER TABLE complaints ADD COLUMN IF NOT EXISTS admin_feedback_file VARCHAR(512)");
+    await connection.query("ALTER TABLE complaints ADD COLUMN IF NOT EXISTS is_feedback_read BOOLEAN DEFAULT FALSE");
 
     log("Running auto-migration for superadmin role...");
     try {

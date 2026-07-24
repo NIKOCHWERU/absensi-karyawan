@@ -33,7 +33,9 @@ export const users = mysqlTable("users", {
   joinDate: varchar("join_date", { length: 50 }),
   employmentStatus: varchar("employment_status", { length: 50 }), // e.g., Kontrak, Tetap
   remainingLeave: int("remaining_leave").default(12),
+  leaveQuota: int("leave_quota").default(12).notNull(),
 });
+
 
 export const shifts = mysqlTable("shifts", {
   id: int("id").primaryKey().autoincrement(),
@@ -99,6 +101,9 @@ export const complaints = mysqlTable("complaints", {
   description: text("description").notNull(),
   status: mysqlEnum("status", ["pending", "reviewed", "resolved"]).default("pending"),
   createdAt: timestamp("created_at").defaultNow(),
+  adminFeedback: text("admin_feedback"),
+  adminFeedbackFile: varchar("admin_feedback_file", { length: 512 }),
+  isFeedbackRead: boolean("is_feedback_read").default(false),
 }, (table) => ({
   userIdIdx: index("idx_complaints_user_id").on(table.userId),
   createdAtIdx: index("idx_complaints_created_at").on(table.createdAt),

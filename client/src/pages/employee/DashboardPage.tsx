@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useAttendance } from "@/hooks/use-attendance";
 import { CompanyHeader } from "@/components/CompanyHeader";
@@ -125,6 +125,33 @@ export default function EmployeeDashboard() {
     const { user } = useAuth();
     const { today, activeSession, todaySessions, sessionCount, completedSessions, isLoadingToday, clockIn, clockOut, breakStart, breakEnd, permit, resume, isPending } = useAttendance();
     const { toast } = useToast();
+ 
+    const queryClient = useQueryClient();
+    const [activeComplaintFeedback, setActiveComplaintFeedback] = useState<any | null>(null);
+
+    const { data: unreadComplaints = [] } = useQuery<any[]>({
+        queryKey: ["/api/complaints/unread-resolved"],
+        refetchInterval: 30000,
+    });
+
+    useEffect(() => {
+        if (unreadComplaints.length > 0 && !activeComplaintFeedback) {
+            setActiveComplaintFeedback(unreadComplaints[0]);
+        }
+    }, [unreadComplaints, activeComplaintFeedback]);
+
+    const readFeedbackMutation = useMutation({
+        mutationFn: async (id: number) => {
+            await fetch(`/api/complaints/${id}/read-feedback`, {
+                method: "PATCH"
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["/api/complaints/unread-resolved"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/complaints"] });
+            setActiveComplaintFeedback(null);
+        }
+    });
  
     const { data: employeeDocs } = useQuery<{
         mutations: any[];
@@ -1387,6 +1414,59 @@ export default function EmployeeDashboard() {
                             className="w-full h-12 text-gray-400"
                         >
                             Batalkan
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Complaint Feedback Popup Dialog */}
+            <Dialog open={!!activeComplaintFeedback} onOpenChange={() => {}}>
+                <DialogContent className="rounded-3xl max-w-sm md:max-w-md p-6">
+                    <DialogHeader>
+                        <div className="mx-auto w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center mb-2 animate-bounce">
+                            <Check className="w-6 h-6 text-emerald-600" />
+                        </div>
+                        <DialogTitle className="text-center text-lg font-bold">Pengaduan Diselesaikan!</DialogTitle>
+                        <DialogDescription className="text-center text-xs text-muted-foreground">
+                            Salah satu laporan pengaduan Anda telah diselesaikan oleh Admin.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 mt-2">
+                        <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Pengaduan Anda</p>
+                            <p className="text-sm font-bold text-slate-800 mt-0.5">{activeComplaintFeedback?.title}</p>
+                            <p className="text-xs text-slate-500 mt-1 line-clamp-2">{activeComplaintFeedback?.description}</p>
+                        </div>
+                        <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 space-y-2">
+                            <p className="text-[10px] font-bold text-blue-800 uppercase tracking-wide">Feedback dari Admin</p>
+                            {activeComplaintFeedback?.adminFeedback ? (
+                                <p className="text-xs text-gray-700 whitespace-pre-wrap">{activeComplaintFeedback.adminFeedback}</p>
+                            ) : (
+                                <p className="text-xs text-gray-500 italic">Tidak ada keterangan tertulis.</p>
+                            )}
+                            {activeComplaintFeedback?.adminFeedbackFile && (
+                                <div className="pt-1">
+                                    <a
+                                        href={activeComplaintFeedback.adminFeedbackFile}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-bold bg-white px-3 py-1.5 rounded-lg border border-blue-200 shadow-sm"
+                                    >
+                                        <Download className="w-3.5 h-3.5" /> Lihat File Lampiran
+                                    </a>
+                                </div>
+                            )}
+                        </div>
+                        <Button
+                            disabled={readFeedbackMutation.isPending}
+                            onClick={() => {
+                                if (activeComplaintFeedback) {
+                                    readFeedbackMutation.mutate(activeComplaintFeedback.id);
+                                }
+                            }}
+                            className="w-full h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold mt-2 shadow-lg shadow-emerald-500/20"
+                        >
+                            {readFeedbackMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Tutup & Tandai Dibaca"}
                         </Button>
                     </div>
                 </DialogContent>
