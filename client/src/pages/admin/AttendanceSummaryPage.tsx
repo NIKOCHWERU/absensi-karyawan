@@ -467,13 +467,66 @@ export default function AttendanceSummaryPage() {
 
             <div className="space-y-6">
             {/* Header Section */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-black text-gray-900 tracking-tight">Ringkasan Absensi</h1>
                     <p className="text-sm text-gray-500">Analisis statistik kehadiran, tingkat keterlambatan, dan keaktifan presensi karyawan.</p>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-3">
+                    <div className="relative w-60">
+                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <Input
+                            type="text"
+                            placeholder="Cari nama / NIK..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-9 rounded-xl bg-white shadow-xs border-gray-200"
+                        />
+                    </div>
                     
+                    <Select value={reportType} onValueChange={(val: any) => setReportType(val)}>
+                        <SelectTrigger className="w-40 rounded-xl bg-white shadow-xs border-gray-200 font-bold">
+                            <SelectValue placeholder="Tipe Laporan" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                            <SelectItem value="daily">Harian</SelectItem>
+                            <SelectItem value="weekly">Mingguan</SelectItem>
+                            <SelectItem value="monthly">Bulanan</SelectItem>
+                            <SelectItem value="custom">Kustom Rentang</SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    {reportType === "daily" && (
+                        <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl px-2 py-1 shadow-xs h-10">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setTargetDate(d => subDays(d, 1))}><ChevronLeft className="h-4 w-4" /></Button>
+                            <Input type="date" value={format(targetDate, 'yyyy-MM-dd')} onChange={(e) => e.target.value && setTargetDate(new Date(e.target.value))} className="border-none bg-transparent focus-visible:ring-0 w-36 text-center font-bold text-gray-700 h-8 text-xs" />
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setTargetDate(d => addDays(d, 1))}><ChevronRight className="h-4 w-4" /></Button>
+                        </div>
+                    )}
+
+                    {reportType === "weekly" && (
+                        <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl px-2 py-1 shadow-xs h-10">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setTargetDate(d => subDays(d, 7))}><ChevronLeft className="h-4 w-4" /></Button>
+                            <Input type="date" value={format(targetDate, 'yyyy-MM-dd')} onChange={(e) => e.target.value && setTargetDate(new Date(e.target.value))} className="border-none bg-transparent focus-visible:ring-0 w-36 text-center font-bold text-gray-700 h-8 text-xs" />
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setTargetDate(d => addDays(d, 7))}><ChevronRight className="h-4 w-4" /></Button>
+                        </div>
+                    )}
+
+                    {reportType === "monthly" && (
+                        <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-xl px-2 py-1 shadow-xs h-10">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setTargetDate(d => subMonths(d, 1))}><ChevronLeft className="h-4 w-4" /></Button>
+                            <Input type="month" value={format(targetDate, 'yyyy-MM')} onChange={(e) => { if (e.target.value) { const [y, m] = e.target.value.split('-'); setTargetDate(new Date(parseInt(y), parseInt(m)-1, 1)); } }} className="border-none bg-transparent focus-visible:ring-0 w-32 text-center font-bold text-gray-700 h-8 text-xs" />
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setTargetDate(d => addMonths(d, 1))}><ChevronRight className="h-4 w-4" /></Button>
+                        </div>
+                    )}
+
+                    {reportType === "custom" && (
+                        <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-1 shadow-xs h-10">
+                            <Input type="date" value={customStartDate} onChange={(e) => setCustomStartDate(e.target.value)} className="border-none bg-transparent focus-visible:ring-0 w-32 text-center font-bold text-gray-700 h-8 text-xs p-0" />
+                            <span className="text-gray-400 text-xs">s/d</span>
+                            <Input type="date" value={customEndDate} onChange={(e) => setCustomEndDate(e.target.value)} className="border-none bg-transparent focus-visible:ring-0 w-32 text-center font-bold text-gray-700 h-8 text-xs p-0" />
+                        </div>
+                    )}
                 </div>
             </div>
 

@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-    Users, Clock, CalendarDays, LogOut, FileText, MessageSquare, History, Image as ImageIcon, MapPin, ChevronLeft, ChevronRight, FileDown, ArrowUpDown, Menu, AlertTriangle
+    Users, Clock, CalendarDays, LogOut, FileText, MessageSquare, History, Image as ImageIcon, MapPin, ChevronLeft, ChevronRight, FileDown, ArrowUpDown, Menu, AlertTriangle, Loader2
 } from "lucide-react";
 
 // Helper: resolve photo URL — handles both local uploads and Google Drive File IDs
@@ -671,7 +671,8 @@ export default function AttendanceHistoryPage() {
   <title>${docTitle}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #1e293b; background: white; padding: 28px 36px; }
+    body { display: none !important; }
+    .pdf-content { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #1e293b; background: white; padding: 28px 36px; width: 794px; min-height: 1120px; box-sizing: border-box; }
     .letterhead { display: flex; align-items: center; gap: 16px; padding-bottom: 10px; }
     .logo-img { width: 60px; height: 60px; object-fit: contain; }
     .company-block h1 { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; }
@@ -714,112 +715,98 @@ export default function AttendanceHistoryPage() {
   </style>
 </head>
 <body>
-  <div class="letterhead">
-    <img src="${logoDataUrl}" class="logo-img" alt="Logo" />
-    <div class="company-block">
-      <h1>PT Elok Jaya Abadhi</h1>
-      <p class="tagline">Sistem Manajemen Kehadiran Digital</p>
+  <div class="pdf-content">
+    <div class="letterhead">
+      <img src="${logoDataUrl}" class="logo-img" alt="Logo" />
+      <div class="company-block">
+        <h1>PT Elok Jaya Abadhi</h1>
+        <p class="tagline">Sistem Manajemen Kehadiran Digital</p>
+      </div>
     </div>
-  </div>
-  <hr class="hr-thick" />
-  <hr class="hr-thin" />
-  <div class="report-meta">
-    <h2>Laporan Absensi Foto Harian</h2>
-    <p class="sub">Periode: ${format(d1, "EEEE, d MMMM yyyy", { locale: id })}</p>
-  </div>
-  <table>
-    <thead>
-      <tr>
-        <th class="c" style="width:28px;">No</th>
-        <th style="width:130px;">Hari & Tanggal</th>
-        <th style="width:180px;">Nama Karyawan</th>
-        <th style="width:180px;">Waktu & Jam Kerja</th>
-        <th>Status & Catatan</th>
-        <th style="width:220px;">Bukti Absen</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${dayRecords.length === 0 ? `
+    <hr class="hr-thick" />
+    <hr class="hr-thin" />
+    <div class="report-meta">
+      <h2>Laporan Riwayat Kehadiran (Foto)</h2>
+      <p class="sub">Periode: ${format(d1, "EEEE, d MMMM yyyy", { locale: id })}</p>
+    </div>
+    <table>
+      <thead>
         <tr>
-          <td colSpan="6" style="text-align:center;padding:20px;color:#94a3b8;">Tidak ada data absensi untuk hari ini.</td>
+          <th class="c" style="width:28px;">No</th>
+          <th style="width:130px;">Hari & Tanggal</th>
+          <th style="width:130px;">Nama Karyawan</th>
+          <th style="width:120px;">Kehadiran</th>
+          <th>Bukti Foto (Absen)</th>
         </tr>
-      ` : dayRecords.map((r, j) => {
-            const currentName = getEmployee(r.userId)?.fullName || '-';
-            const emp = getEmployee(r.userId);
-            const currentDateStr = format(new Date(r.date), 'EEEE, d MMMM yyyy', { locale: id });
-
-            const isContinuation = currentName === lastShownName && currentDateStr === lastShownDate;
-            lastShownName = currentName;
-            lastShownDate = currentDateStr;
-
-            const sts = isContinuation && r.status === 'late' ? 'present' : (r.status || '-');
-            const statusLabel = sts === 'present' ? 'Hadir' : sts === 'late' ? 'Telat' : sts === 'sick' ? 'Sakit' : sts === 'permission' ? 'Izin' : sts === 'cuti' ? 'Cuti' : sts === 'absent' ? 'Alpha' : sts;
-            const statusClass = sts === 'present' ? 'st-hadir' : sts === 'late' ? 'st-telat' : sts === 'sick' ? 'st-sakit' : sts === 'permission' ? 'st-izin' : sts === 'cuti' ? 'st-cuti' : sts === 'absent' ? 'st-alpha' : 'st-unknown';
-
-            const tIn = r.checkIn ? format(new Date(r.checkIn), 'HH:mm') : '-';
-            const tBrkS = r.breakStart ? format(new Date(r.breakStart), 'HH:mm') : '-';
-            const tBrkE = r.breakEnd ? format(new Date(r.breakEnd), 'HH:mm') : '-';
-            const tOut = r.checkOut ? format(new Date(r.checkOut), 'HH:mm') : '-';
-
-            let photosHtml = '<div class="photo-grid">';
-            const addPhoto = (url: string | null, label: string) => {
-                if (url) {
-                    let resolvedUrl = getPhotoUrl(url);
-                    const b64 = imageCache[resolvedUrl] || (url.startsWith('data:') ? url : '');
-                    if (b64) {
-                        photosHtml += `<div class="photo-item"><img src="${b64}" class="photo-img"/><div class="photo-label">${label}</div></div>`;
-                    } else {
-                        photosHtml += `<div class="photo-item"><div style="height:65px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:9px;">No Image</div><div class="photo-label">${label}</div></div>`;
-                    }
-                }
-            };
-
-            addPhoto(r.checkInPhoto, 'Masuk');
-            addPhoto(r.breakStartPhoto, 'Mulai Ist.');
-            addPhoto(r.breakEndPhoto, 'Selesai Ist.');
-            addPhoto(r.checkOutPhoto, 'Pulang');
-            addPhoto((r as any).lateReasonPhoto, 'Bukti Telat');
-            photosHtml += '</div>';
-
-            if (photosHtml === '<div class="photo-grid"></div>') {
-                photosHtml = '<span style="color:#94a3b8;font-style:italic;font-size:9px;">Tidak ada bukti foto</span>';
-            }
-
-            const { duration, cleanNotes } = parsePermitInfo(r.notes);
-            let extraNotes = '';
-            if (cleanNotes) extraNotes += `<div style="margin-top:2px;color:#475569;font-size:9.5px;line-height:1.3;"><b>Cat:\n</b> ${cleanNotes}</div>`;
-            if (sts === 'late' && (r as any).lateReason) extraNotes += `<div style="margin-top:2px;color:#c2410c;font-size:9.5px;line-height:1.3;"><b>Alasan Telat:\n</b> ${(r as any).lateReason}</div>`;
-
-            const checkInLoc = r.checkInLocation || '-';
-
-            return `<tr>
-            <td class="c">${isContinuation ? '<span style="color:#cbd5e1;font-weight:bold;">↳</span>' : (j + 1)}</td>
-            <td style="font-size:9.5px;color:#475569;">${isContinuation ? '' : currentDateStr}</td>
+      </thead>
+      <tbody>
+        ${dayRecords.length === 0 ? `
+          <tr>
+            <td colSpan="5" style="text-align:center;padding:20px;color:#94a3b8;">Tidak ada data absensi untuk hari ini.</td>
+          </tr>
+        ` : dayRecords.map((r, index) => {
+              const dateStr = format(new Date(r.date), 'EEEE, d MMMM yyyy', { locale: id });
+              const dateString = r.date instanceof Date ? r.date.toISOString().split('T')[0] : String(r.date);
+              const isSameUser = lastShownName === r.userId.toString() && lastShownDate === dateString;
+              lastShownName = r.userId.toString();
+              lastShownDate = dateString;
+              const emp = getEmployee(r.userId);
+              const statusLabel = r.status === 'present' ? 'Hadir' : r.status === 'late' ? 'Telat' : r.status === 'sick' ? 'Sakit' : r.status === 'permission' ? 'Izin' : r.status === 'cuti' ? 'Cuti' : r.status === 'absent' ? 'Alpha' : (r.status || '-');
+              const statusClass = r.status === 'present' ? 'st-hadir' : r.status === 'late' ? 'st-telat' : r.status === 'sick' ? 'st-sakit' : r.status === 'permission' ? 'st-izin' : r.status === 'cuti' ? 'st-cuti' : r.status === 'absent' ? 'st-alpha' : 'st-unknown';
+              const checkInLoc = r.checkInLocation;
+              let photosHtml = '<div class="photo-grid">';
+              let hasPhotos = false;
+              if (r.checkInPhoto) {
+                  const b64 = imageCache[getPhotoUrl(r.checkInPhoto)] || '';
+                  if (b64) {
+                      photosHtml += `<div class="photo-item"><img src="${b64}" class="photo-img" /><p class="photo-label">Masuk</p></div>`;
+                      hasPhotos = true;
+                  }
+              }
+              if (r.breakStartPhoto) {
+                  const b64 = imageCache[getPhotoUrl(r.breakStartPhoto)] || '';
+                  if (b64) {
+                      photosHtml += `<div class="photo-item"><img src="${b64}" class="photo-img" /><p class="photo-label">Mulai Istirahat</p></div>`;
+                      hasPhotos = true;
+                  }
+              }
+              if (r.breakEndPhoto) {
+                  const b64 = imageCache[getPhotoUrl(r.breakEndPhoto)] || '';
+                  if (b64) {
+                      photosHtml += `<div class="photo-item"><img src="${b64}" class="photo-img" /><p class="photo-label">Selesai Istirahat</p></div>`;
+                      hasPhotos = true;
+                  }
+              }
+              if (r.checkOutPhoto) {
+                  const b64 = imageCache[getPhotoUrl(r.checkOutPhoto)] || '';
+                  if (b64) {
+                      photosHtml += `<div class="photo-item"><img src="${b64}" class="photo-img" /><p class="photo-label">Pulang</p></div>`;
+                      hasPhotos = true;
+                  }
+              }
+              if ((r as any).lateReasonPhoto) {
+                  const b64 = imageCache[getPhotoUrl((r as any).lateReasonPhoto)] || '';
+                  if (b64) {
+                      photosHtml += `<div class="photo-item"><img src="${b64}" class="photo-img" /><p class="photo-label">Bukti Telat</p></div>`;
+                      hasPhotos = true;
+                  }
+              }
+              if (!hasPhotos) photosHtml += '<span style="color:#94a3b8;font-style:italic;font-size:9.5px;">Tidak ada foto lampiran</span>';
+              photosHtml += '</div>';
+              let extraNotes = '';
+              if (r.notes) extraNotes = `<div style="margin-top:4px;font-style:italic;color:#64748b;font-size:9.5px;">Ket: ${r.notes}</div>`;
+              return `<tr>
+            <td style="text-align:center;color:#94a3b8;font-size:10px;">${isSameUser ? '<span style="color:#cbd5e1;">↳</span>' : (index + 1)}</td>
+            <td style="font-weight:600;font-size:9.5px;">${isSameUser ? '' : dateStr}</td>
             <td>
-                ${isContinuation ? '' : `
-                    <div style="line-height:1.2;">
-                        <b style="color:#1d4ed8;font-size:11.5px;">${currentName}</b><br/>
-                        ${(r.shift && r.shift.toLowerCase().trim() !== '-' && r.shift.toLowerCase().trim() !== 'management') 
-                            ? `<span style="color:#94a3b8;font-size:9.5px;font-weight:bold;text-transform:uppercase;">${r.shift}</span><br/>` 
-                            : '<span style="color:#94a3b8;font-size:9.5px;font-style:italic;">Belum Tercatat</span><br/>'}
-                        <span style="color:#94a3b8;font-size:9.5px;">NIK: ${emp?.nik || emp?.username || '-'}</span>
-                    </div>
-                `}
-                <div style="margin-top:4px;">
-                    <span style="color:#94a3b8; font-size: 9px; font-style: italic;">Sesi ${r.sessionNumber || 1}</span>
-                </div>
-            </td>
-            <td>
-              <div style="font-family:monospace;font-size:10.5px;line-height:1.4;">
-                IN : <span style="color:#16a34a;font-weight:bold;">${tIn}</span><br/>
-                BRK: <span style="color:#d97706;font-weight:bold;">${tBrkS}</span> - <span style="color:#2563eb;font-weight:bold;">${tBrkE}</span><br/>
-                OUT: <span style="color:#dc2626;font-weight:bold;">${tOut}</span><br/>
-                ${duration > 0 ? `PERMIT: <span style="color:#7c3aed;font-weight:bold;">${duration} Jam</span><br/>` : ''}
+              <div style="line-height:1.2;">
+                <b style="color:#1d4ed8;font-size:11.5px;">${emp?.fullName || '-'}</b><br/>
+                <span style="color:#64748b;font-size:9px;">NIK: ${emp?.nik || emp?.username || '-'}</span>
                 <div style="border-top:1px solid #eee; margin-top:4px; padding-top:4px; font-weight:bold;">
                   ${(() => {
-                    const { netWorkMins } = calculateDailyTotal([r]);
-                    return netWorkMins > 0 ? `TOTAL: ${formatDuration(netWorkMins)}` : 'TIDAK LENGKAP';
-                })()}
+                      const { netWorkMins } = calculateDailyTotal([r]);
+                      return netWorkMins > 0 ? `TOTAL: ${formatDuration(netWorkMins)}` : 'TIDAK LENGKAP';
+                  })()}
                 </div>
               </div>
               <div style="margin-top:8px; font-size:8.5px; color:#64748b; line-height:1.2; max-width:140px; word-break:break-word; background:#f8fafc; padding:4px; border-radius:4px;">
@@ -836,6 +823,7 @@ export default function AttendanceHistoryPage() {
         }).join('')}
 </tbody>
 </table>
+</div>
 </body>
 </html>`;
 
@@ -849,10 +837,10 @@ export default function AttendanceHistoryPage() {
                 };
 
                 const container = document.createElement('div');
-                container.style.position = 'fixed';
+                container.style.position = 'absolute';
                 container.style.left = '0';
                 container.style.top = '0';
-                container.style.zIndex = '-99999';
+                container.style.zIndex = '9999';
                 container.style.width = '794px';
                 container.style.backgroundColor = '#ffffff';
                 container.style.pointerEvents = 'none';
@@ -1288,7 +1276,19 @@ export default function AttendanceHistoryPage() {
                         )}
                     </div>
                 </div>
-            </div>
+            {isExporting && (
+                <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center z-[99999] transition-all">
+                    <div className="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center space-y-4 max-w-sm text-center border border-gray-100">
+                        <Loader2 className="w-12 h-12 text-emerald-600 animate-spin" />
+                        <div>
+                            <h3 className="font-black text-gray-900 text-lg uppercase tracking-tight">Mengekspor Laporan</h3>
+                            <p className="text-sm text-gray-500 mt-2">Sedang memproses dokumen PDF harian dan menggabungkannya ke ZIP.</p>
+                            <p className="text-xs text-emerald-600 font-bold mt-3 bg-emerald-50 px-3 py-1 rounded-full inline-block">Mohon jangan menutup halaman ini</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
         </div>
         </div>
     );

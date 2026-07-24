@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, FileDown, ArrowLeft, Search, ArrowUpDown, MessageSquare, Plus, Edit2, Trash2, Camera, Image as ImageIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileDown, ArrowLeft, Search, ArrowUpDown, MessageSquare, Plus, Edit2, Trash2, Camera, Image as ImageIcon, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
 import { differenceInMinutes } from "date-fns";
@@ -634,7 +634,8 @@ export default function RecapPage() {
   <title>${docTitle}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #1e293b; background: white; padding: 28px 36px; }
+    body { display: none !important; }
+    .pdf-content { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #1e293b; background: white; padding: 28px 36px; width: 794px; min-height: 1120px; box-sizing: border-box; }
     .letterhead { display: flex; align-items: center; gap: 16px; padding-bottom: 10px; }
     .logo-img { width: 60px; height: 60px; object-fit: contain; }
     .company-block h1 { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; }
@@ -683,95 +684,94 @@ export default function RecapPage() {
       tr { page-break-inside: avoid; }
     }
   </style>
-</head>
-<body>
-  <div class="letterhead">
-    <img src="${logoDataUrl}" class="logo-img" alt="Logo" />
-    <div class="company-block">
-      <h1>PT Elok Jaya Abadhi</h1>
-      <p class="tagline">Sistem Manajemen Kehadiran Digital</p>
+  <div class="pdf-content">
+    <div class="letterhead">
+      <img src="${logoDataUrl}" class="logo-img" alt="Logo" />
+      <div class="company-block">
+        <h1>PT Elok Jaya Abadhi</h1>
+        <p class="tagline">Sistem Manajemen Kehadiran Digital</p>
+      </div>
     </div>
-  </div>
-  <hr class="hr-thick" />
-  <hr class="hr-thin" />
-  <div class="report-meta">
-    <h2>Laporan Rekapitulasi Absensi Harian</h2>
-    <p class="sub">Periode: ${format(d1, "EEEE, d MMMM yyyy", { locale: id })}</p>
-  </div>
-  <table>
-    <thead>
-      <tr>
-        <th class="c" style="width:28px;">No</th>
-        <th style="width:130px;">Hari & Tanggal</th>
-        <th style="width:130px;">Nama Karyawan</th>
-        <th class="c" style="width:62px;">Masuk</th>
-        <th class="c" style="width:62px;">Istirahat</th>
-        <th class="c" style="width:62px;">Selesai</th>
-        <th class="c" style="width:62px;">Pulang</th>
-        <th style="width:80px;">Jam Kerja</th>
-        <th class="c" style="width:80px;">Total Istirahat</th>
-        <th class="c" style="width:62px;">Status</th>
-        <th>Keterangan</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${filteredDayRecords.length === 0 ? `
+    <hr class="hr-thick" />
+    <hr class="hr-thin" />
+    <div class="report-meta">
+      <h2>Laporan Rekapitulasi Absensi Harian</h2>
+      <p class="sub">Periode: ${format(d1, "EEEE, d MMMM yyyy", { locale: id })}</p>
+    </div>
+    <table>
+      <thead>
         <tr>
-          <td colSpan="11" style="text-align:center;padding:20px;color:#94a3b8;">Tidak ada data absensi untuk hari ini.</td>
+          <th class="c" style="width:28px;">No</th>
+          <th style="width:130px;">Hari & Tanggal</th>
+          <th style="width:130px;">Nama Karyawan</th>
+          <th class="c" style="width:62px;">Masuk</th>
+          <th class="c" style="width:62px;">Istirahat</th>
+          <th class="c" style="width:62px;">Selesai</th>
+          <th class="c" style="width:62px;">Pulang</th>
+          <th style="width:80px;">Jam Kerja</th>
+          <th class="c" style="width:80px;">Total Istirahat</th>
+          <th class="c" style="width:62px;">Status</th>
+          <th>Keterangan</th>
         </tr>
-      ` : filteredDayRecords.map((row, index) => {
-            const dateStr = format(new Date(row.date), "yyyy-MM-dd");
-            const breakMins = calculateDuration(row.breakStart, row.breakEnd);
-            const key = `${dateStr}-${row.userId}`;
-            const dailyEntry = localDailyTotals.get(key);
-            const dailyTotalMins = dailyEntry?.mins ?? 0;
-            const prevRow = index > 0 ? filteredDayRecords[index - 1] : null;
-            const isSameDayAndUser = !!(prevRow && format(new Date(prevRow.date), "yyyy-MM-dd") === dateStr && prevRow.userId === row.userId);
-            const statusLabel = row.status === 'present' ? 'Hadir' : row.status === 'late' ? 'Telat' : row.status === 'sick' ? 'Sakit' : row.status === 'permission' ? 'Izin' : row.status === 'cuti' ? 'Cuti' : row.status === 'absent' ? 'Alpha' : (row.status || '-');
-            const statusClass = row.status === 'present' ? 'st-hadir' : row.status === 'late' ? 'st-telat' : row.status === 'sick' ? 'st-sakit' : row.status === 'permission' ? 'st-izin' : row.status === 'cuti' ? 'st-cuti' : row.status === 'absent' ? 'st-alpha' : '';
-            const inTime = row.checkIn ? format(new Date(row.checkIn), 'HH:mm') : '-';
-            const brkTime = row.breakStart ? format(new Date(row.breakStart), 'HH:mm') : '-';
-            const brkEnd = row.breakEnd ? format(new Date(row.breakEnd), 'HH:mm') : '-';
-            const outTime = row.checkOut ? format(new Date(row.checkOut), 'HH:mm') : '-';
-            const isNoBreak = (inTime !== '-' && outTime !== '-' && brkTime === '-' && brkEnd === '-');
-            const jamKerja = !isSameDayAndUser ? (dailyTotalMins > 0 ? formatDuration(dailyTotalMins) : '-') : '';
-            let keterangan = row.notes ? row.notes : '-';
-            if (!row.checkOut) keterangan = row.notes ? row.notes + ' <br><span class="note-warn">(Belum Pulang)</span>' : '<span class="note-warn">Belum Pulang</span>';
-            else if (isNoBreak) keterangan = row.notes ? row.notes + ' <br><span class="note-warn">(Tanpa Istirahat)</span>' : '<span class="note-warn">Tanpa Istirahat</span>';
-            const lateNote = row.status === 'late' && (row as any).lateReason ? `<br><span class="note-late">[Telat: ${(row as any).lateReason}]</span>` : '';
-            return `<tr>
-          <td class="col-no">${isSameDayAndUser ? '<span style="color:#cbd5e1;">↳</span>' : (index + 1)}</td>
-          <td class="col-date" style="font-size:9.5px;">${isSameDayAndUser ? '' : format(new Date(row.date), 'EEEE, d MMMM yyyy', { locale: id })}</td>
-          <td class="col-name">
-              ${isSameDayAndUser ? '' : `
-                   <div style="line-height:1.2;">
-                       <b style="color:#1d4ed8;font-size:11.5px;">${getUserName(row.userId) || '-'}</b><br/>
-                       ${(row.shift && row.shift.toLowerCase().trim() !== '-' && row.shift.toLowerCase().trim() !== 'management') 
-                           ? `<span style="color:#16a34a;font-size:9px;font-weight:bold;text-transform:uppercase;">${row.shift}</span><br/>` 
-                           : '<span style="color:#94a3b8;font-size:9px;font-style:italic;">Belum Tercatat</span><br/>'}
-                       <span style="color:#64748b;font-size:9px;">NIK: ${users?.find(u => u.id === row.userId)?.nik || users?.find(u => u.id === row.userId)?.username || '-'}</span>
-                   </div>
-              `}
-          </td>
-          <td class="col-time ${inTime === '-' ? 't-dash' : 't-in'}">${inTime}</td>
-          <td class="col-time ${brkTime === '-' ? 't-dash' : 't-brk'}">${brkTime}</td>
-          <td class="col-time ${brkEnd === '-' ? 't-dash' : 't-brk'}">${brkEnd}</td>
-          <td class="col-time ${outTime === '-' ? 't-dash' : 't-out'}">${outTime}</td>
-          <td class="col-work">${jamKerja}</td>
-          <td class="col-brk">${breakMins > 0 ? formatDuration(breakMins) : '-'}</td>
-          <td class="col-stat"><span class="${statusClass}">${statusLabel}</span></td>
-          <td class="col-note">${keterangan}${lateNote}</td>
-        </tr>`;
-        }).join('')}
-    </tbody>
-  </table>
-  <div class="signature-section">
-    <div class="sig-box"><p class="sig-label">Checked By</p><div class="sig-name">NIKO</div></div>
-    <div class="sig-box"><p class="sig-label">Approved By</p><div class="sig-name">CLAVERINA</div></div>
+      </thead>
+      <tbody>
+        ${filteredDayRecords.length === 0 ? `
+          <tr>
+            <td colSpan="11" style="text-align:center;padding:20px;color:#94a3b8;">Tidak ada data absensi untuk hari ini.</td>
+          </tr>
+        ` : filteredDayRecords.map((row, index) => {
+              const dateStr = format(new Date(row.date), "yyyy-MM-dd");
+              const breakMins = calculateDuration(row.breakStart, row.breakEnd);
+              const key = `${dateStr}-${row.userId}`;
+              const dailyEntry = localDailyTotals.get(key);
+              const dailyTotalMins = dailyEntry?.mins ?? 0;
+              const prevRow = index > 0 ? filteredDayRecords[index - 1] : null;
+              const isSameDayAndUser = !!(prevRow && format(new Date(prevRow.date), "yyyy-MM-dd") === dateStr && prevRow.userId === row.userId);
+              const statusLabel = row.status === 'present' ? 'Hadir' : row.status === 'late' ? 'Telat' : row.status === 'sick' ? 'Sakit' : row.status === 'permission' ? 'Izin' : row.status === 'cuti' ? 'Cuti' : row.status === 'absent' ? 'Alpha' : (row.status || '-');
+              const statusClass = row.status === 'present' ? 'st-hadir' : row.status === 'late' ? 'st-telat' : row.status === 'sick' ? 'st-sakit' : row.status === 'permission' ? 'st-izin' : row.status === 'cuti' ? 'st-cuti' : row.status === 'absent' ? 'st-alpha' : '';
+              const inTime = row.checkIn ? format(new Date(row.checkIn), 'HH:mm') : '-';
+              const brkTime = row.breakStart ? format(new Date(row.breakStart), 'HH:mm') : '-';
+              const brkEnd = row.breakEnd ? format(new Date(row.breakEnd), 'HH:mm') : '-';
+              const outTime = row.checkOut ? format(new Date(row.checkOut), 'HH:mm') : '-';
+              const isNoBreak = (inTime !== '-' && outTime !== '-' && brkTime === '-' && brkEnd === '-');
+              const jamKerja = !isSameDayAndUser ? (dailyTotalMins > 0 ? formatDuration(dailyTotalMins) : '-') : '';
+              let keterangan = row.notes ? row.notes : '-';
+              if (!row.checkOut) keterangan = row.notes ? row.notes + ' <br><span class="note-warn">(Belum Pulang)</span>' : '<span class="note-warn">Belum Pulang</span>';
+              else if (isNoBreak) keterangan = row.notes ? row.notes + ' <br><span class="note-warn">(Tanpa Istirahat)</span>' : '<span class="note-warn">Tanpa Istirahat</span>';
+              const lateNote = row.status === 'late' && (row as any).lateReason ? `<br><span class="note-late">[Telat: ${(row as any).lateReason}]</span>` : '';
+              return `<tr>
+            <td class="col-no">${isSameDayAndUser ? '<span style="color:#cbd5e1;">↳</span>' : (index + 1)}</td>
+            <td class="col-date" style="font-size:9.5px;">${isSameDayAndUser ? '' : format(new Date(row.date), 'EEEE, d MMMM yyyy', { locale: id })}</td>
+            <td class="col-name">
+                ${isSameDayAndUser ? '' : `
+                     <div style="line-height:1.2;">
+                         <b style="color:#1d4ed8;font-size:11.5px;">${getUserName(row.userId) || '-'}</b><br/>
+                         ${(row.shift && row.shift.toLowerCase().trim() !== '-' && row.shift.toLowerCase().trim() !== 'management') 
+                             ? `<span style="color:#16a34a;font-size:9px;font-weight:bold;text-transform:uppercase;">${row.shift}</span><br/>` 
+                             : '<span style="color:#94a3b8;font-size:9px;font-style:italic;">Belum Tercatat</span><br/>'}
+                         <span style="color:#64748b;font-size:9px;">NIK: ${users?.find(u => u.id === row.userId)?.nik || users?.find(u => u.id === row.userId)?.username || '-'}</span>
+                     </div>
+                `}
+            </td>
+            <td class="col-time ${inTime === '-' ? 't-dash' : 't-in'}">${inTime}</td>
+            <td class="col-time ${brkTime === '-' ? 't-dash' : 't-brk'}">${brkTime}</td>
+            <td class="col-time ${brkEnd === '-' ? 't-dash' : 't-brk'}">${brkEnd}</td>
+            <td class="col-time ${outTime === '-' ? 't-dash' : 't-out'}">${outTime}</td>
+            <td class="col-work">${jamKerja}</td>
+            <td class="col-brk">${breakMins > 0 ? formatDuration(breakMins) : '-'}</td>
+            <td class="col-stat"><span class="${statusClass}">${statusLabel}</span></td>
+            <td class="col-note">${keterangan}${lateNote}</td>
+          </tr>`;
+          }).join('')}
+      </tbody>
+    </table>
+    <div class="signature-section">
+      <div class="sig-box"><p class="sig-label">Checked By</p><div class="sig-name">NIKO</div></div>
+      <div class="sig-box"><p class="sig-label">Approved By</p><div class="sig-name">CLAVERINA</div></div>
+    </div>
+    <div class="footer">Dokumen ini dicetak secara otomatis oleh Sistem Absensi PT ELOK JAYA ABADHI &mdash; ${format(new Date(), "d MMMM yyyy, HH:mm", { locale: id })} WIB</div>
   </div>
-  <div class="footer">Dokumen ini dicetak secara otomatis oleh Sistem Absensi PT ELOK JAYA ABADHI &mdash; ${format(new Date(), "d MMMM yyyy, HH:mm", { locale: id })} WIB</div>
-</body>
-</html>`;
+`;
 
             const opt = {
                 margin:       [8, 8, 8, 8],
@@ -783,10 +783,10 @@ export default function RecapPage() {
             };
 
             const container = document.createElement('div');
-            container.style.position = 'fixed';
+            container.style.position = 'absolute';
             container.style.left = '0';
             container.style.top = '0';
-            container.style.zIndex = '-99999';
+            container.style.zIndex = '9999';
             container.style.width = '794px';
             container.style.backgroundColor = '#ffffff';
             container.style.pointerEvents = 'none';
@@ -1152,6 +1152,19 @@ export default function RecapPage() {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            {isExporting && (
+                <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center z-[99999] transition-all">
+                    <div className="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center space-y-4 max-w-sm text-center border border-gray-100">
+                        <Loader2 className="w-12 h-12 text-emerald-600 animate-spin" />
+                        <div>
+                            <h3 className="font-black text-gray-900 text-lg uppercase tracking-tight">Mengekspor Laporan</h3>
+                            <p className="text-sm text-gray-500 mt-2">Sedang memproses dokumen PDF harian dan menggabungkannya ke ZIP.</p>
+                            <p className="text-xs text-emerald-600 font-bold mt-3 bg-emerald-50 px-3 py-1 rounded-full inline-block">Mohon jangan menutup halaman ini</p>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
