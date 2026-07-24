@@ -635,7 +635,7 @@ export default function RecapPage() {
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { display: none !important; }
-    .pdf-content { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #1e293b; background: white; padding: 28px 36px; width: 794px; min-height: 1120px; box-sizing: border-box; }
+    .pdf-content { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #1e293b; background: white; padding: 15px; width: 794px; box-sizing: border-box; }
     .letterhead { display: flex; align-items: center; gap: 16px; padding-bottom: 10px; }
     .logo-img { width: 60px; height: 60px; object-fit: contain; }
     .company-block h1 { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; }
@@ -774,12 +774,12 @@ export default function RecapPage() {
 `;
 
             const opt = {
-                margin:       [8, 8, 8, 8],
+                margin:       [4, 8, 4, 8],
                 filename:     `${docTitle}.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: 0, windowWidth: 794 },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+                pagebreak:    { mode: ['css', 'legacy'] }
             };
 
             const container = document.createElement('div');
