@@ -143,6 +143,9 @@ function Router() {
       <Route path="/admin/leave">
         <ProtectedRoute component={() => <AdminLayout><AdminLeave /></AdminLayout>} adminOnly />
       </Route>
+      <Route path="/admin/leave-quotas">
+        <ProtectedRoute component={() => <AdminLayout><AdminLeave /></AdminLayout>} adminOnly />
+      </Route>
       <Route path="/admin/leave-history">
         <ProtectedRoute component={() => <AdminLayout><AdminLeaveHistory /></AdminLayout>} adminOnly />
       </Route>

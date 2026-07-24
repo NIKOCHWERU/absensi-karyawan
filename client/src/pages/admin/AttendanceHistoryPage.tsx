@@ -45,6 +45,20 @@ const loadHtml2Pdf = () => {
     });
 };
 
+const loadJsZip = () => {
+    return new Promise<any>((resolve, reject) => {
+        if ((window as any).JSZip) {
+            resolve((window as any).JSZip);
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+        script.onload = () => resolve((window as any).JSZip);
+        script.onerror = () => reject(new Error("Gagal memuat script JSZip"));
+        document.head.appendChild(script);
+    });
+};
+
 export default function AttendanceHistoryPage() {
     const [, setLocation] = useLocation();
     const { toast } = useToast();
@@ -530,12 +544,14 @@ export default function AttendanceHistoryPage() {
         setIsExporting(true);
         
         let html2pdf: any;
+        let JSZip: any;
         try {
             html2pdf = await loadHtml2Pdf();
+            JSZip = await loadJsZip();
         } catch (err) {
             toast({
                 title: "Error",
-                description: "Gagal memuat engine pembuat PDF.",
+                description: "Gagal memuat engine pembuat PDF atau ZIP.",
                 variant: "destructive"
             });
             setIsExporting(false);
@@ -544,8 +560,10 @@ export default function AttendanceHistoryPage() {
 
         toast({
             title: "Export Massal Dimulai",
-            description: `Mengekspor ${dates.length} laporan foto harian dalam format PDF secara massal. Harap izinkan download multipel jika diminta browser.`,
+            description: `Mengekspor ${dates.length} laporan foto harian dalam format PDF ke dalam file ZIP. Mohon tunggu...`,
         });
+
+        const zip = new JSZip();
 
         const imageCache: Record<string, string> = {};
         const fetchImageBase64 = async (url: string, retries = 2) => {
@@ -845,7 +863,8 @@ export default function AttendanceHistoryPage() {
                 await new Promise(r => setTimeout(r, 150));
 
                 try {
-                    await html2pdf().set(opt).from(container).save();
+                    const blob = await html2pdf().set(opt).from(container).output('blob');
+                    zip.file(`${docTitle}.pdf`, blob);
                 } catch (e) {
                     console.error("Gagal membuat PDF untuk tanggal", d1, e);
                 }
@@ -855,6 +874,35 @@ export default function AttendanceHistoryPage() {
                 }
 
                 await new Promise(resolve => setTimeout(resolve, 600));
+            }
+
+            try {
+                toast({
+                    title: "Mengompresi File",
+                    description: "Menyatukan semua laporan foto PDF ke dalam satu file ZIP...",
+                });
+                const zipContent = await zip.generateAsync({ type: "blob" });
+                const zipUrl = URL.createObjectURL(zipContent);
+                const a = document.createElement("a");
+                a.href = zipUrl;
+                const startStr = format(dates[0], "yyyyMMdd");
+                const endStr = format(dates[dates.length - 1], "yyyyMMdd");
+                a.download = `REKAP_ABSENSI_FOTO_MASSAL_${startStr}_to_${endStr}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(zipUrl);
+                toast({
+                    title: "Ekspor Selesai",
+                    description: "File ZIP rekap foto berhasil diunduh.",
+                });
+            } catch (zipErr: any) {
+                console.error("Gagal membuat file ZIP rekap foto", zipErr);
+                toast({
+                    title: "Error",
+                    description: "Gagal membuat file ZIP: " + zipErr.message,
+                    variant: "destructive"
+                });
             }
         } finally {
             setIsExporting(false);

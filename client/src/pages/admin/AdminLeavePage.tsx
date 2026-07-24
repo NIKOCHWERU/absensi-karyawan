@@ -241,65 +241,173 @@ export default function AdminLeavePage() {
                                 <tr>
                                     <th className="px-6 py-4">Karyawan</th>
                                     <th className="px-6 py-4">Sisa Cuti</th>
-                                    <th className="px-6 py-4">Periode</th>
+                                    <th className="px-6 py-4">Periode Cuti</th>
                                     <th className="px-6 py-4">Status</th>
                                     <th className="px-6 py-4 text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {sortedRequests?.map((req) => {
-                                    const userObj = getUserObj(req.userId);
-                                    const remaining = userObj?.remainingLeave ?? 12;
-                                    return (
-                                        <tr key={req.id} className="border-t border-gray-50">
-                                            <td className="px-6 py-4 font-bold">{getUserName(req.userId)}</td>
-                                            <td className="px-6 py-4">{remaining} / 12 Hari</td>
-                                            <td className="px-6 py-4">{format(new Date(req.startDate), "d MMM")} - {format(new Date(req.endDate), "d MMM")}</td>
-                                            <td className="px-6 py-4">{req.status}</td>
-                                            <td className="px-6 py-4 text-center">
-                                                <Button size="sm" variant="outline" onClick={() => mutation.mutate({ id: req.id, status: 'approved' })}>Setujui</Button>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
+                                {sortedRequests?.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={5} className="px-6 py-12 text-center text-gray-400 font-medium">
+                                            Belum ada permohonan cuti.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    sortedRequests?.map((req) => {
+                                        const userObj = getUserObj(req.userId);
+                                        const remaining = userObj?.remainingLeave ?? 12;
+                                        return (
+                                            <tr key={req.id} className="border-t border-gray-50 hover:bg-gray-50/50">
+                                                <td className="px-6 py-4">
+                                                    <div className="font-bold text-gray-900">{getUserName(req.userId)}</div>
+                                                    <div className="text-xs text-gray-400 font-mono">{userObj?.nik || userObj?.username || '-'}</div>
+                                                </td>
+                                                <td className="px-6 py-4 font-bold text-emerald-700">{remaining}/12 Hari</td>
+                                                <td className="px-6 py-4">{format(new Date(req.startDate), "d MMM yyyy")} - {format(new Date(req.endDate), "d MMM yyyy")}</td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                                        req.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                                        req.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                                        'bg-orange-100 text-orange-700'
+                                                    }`}>
+                                                        {req.status === 'approved' ? 'Disetujui' : req.status === 'rejected' ? 'Ditolak' : 'Pending'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <Button size="sm" variant="outline" onClick={() => handlePrintLeave(req)} title="Cetak"><Printer className="w-3.5 h-3.5" /></Button>
+                                                        <Button size="sm" variant="outline" className="text-red-600 border-red-100" onClick={() => handleDeleteLeave(req.id)} title="Hapus"><Trash2 className="w-3.5 h-3.5" /></Button>
+                                                        {req.status === 'pending' && (
+                                                            <>
+                                                                <Button size="sm" variant="outline" className="text-red-600" onClick={() => mutation.mutate({ id: req.id, status: 'rejected' })}>Tolak</Button>
+                                                                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={() => mutation.mutate({ id: req.id, status: 'approved' })}>Setuju</Button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
                             </tbody>
                         </table>
                     </CardContent>
                 </Card>
             ) : (
-                <Card className="border-gray-100 shadow-sm rounded-xl overflow-hidden">
-                    <CardContent className="p-0 overflow-x-auto">
-                        <table className="w-full text-sm text-left">
-                            <thead className="text-[10px] text-gray-400 font-black uppercase tracking-widest bg-gray-50/50">
-                                <tr>
-                                    <th className="px-6 py-4">Karyawan</th>
-                                    <th className="px-6 py-4">Sisa Cuti</th>
-                                    <th className="px-6 py-4 text-center">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredEmployees.map((emp) => (
-                                    <tr key={emp.id} className="border-t border-gray-50">
-                                        <td className="px-6 py-4 font-bold">{toTitleCase(emp.fullName)}</td>
-                                        <td className="px-6 py-4">{emp.remainingLeave ?? 12} Hari</td>
-                                        <td className="px-6 py-4 flex justify-center gap-2">
-                                            <Button size="sm" variant="outline" onClick={() => handleOpenEditQuota(emp)}><Edit3 className="w-4 h-4" /></Button>
-                                            <Button size="sm" variant="outline" onClick={() => handleResetQuota(emp)}><RotateCcw className="w-4 h-4" /></Button>
-                                        </td>
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center gap-4">
+                        <h2 className="text-lg font-bold text-gray-800">Daftar Sisa Cuti Karyawan</h2>
+                        <div className="relative w-72">
+                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <Input
+                                type="text"
+                                placeholder="Cari nama / NIK karyawan..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-9 bg-white text-sm rounded-xl"
+                            />
+                        </div>
+                    </div>
+
+                    <Card className="border-gray-100 shadow-sm rounded-xl overflow-hidden">
+                        <CardContent className="p-0 overflow-x-auto">
+                            <table className="w-full text-sm text-left">
+                                <thead className="text-[10px] text-gray-400 font-black uppercase tracking-widest bg-gray-50/50">
+                                    <tr>
+                                        <th className="px-6 py-4">Nama Karyawan</th>
+                                        <th className="px-6 py-4">Cabang / Jabatan</th>
+                                        <th className="px-6 py-4 text-center">Sisa Cuti</th>
+                                        <th className="px-6 py-4 text-center">Aksi</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </CardContent>
-                </Card>
+                                </thead>
+                                <tbody>
+                                    {filteredEmployees.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={4} className="px-6 py-12 text-center text-gray-400 font-medium">
+                                                Tidak ada karyawan ditemukan.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        filteredEmployees.map((emp) => {
+                                            const remaining = emp.remainingLeave ?? 12;
+                                            return (
+                                                <tr key={emp.id} className="border-t border-gray-50 hover:bg-gray-50/50 transition-colors">
+                                                    <td className="px-6 py-4">
+                                                        <div className="font-bold text-gray-900">{toTitleCase(emp.fullName)}</div>
+                                                        <div className="text-xs text-gray-400 font-mono">NIK: {emp.nik || emp.username || '-'}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-gray-600">
+                                                        <div>{emp.branch || '-'}</div>
+                                                        <div className="text-xs text-gray-400">{emp.position || '-'}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <span className={`px-3 py-1 rounded-full text-xs font-black border ${
+                                                            remaining > 5 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                                            remaining > 0 ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                                            'bg-red-50 text-red-700 border-red-200'
+                                                        }`}>
+                                                            {remaining}/12 Hari
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                className="text-blue-600 border-blue-200 hover:bg-blue-50 gap-1 rounded-lg text-xs font-bold"
+                                                                onClick={() => handleResetQuota(emp)}
+                                                                disabled={resetQuotaMutation.isPending}
+                                                                title="Reset jatah cuti kembali ke 12 hari"
+                                                            >
+                                                                <RotateCcw className="w-3.5 h-3.5" /> Reset (12 Hari)
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                className="text-emerald-700 border-emerald-200 hover:bg-emerald-50 gap-1 rounded-lg text-xs font-bold"
+                                                                onClick={() => handleOpenEditQuota(emp)}
+                                                            >
+                                                                <Edit3 className="w-3.5 h-3.5" /> Edit Manual
+                                                            </Button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                    )}
+                                </tbody>
+                            </table>
+                        </CardContent>
+                    </Card>
+                </div>
             )}
 
             <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
-                <DialogContent>
-                    <DialogHeader><DialogTitle>Edit Sisa Cuti</DialogTitle></DialogHeader>
-                    <Input type="number" value={manualQuotaInput} onChange={(e) => setManualQuotaInput(e.target.value)} />
-                    <DialogFooter>
-                        <Button onClick={handleSaveQuota}>Simpan</Button>
+                <DialogContent className="sm:max-w-md rounded-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="text-base font-bold">Edit Sisa Cuti - {editingUser && toTitleCase(editingUser.fullName)}</DialogTitle>
+                        <DialogDescription className="text-xs text-gray-500">
+                            Masukkan jumlah sisa cuti baru (maksimal 12 hari).
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-2">
+                        <Label className="text-xs font-bold text-gray-700 mb-1.5 block">Sisa Cuti Baru (Hari):</Label>
+                        <Input
+                            type="number"
+                            min={0}
+                            max={12}
+                            value={manualQuotaInput}
+                            onChange={(e) => setManualQuotaInput(e.target.value)}
+                            className="rounded-xl font-bold text-base"
+                            placeholder="0 - 12"
+                        />
+                    </div>
+                    <DialogFooter className="gap-2">
+                        <Button variant="outline" onClick={() => setEditingUser(null)}>Batal</Button>
+                        <Button onClick={handleSaveQuota} disabled={updateQuotaMutation.isPending} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+                            {updateQuotaMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Simpan
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
