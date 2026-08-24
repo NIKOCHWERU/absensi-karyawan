@@ -44,11 +44,18 @@ const loadJsZip = () => {
     });
 };
 
+const resolveFileUrl = (url: string | null): string => {
+    if (!url) return "";
+    if (url.startsWith('data:') || url.startsWith('http')) return url;
+    return url.length > 20 && !url.includes('/') ? `/api/images/${url}` : `/uploads/${url}`;
+};
+
 export default function RecapPage() {
     const [, setLocation] = useLocation();
     const { toast } = useToast();
     const queryClient = useQueryClient();
     const [isExporting, setIsExporting] = useState(false);
+    const [exportProgress, setExportProgress] = useState("");
 
     const [targetDate, setTargetDate] = useState(new Date());
     const [selectedPhotoRecord, setSelectedPhotoRecord] = useState<Attendance | null>(null);
@@ -273,6 +280,624 @@ export default function RecapPage() {
             });
         }
         setIsManualModalOpen(true);
+    };
+
+    const buildRecapReportHtml = ({
+        docTitle,
+        periodStr,
+        namaPt,
+        singkatanPt,
+        alamatPt,
+        logoDataUrl,
+        usersList,
+        processedData,
+        startDate,
+        endDate,
+        imageCache = {},
+        isPdf = false
+    }: {
+        docTitle: string;
+        periodStr: string;
+        namaPt: string;
+        singkatanPt: string;
+        alamatPt: string;
+        logoDataUrl: string;
+        usersList: any[];
+        processedData: any[];
+        startDate: Date;
+        endDate: Date;
+        imageCache?: Record<string, string>;
+        isPdf?: boolean;
+    }) => {
+        const escapeHTML = (value: any): string => {
+            if (value === null || value === undefined) return "";
+            return String(value)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        };
+
+        const NAMA_HARI = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+        const NAMA_BULAN = [
+            "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+            "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+        ];
+
+        const formatTanggalIndo = (date: Date): string => {
+            return `${NAMA_HARI[date.getDay()]}, ${date.getDate()} ${NAMA_BULAN[date.getMonth()]} ${date.getFullYear()}`;
+        };
+
+        const formatISO = (date: Date): string => {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, "0");
+            const d = String(date.getDate()).padStart(2, "0");
+            return `${y}-${m}-${d}`;
+        };
+
+        const formatTimeDot = (dateVal: any): string => {
+            if (!dateVal) return "-";
+            try {
+                return format(new Date(dateVal), "HH.mm");
+            } catch (_) {
+                return "-";
+            }
+        };
+
+        const formatJamKerjaIndo = (minutes: number): string => {
+            if (minutes <= 0) return "-";
+            const h = Math.floor(minutes / 60);
+            const m = minutes % 60;
+            if (h > 0 && m > 0) return `${h} jam ${m} menit`;
+            if (h > 0) return `${h} jam 0 menit`;
+            return `${m} menit`;
+        };
+
+        const normalisasiStatus = (status: string | null | undefined): string => {
+            if (!status) return "HADIR";
+            const s = String(status).trim().toUpperCase();
+            if (s === "PRESENT") return "HADIR";
+            if (s === "LATE") return "TELAT";
+            if (s === "SICK") return "SAKIT";
+            if (s === "PERMISSION") return "IZIN";
+            if (s === "CUTI") return "CUTI";
+            if (s === "ABSENT") return "ALPHA";
+            return s;
+        };
+
+        const classStatus = (status: string): string => {
+            switch (status) {
+                case "HADIR": return "status-hadir";
+                case "TELAT": return "status-telat";
+                case "SAKIT": return "status-sakit";
+                case "IZIN": return "status-izin";
+                case "CUTI": return "status-cuti";
+                case "ALPHA": return "status-alpha";
+                default: return "status-lain";
+            }
+        };
+
+        const allDates: Date[] = [];
+        let curr = new Date(startDate);
+        const end = new Date(endDate);
+        curr.setHours(0, 0, 0, 0);
+        end.setHours(0, 0, 0, 0);
+        while (curr <= end) {
+            allDates.push(new Date(curr));
+            curr.setDate(curr.getDate() + 1);
+        }
+
+        const uniqueUserIds = Array.from(new Set(processedData.map(r => r.userId)));
+        const employeeList = uniqueUserIds
+            .map(uid => usersList?.find(u => u.id === uid))
+            .filter(Boolean)
+            .sort((a, b) => (a.fullName || '').localeCompare(b.fullName || '', 'id'));
+
+        let reportsHtml = "";
+
+        if (employeeList.length === 0) {
+            reportsHtml = `
+                <div style="max-width:700px; margin:50px auto; padding:30px; background:white; border:1px solid #ddd; text-align:center;">
+                    <h2>Belum ada data absensi</h2>
+                    <p>Silakan masukkan data absensi untuk periode ini.</p>
+                </div>
+            `;
+        } else {
+            employeeList.forEach((emp, empIdx) => {
+                const empName = (emp.fullName || '').toUpperCase();
+                const empNik = emp.nik || emp.username || '';
+                let jumlahHadir = 0;
+                let jumlahTelat = 0;
+                let jumlahTidakAbsen = 0;
+                let jumlahSakit = 0;
+                let jumlahIzin = 0;
+                let totalMinsEmp = 0;
+
+                let isiBaris = "";
+
+                allDates.forEach((dateObj) => {
+                    const dateIso = formatISO(dateObj);
+                    const dayRecords = processedData.filter(
+                        r => r.userId === emp.id && format(new Date(r.date), "yyyy-MM-dd") === dateIso
+                    );
+
+                    const photoList: { url: string; label: string }[] = [];
+                    
+                    if (dayRecords.length > 0) {
+                        const rec = dayRecords[0];
+                        if (rec.checkInPhoto) photoList.push({ url: rec.checkInPhoto, label: "Absen Masuk" });
+                        if (rec.breakStartPhoto) photoList.push({ url: rec.breakStartPhoto, label: "Istirahat" });
+                        if (rec.breakEndPhoto) photoList.push({ url: rec.breakEndPhoto, label: "Selesai Ist" });
+                        if (rec.checkOutPhoto) photoList.push({ url: rec.checkOutPhoto, label: "Absen Pulang" });
+                        if ((rec as any).lateReasonPhoto) photoList.push({ url: (rec as any).lateReasonPhoto, label: "Bukti Telat" });
+                    }
+
+                    let photoCellHtml = "";
+                    if (photoList.length > 0) {
+                        photoCellHtml = `<div class="photo-grid">` +
+                            photoList.map(p => {
+                                const rawUrl = p.url;
+                                const resolved = resolveFileUrl(rawUrl);
+                                const fullUrl = resolved.startsWith('http')
+                                    ? resolved
+                                    : `${window.location.origin}${resolved.startsWith('/') ? '' : '/'}${resolved}`;
+                                const src = imageCache[rawUrl] || imageCache[resolved] || imageCache[fullUrl] || fullUrl;
+                                return `
+                                    <div class="photo-item">
+                                        <img src="${escapeHTML(src)}" class="photo-img" alt="${escapeHTML(p.label)}" loading="eager" />
+                                        <span class="photo-label">${escapeHTML(p.label)}</span>
+                                    </div>
+                                `;
+                            }).join("") +
+                            `</div>`;
+                    } else {
+                        photoCellHtml = `<span class="no-photo">-</span>`;
+                    }
+
+                    if (dayRecords.length === 0) {
+                        jumlahTidakAbsen++;
+                        isiBaris += `
+                            <tr>
+                                <td class="date-column">${formatTanggalIndo(dateObj)}</td>
+                                <td>
+                                    <div class="tidak-absen">TIDAK ABSEN</div>
+                                </td>
+                                <td>${photoCellHtml}</td>
+                            </tr>
+                        `;
+                    } else {
+                        const rec = dayRecords[0];
+                        const statusNorm = normalisasiStatus(rec.status);
+                        const kelas = classStatus(statusNorm);
+
+                        if (statusNorm === "HADIR" || statusNorm === "TELAT") jumlahHadir++;
+                        if (statusNorm === "TELAT") jumlahTelat++;
+                        if (statusNorm === "SAKIT") jumlahSakit++;
+                        if (statusNorm === "IZIN") jumlahIzin++;
+
+                        const masuk = formatTimeDot(rec.checkIn);
+                        const pulang = formatTimeDot(rec.checkOut);
+
+                        const istirahatStart = formatTimeDot(rec.breakStart);
+                        const istirahatEnd = formatTimeDot(rec.breakEnd);
+                        let istirahatText = "";
+                        if (istirahatStart !== "-" && istirahatEnd !== "-") {
+                            istirahatText = `<strong>${istirahatStart} sampai ${istirahatEnd}</strong>`;
+                        } else if (istirahatStart !== "-") {
+                            istirahatText = `<strong>${istirahatStart} sampai -</strong>`;
+                        }
+
+                        const { netWorkMins } = calculateDailyTotal(dayRecords);
+                        if (netWorkMins > 0) {
+                            totalMinsEmp += netWorkMins;
+                        }
+                        const jamKerjaStr = netWorkMins > 0 ? formatJamKerjaIndo(netWorkMins) : "";
+
+                        const lateReasonStr = rec.lateReason || (rec as any).late_reason || "";
+                        const notesStr = rec.notes || "";
+
+                        let cellHtml = `
+                            <td>
+                                <div class="${kelas}">${escapeHTML(statusNorm)}</div>
+                        `;
+
+                        if (masuk !== "-" || pulang !== "-") {
+                            cellHtml += `
+                                <div class="jam">Jam: <strong>${escapeHTML(masuk)} sampai ${escapeHTML(pulang)}</strong></div>
+                            `;
+                        }
+
+                        if (istirahatText) {
+                            cellHtml += `
+                                <div class="jam-istirahat">Istirahat: ${istirahatText}</div>
+                            `;
+                        }
+
+                        if (jamKerjaStr) {
+                            cellHtml += `
+                                <div class="jam-kerja">Jam kerja: <strong>${escapeHTML(jamKerjaStr)}</strong></div>
+                            `;
+                        }
+
+                        if (lateReasonStr) {
+                            cellHtml += `
+                                <div class="alasan-telat"><strong>Alasan Telat:</strong> ${escapeHTML(lateReasonStr)}</div>
+                            `;
+                        }
+
+                        if (notesStr) {
+                            cellHtml += `
+                                <div class="keterangan">${escapeHTML(notesStr)}</div>
+                            `;
+                        }
+
+                        cellHtml += `</td>`;
+
+                        isiBaris += `
+                            <tr>
+                                <td class="date-column">${formatTanggalIndo(dateObj)}</td>
+                                ${cellHtml}
+                                <td>${photoCellHtml}</td>
+                            </tr>
+                        `;
+                    }
+                });
+
+                const totalHours = Math.floor(totalMinsEmp / 60);
+                const totalMinsRem = totalMinsEmp % 60;
+                const totalJamKerjaStr = totalMinsEmp > 0 ? `${totalHours} jam ${totalMinsRem} menit` : "-";
+
+                reportsHtml += `
+                    <section class="report">
+                        <div class="letterhead">
+                            ${logoDataUrl ? `<img src="${logoDataUrl}" class="logo-img" alt="Logo" />` : ''}
+                            <div class="company-block">
+                                <h1>${escapeHTML(namaPt)}</h1>
+                                ${alamatPt ? `<p class="alamat">${escapeHTML(alamatPt)}</p>` : `<p class="alamat">Sistem Manajemen Kehadiran Digital</p>`}
+                            </div>
+                        </div>
+                        <hr class="hr-thick" />
+                        <hr class="hr-thin" />
+
+                        <header class="header">
+                            <div class="header-left">
+                                <div class="company">${escapeHTML(singkatanPt)}</div>
+                                <h1 class="title">LAPORAN KEHADIRAN TENAGA KERJA</h1>
+                                <p class="period">Periode ${escapeHTML(periodStr)}</p>
+                            </div>
+                            <div class="header-right">
+                                <h2 class="employee-name">${escapeHTML(empName)}</h2>
+                                ${empNik ? `<div class="employee-nik">NIK: ${escapeHTML(empNik)}</div>` : ''}
+                                <div class="report-number">No. ${empIdx + 1}</div>
+                            </div>
+                        </header>
+
+                        <div class="summary">
+                            <div class="summary-item">
+                                <span class="summary-label">Hadir</span>
+                                <span class="summary-value">${jumlahHadir} hari</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Telat</span>
+                                <span class="summary-value">${jumlahTelat} hari</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Tidak Absen</span>
+                                <span class="summary-value">${jumlahTidakAbsen} hari</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Sakit</span>
+                                <span class="summary-value">${jumlahSakit} hari</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Izin</span>
+                                <span class="summary-value">${jumlahIzin} hari</span>
+                            </div>
+                            <div class="summary-item summary-item-highlight">
+                                <span class="summary-label">Total Jam Kerja</span>
+                                <span class="summary-value summary-value-work">${totalJamKerjaStr}</span>
+                            </div>
+                        </div>
+
+                        <table class="attendance-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 20%;">TANGGAL</th>
+                                    <th style="width: 45%;">KEHADIRAN</th>
+                                    <th style="width: 35%;">BUKTI FOTO ( ABSEN )</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${isiBaris}
+                            </tbody>
+                        </table>
+                    </section>
+                `;
+            });
+        }
+
+        return `<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${escapeHTML(docTitle)}</title>
+    <style>
+        @page { size: A4 landscape; margin: 8mm 12mm 8mm 12mm; }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; }
+        body { background: #eeeeee; color: #0f172a; font-family: Arial, Helvetica, sans-serif; font-size: 7.5pt; }
+        .report { width: 100%; max-width: 1050px; margin: 10px auto; padding: 10px 14px; background: #ffffff; page-break-after: always; page-break-inside: auto; break-inside: auto; }
+        .report:last-child { page-break-after: auto; }
+        .letterhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; min-height: 36px; }
+        .logo-img { height: 36px; max-width: 110px; object-fit: contain; flex-shrink: 0; }
+        .company-block { text-align: right; flex-grow: 1; margin-left: 12px; }
+        .company-block h1 { font-size: 15px; font-weight: bold; text-transform: uppercase; margin-bottom: 1px; letter-spacing: 0.5px; }
+        .company-block .alamat { font-size: 8.5px; font-weight: normal; color: #334155; line-height: 1.2; margin-top: 1px; }
+        .hr-thick { border: none; border-top: 2px solid #0f172a; margin: 3px 0 1px; }
+        .hr-thin { border: none; border-top: 1px solid #cbd5e1; margin-bottom: 6px; }
+        .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1.5px solid #0f172a; padding-bottom: 3px; margin-bottom: 6px; page-break-inside: avoid; }
+        .header-left { text-align: left; }
+        .header-right { text-align: right; }
+        .company { margin-bottom: 1px; font-size: 7pt; font-weight: bold; letter-spacing: 1px; color: #475569; }
+        .title { margin: 0; font-size: 9.5pt; font-weight: 800; color: #0f172a; }
+        .period { margin: 1px 0 0; color: #475569; font-size: 7pt; }
+        .employee-name { margin: 0 0 1px; font-size: 10.5pt; font-weight: 800; text-transform: uppercase; color: #0f172a; }
+        .employee-nik { font-size: 7pt; color: #475569; margin-bottom: 1px; }
+        .report-number { color: #64748b; font-size: 6.5pt; }
+        .summary { display: flex; width: 100%; margin-bottom: 6px; border: 1px solid #cbd5e1; background: #f8fafc; page-break-inside: avoid; }
+        .summary-item { flex: 1; padding: 2.5px 4px; border-right: 1px solid #cbd5e1; text-align: center; }
+        .summary-item:last-child { border-right: none; }
+        .summary-item-highlight { background: #f0fdf4; }
+        .summary-label { display: block; margin-bottom: 1px; color: #64748b; font-size: 6pt; text-transform: uppercase; }
+        .summary-value { font-size: 8pt; font-weight: bold; color: #0f172a; }
+        .summary-value-work { color: #166534; font-weight: 800; }
+        .attendance-table { width: 100%; border-collapse: collapse; table-layout: fixed; page-break-inside: auto; break-inside: auto; }
+        .attendance-table thead { display: table-header-group; }
+        .attendance-table tbody tr { page-break-inside: avoid !important; break-inside: avoid !important; break-inside: avoid-page !important; }
+        .attendance-table th { background: #f1f5f9; border: 1px solid #94a3b8; padding: 3px 4px; text-align: left; font-size: 6.8pt; font-weight: 800; text-transform: uppercase; page-break-inside: avoid; }
+        .attendance-table td { border: 1px solid #cbd5e1; padding: 2px 4px; vertical-align: middle; font-size: 6.5pt; line-height: 1.2; page-break-inside: avoid !important; break-inside: avoid !important; }
+        .attendance-table tbody tr:nth-child(even) { background: #f8fafc; }
+        .date-column { font-weight: bold; }
+        .status-hadir { color: #166534; font-weight: bold; }
+        .status-telat { color: #9a3412; font-weight: bold; }
+        .status-sakit { color: #1d4ed8; font-weight: bold; }
+        .status-izin { color: #7c3aed; font-weight: bold; }
+        .status-cuti { color: #0f766e; font-weight: bold; }
+        .status-alpha { color: #991b1b; font-weight: bold; }
+        .status-lain { color: #374151; font-weight: bold; }
+        .tidak-absen { color: #991b1b; font-weight: bold; letter-spacing: .4px; margin-bottom: 2px; }
+        .jam { color: #334155; margin-top: 1px; }
+        .jam-istirahat { color: #d97706; margin-top: 1px; font-weight: 500; }
+        .jam-kerja { color: #475569; margin-top: 1px; }
+        .alasan-telat { color: #dc2626; margin-top: 1px; font-size: 6pt; }
+        .keterangan { color: #64748b; margin-top: 1px; font-size: 6pt; }
+        .photo-grid { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; page-break-inside: avoid !important; break-inside: avoid !important; }
+        .photo-item { display: flex; flex-direction: column; align-items: center; border: 1px solid #cbd5e1; border-radius: 3px; padding: 2px; background: #ffffff; width: 54px; page-break-inside: avoid !important; break-inside: avoid !important; }
+        .photo-img { width: 48px; height: 44px; object-fit: cover; border-radius: 2px; }
+        .photo-label { font-size: 5.2pt; font-weight: bold; color: #334155; margin-top: 1.5px; text-transform: uppercase; text-align: center; line-height: 1; white-space: nowrap; }
+        .no-photo { color: #94a3b8; font-size: 6.5pt; text-align: center; display: block; }
+        .print-container { position: fixed; top: 15px; right: 15px; z-index: 9999; }
+        .print-button { border: none; padding: 10px 18px; background: #111827; color: white; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .print-button:hover { background: #374151; }
+        .footer { margin-top: 8px; font-size: 7pt; color: #94a3b8; border-top: 1px dashed #cbd5e1; padding-top: 3px; text-align: center; }
+        @media screen { body { padding: 12px; } .report { box-shadow: 0 2px 10px rgba(0, 0, 0, .12); } }
+        @media print {
+            @page { size: A4 landscape; margin: 6mm 10mm 6mm 10mm; }
+            body { background: white; padding: 0; margin: 0; font-size: 6.5pt; }
+            .print-container, .footer { display: none !important; }
+            .report { width: 100% !important; max-width: none !important; min-height: auto !important; margin: 0 !important; padding: 2mm 4mm !important; box-shadow: none !important; page-break-after: always !important; page-break-inside: auto !important; break-inside: auto !important; }
+            .attendance-table { page-break-inside: auto !important; break-inside: auto !important; }
+            .attendance-table thead { display: table-header-group !important; }
+            .attendance-table tbody tr { page-break-inside: avoid !important; break-inside: avoid !important; break-inside: avoid-page !important; }
+            .attendance-table th { padding: 2px 4px !important; font-size: 6.5pt !important; }
+            .attendance-table td { padding: 1.5px 4px !important; font-size: 6pt !important; line-height: 1.15 !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+            .photo-grid { page-break-inside: avoid !important; break-inside: avoid !important; }
+            .photo-item { width: 48px !important; padding: 1.5px !important; page-break-inside: avoid !important; break-inside: avoid !important; }
+            .photo-img { width: 43px !important; height: 40px !important; }
+            .photo-label { font-size: 4.8pt !important; }
+        }
+    </style>
+</head>
+<body>
+    ${!isPdf ? `<div class="print-container"><button class="print-button" onclick="window.print()">Cetak / Simpan PDF</button></div>` : ''}
+    <div id="laporan">${reportsHtml}</div>
+    <div class="footer">Dokumen ini dicetak secara otomatis oleh Sistem Absensi ${escapeHTML(namaPt.toUpperCase())} &mdash; ${format(new Date(), "d MMMM yyyy, HH:mm", { locale: id })} WIB</div>
+    ${!isPdf ? `<script>window.onload = function() { setTimeout(function() { window.print(); }, 600); };</script>` : ''}
+</body>
+</html>`;
+    };
+
+    const handleExportPdf = async () => {
+        let periodStr = '';
+        if (reportType === 'daily') {
+            periodStr = format(targetDate, "dd MMMM yyyy", { locale: id }).toUpperCase();
+        } else if (reportType === 'weekly') {
+            periodStr = `${format(startDate, "dd MMM")} - ${format(endDate, "dd MMM yyyy", { locale: id })}`.toUpperCase();
+        } else if (reportType === 'custom') {
+            periodStr = `${format(startDate, "dd MMM yyyy", { locale: id })} - ${format(endDate, "dd MMM yyyy", { locale: id })}`.toUpperCase();
+        } else {
+            periodStr = format(targetDate, "MMMM yyyy", { locale: id }).toUpperCase();
+        }
+
+        const todayStamp = format(new Date(), "dd-MM-yyyy");
+        const pdfFileName = `LAPORAN REKAP ABSENSI TENAGA KERJA PT EJA - ${periodStr} (${todayStamp}).pdf`;
+        setIsExporting(true);
+        setExportProgress("Memuat logo & gambar absensi untuk PDF...");
+        try {
+            let logoDataUrl = '';
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                const logoRes = await fetch('/logo_elok_buah.jpg', { signal: controller.signal });
+                clearTimeout(timeoutId);
+                const logoBlob = await logoRes.blob();
+                logoDataUrl = await new Promise<string>((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result as string);
+                    reader.onerror = () => resolve('');
+                    reader.readAsDataURL(logoBlob);
+                });
+            } catch (_) {}
+
+            const imageCache: Record<string, string> = {};
+            const uniquePhotoUrls = new Set<string>();
+            processedData.forEach(r => {
+                if (r.checkInPhoto) uniquePhotoUrls.add(r.checkInPhoto);
+                if (r.breakStartPhoto) uniquePhotoUrls.add(r.breakStartPhoto);
+                if (r.breakEndPhoto) uniquePhotoUrls.add(r.breakEndPhoto);
+                if (r.checkOutPhoto) uniquePhotoUrls.add(r.checkOutPhoto);
+                if ((r as any).lateReasonPhoto) uniquePhotoUrls.add((r as any).lateReasonPhoto);
+            });
+
+            const compressBlobToThumbnailBase64 = (blob: Blob, maxW = 160, maxH = 140, quality = 0.75): Promise<string> => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    const url = URL.createObjectURL(blob);
+                    img.onload = () => {
+                        URL.revokeObjectURL(url);
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > height) {
+                            if (width > maxW) {
+                                height = Math.round((height * maxW) / width);
+                                width = maxW;
+                            }
+                        } else {
+                            if (height > maxH) {
+                                width = Math.round((width * maxH) / height);
+                                height = maxH;
+                            }
+                        }
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = Math.max(1, width);
+                        canvas.height = Math.max(1, height);
+                        const ctx = canvas.getContext('2d');
+                        if (!ctx) {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result as string);
+                            reader.onerror = () => resolve('');
+                            reader.readAsDataURL(blob);
+                            return;
+                        }
+
+                        ctx.drawImage(img, 0, 0, width, height);
+                        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                        resolve(dataUrl);
+                    };
+                    img.onerror = () => {
+                        URL.revokeObjectURL(url);
+                        resolve('');
+                    };
+                    img.src = url;
+                });
+            };
+
+            const urlArray = Array.from(uniquePhotoUrls);
+            
+            const fetchSingleImageBase64 = async (rawUrl: string, retries = 2) => {
+                if (!rawUrl) return;
+                if (rawUrl.startsWith('data:')) {
+                    imageCache[rawUrl] = rawUrl;
+                    return;
+                }
+
+                const resolved = resolveFileUrl(rawUrl);
+                if (!resolved) return;
+
+                const fullUrl = resolved.startsWith('http')
+                    ? resolved
+                    : `${window.location.origin}${resolved.startsWith('/') ? '' : '/'}${resolved}`;
+
+                if (imageCache[rawUrl]) return;
+
+                for (let i = 0; i <= retries; i++) {
+                    try {
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 6000);
+                        const res = await fetch(fullUrl, { signal: controller.signal });
+                        clearTimeout(timeoutId);
+
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        const blob = await res.blob();
+                        const b64 = await compressBlobToThumbnailBase64(blob, 160, 140, 0.75);
+                        if (b64 && b64.startsWith('data:image')) {
+                            imageCache[rawUrl] = b64;
+                            imageCache[resolved] = b64;
+                            imageCache[fullUrl] = b64;
+                            return;
+                        }
+                    } catch (e) {
+                        console.warn(`Preload image attempt ${i + 1} failed for ${fullUrl}:`, e);
+                        if (i === retries) {
+                            imageCache[rawUrl] = fullUrl;
+                            imageCache[resolved] = fullUrl;
+                        } else {
+                            await new Promise(r => setTimeout(r, 400));
+                        }
+                    }
+                }
+            };
+
+            const chunkSize = 8;
+            for (let i = 0; i < urlArray.length; i += chunkSize) {
+                const chunk = urlArray.slice(i, i + chunkSize);
+                setExportProgress(`Memuat gambar absensi (${Math.min(i + chunkSize, urlArray.length)}/${urlArray.length})...`);
+                await Promise.all(chunk.map(url => fetchSingleImageBase64(url)));
+            }
+
+            setExportProgress("Menyusun dokumen PDF...");
+            const html = buildRecapReportHtml({
+                docTitle: pdfFileName,
+                periodStr,
+                namaPt: "PT Elok Jaya Abadhi",
+                singkatanPt: "PT EJA",
+                alamatPt: "Sistem Manajemen Kehadiran Digital",
+                logoDataUrl,
+                usersList: users || [],
+                processedData,
+                startDate,
+                endDate,
+                imageCache,
+                isPdf: true
+            });
+
+            const container = document.createElement('div');
+            container.style.position = 'fixed';
+            container.style.left = '-9999px';
+            container.style.top = '0';
+            container.style.width = '1050px';
+            container.style.backgroundColor = '#ffffff';
+            container.innerHTML = html;
+            document.body.appendChild(container);
+
+            const imgs = Array.from(container.querySelectorAll('img'));
+            await Promise.all(imgs.map(img => {
+                if (img.complete) return Promise.resolve();
+                return new Promise(res => { img.onload = res; img.onerror = res; });
+            }));
+
+            const html2pdfLib = await loadHtml2Pdf();
+            const opt = {
+                margin: [5, 5, 5, 5],
+                filename: pdfFileName,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 1050, letterRendering: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape', compress: true },
+                pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.attendance-table tbody tr', '.summary', '.header', '.photo-item'] }
+            };
+            await html2pdfLib().set(opt).from(container).save();
+            document.body.removeChild(container);
+
+            toast({ title: "✅ PDF Berhasil Diunduh", description: pdfFileName });
+        } catch (e: any) {
+            toast({ title: "Gagal Export PDF", description: e.message, variant: "destructive" });
+        } finally {
+            setIsExporting(false);
+            setExportProgress("");
+        }
     };
 
     const handleExport = async () => {
@@ -932,6 +1557,14 @@ export default function RecapPage() {
                             <Button variant="outline" className="gap-2 h-10 font-bold shadow-sm" onClick={handleExport}>
                                 <FileDown className="h-4 w-4" /> Export HTML
                             </Button>
+                            <Button 
+                                variant="outline" 
+                                className="gap-2 bg-red-50 text-red-700 border-red-200 hover:bg-red-100 h-10 font-bold shadow-sm" 
+                                onClick={handleExportPdf}
+                                disabled={isExporting}
+                            >
+                                <FileDown className="h-4 w-4" /> {isExporting ? "Mengekspor..." : "Export PDF Rekap"}
+                            </Button>
                         </div>
                     </div>
                     <div className="p-0">
@@ -1159,7 +1792,7 @@ export default function RecapPage() {
                         <Loader2 className="w-12 h-12 text-emerald-600 animate-spin" />
                         <div>
                             <h3 className="font-black text-gray-900 text-lg uppercase tracking-tight">Mengekspor Laporan</h3>
-                            <p className="text-sm text-gray-500 mt-2">Sedang memproses dokumen PDF harian dan menggabungkannya ke ZIP.</p>
+                            <p className="text-sm text-gray-500 mt-2">{exportProgress || "Sedang memproses dokumen laporan..."}</p>
                             <p className="text-xs text-emerald-600 font-bold mt-3 bg-emerald-50 px-3 py-1 rounded-full inline-block">Mohon jangan menutup halaman ini</p>
                         </div>
                     </div>
