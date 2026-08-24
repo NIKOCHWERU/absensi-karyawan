@@ -709,6 +709,184 @@ export default function RecapPage() {
 </html>`;
     };
 
+    const handleExportHtmlRekap = async () => {
+        let periodStr = '';
+        if (reportType === 'daily') {
+            periodStr = format(targetDate, "dd MMMM yyyy", { locale: id }).toUpperCase();
+        } else if (reportType === 'weekly') {
+            periodStr = `${format(startDate, "dd MMM")} - ${format(endDate, "dd MMM yyyy", { locale: id })}`.toUpperCase();
+        } else if (reportType === 'custom') {
+            periodStr = `${format(startDate, "dd MMM yyyy", { locale: id })} - ${format(endDate, "dd MMM yyyy", { locale: id })}`.toUpperCase();
+        } else {
+            periodStr = format(targetDate, "MMMM yyyy", { locale: id }).toUpperCase();
+        }
+
+        const fileName = `LAPORAN REKAP ABSENSI TENAGA KERJA PT EJA - ${periodStr}.html`;
+        setIsExporting(true);
+        setExportProgress("Memuat logo & gambar absensi untuk HTML...");
+        try {
+            let logoDataUrl = '';
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                const logoRes = await fetch('/logo_elok_buah.jpg', { signal: controller.signal });
+                clearTimeout(timeoutId);
+                const logoBlob = await logoRes.blob();
+                logoDataUrl = await new Promise<string>((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result as string);
+                    reader.onerror = () => resolve('');
+                    reader.readAsDataURL(logoBlob);
+                });
+            } catch (_) {}
+
+            const imageCache: Record<string, string> = {};
+            const uniquePhotoUrls = new Set<string>();
+            processedData.forEach(r => {
+                if (r.checkInPhoto) uniquePhotoUrls.add(r.checkInPhoto);
+                if (r.breakStartPhoto) uniquePhotoUrls.add(r.breakStartPhoto);
+                if (r.breakEndPhoto) uniquePhotoUrls.add(r.breakEndPhoto);
+                if (r.checkOutPhoto) uniquePhotoUrls.add(r.checkOutPhoto);
+                if ((r as any).lateReasonPhoto) uniquePhotoUrls.add((r as any).lateReasonPhoto);
+            });
+
+            const compressBlobToThumbnailBase64 = (blob: Blob, maxW = 160, maxH = 140, quality = 0.75): Promise<string> => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    const url = URL.createObjectURL(blob);
+                    img.onload = () => {
+                        URL.revokeObjectURL(url);
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > height) {
+                            if (width > maxW) {
+                                height = Math.round((height * maxW) / width);
+                                width = maxW;
+                            }
+                        } else {
+                            if (height > maxH) {
+                                width = Math.round((width * maxH) / height);
+                                height = maxH;
+                            }
+                        }
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = Math.max(1, width);
+                        canvas.height = Math.max(1, height);
+                        const ctx = canvas.getContext('2d');
+                        if (!ctx) {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result as string);
+                            reader.onerror = () => resolve('');
+                            reader.readAsDataURL(blob);
+                            return;
+                        }
+
+                        ctx.drawImage(img, 0, 0, width, height);
+                        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                        resolve(dataUrl);
+                    };
+                    img.onerror = () => {
+                        URL.revokeObjectURL(url);
+                        resolve('');
+                    };
+                    img.src = url;
+                });
+            };
+
+            const urlArray = Array.from(uniquePhotoUrls);
+            
+            const fetchSingleImageBase64 = async (rawUrl: string, retries = 2) => {
+                if (!rawUrl) return;
+                if (rawUrl.startsWith('data:')) {
+                    imageCache[rawUrl] = rawUrl;
+                    return;
+                }
+
+                const resolved = resolveFileUrl(rawUrl);
+                if (!resolved) return;
+
+                const fullUrl = resolved.startsWith('http')
+                    ? resolved
+                    : `${window.location.origin}${resolved.startsWith('/') ? '' : '/'}${resolved}`;
+
+                if (imageCache[rawUrl]) return;
+
+                for (let i = 0; i <= retries; i++) {
+                    try {
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 6000);
+                        const res = await fetch(fullUrl, { signal: controller.signal });
+                        clearTimeout(timeoutId);
+
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        const blob = await res.blob();
+                        const b64 = await compressBlobToThumbnailBase64(blob, 160, 140, 0.75);
+                        if (b64 && b64.startsWith('data:image')) {
+                            imageCache[rawUrl] = b64;
+                            imageCache[resolved] = b64;
+                            imageCache[fullUrl] = b64;
+                            return;
+                        }
+                    } catch (e) {
+                        console.warn(`Preload image attempt ${i + 1} failed for ${fullUrl}:`, e);
+                        if (i === retries) {
+                            imageCache[rawUrl] = fullUrl;
+                            imageCache[resolved] = fullUrl;
+                        } else {
+                            await new Promise(r => setTimeout(r, 400));
+                        }
+                    }
+                }
+            };
+
+            const chunkSize = 8;
+            for (let i = 0; i < urlArray.length; i += chunkSize) {
+                const chunk = urlArray.slice(i, i + chunkSize);
+                setExportProgress(`Memuat gambar absensi (${Math.min(i + chunkSize, urlArray.length)}/${urlArray.length})...`);
+                await Promise.all(chunk.map(url => fetchSingleImageBase64(url)));
+            }
+
+            setExportProgress("Menyusun dokumen HTML...");
+            const html = buildRecapReportHtml({
+                docTitle: fileName,
+                periodStr,
+                namaPt: "PT Elok Jaya Abadhi",
+                singkatanPt: "PT EJA",
+                alamatPt: "Sistem Manajemen Kehadiran Digital",
+                logoDataUrl,
+                usersList: users || [],
+                processedData,
+                startDate,
+                endDate,
+                imageCache,
+                isPdf: false
+            });
+
+            const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+            const blobUrl = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = blobUrl;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(blobUrl);
+            }, 5000);
+
+            toast({ title: "✅ HTML Rekap Berhasil Diunduh", description: fileName });
+        } catch (e: any) {
+            toast({ title: "Gagal Export HTML Rekap", description: e.message, variant: "destructive" });
+        } finally {
+            setIsExporting(false);
+            setExportProgress("");
+        }
+    };
+
     const handleExportPdf = async () => {
         let periodStr = '';
         if (reportType === 'daily') {
@@ -1556,6 +1734,14 @@ export default function RecapPage() {
                             )}
                             <Button variant="outline" className="gap-2 h-10 font-bold shadow-sm" onClick={handleExport}>
                                 <FileDown className="h-4 w-4" /> Export HTML
+                            </Button>
+                            <Button 
+                                variant="outline" 
+                                className="gap-2 bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 h-10 font-bold shadow-sm" 
+                                onClick={handleExportHtmlRekap}
+                                disabled={isExporting}
+                            >
+                                <FileDown className="h-4 w-4" /> {isExporting ? "Mengekspor..." : "Export HTML Rekap"}
                             </Button>
                             <Button 
                                 variant="outline" 
