@@ -56,6 +56,7 @@ export default function RecapPage() {
     const queryClient = useQueryClient();
     const [isExporting, setIsExporting] = useState(false);
     const [exportProgress, setExportProgress] = useState("");
+    const [pageSplitMode, setPageSplitMode] = useState<"split" | "combine">("split");
 
     const [targetDate, setTargetDate] = useState(new Date());
     const [selectedPhotoRecord, setSelectedPhotoRecord] = useState<Attendance | null>(null);
@@ -294,7 +295,8 @@ export default function RecapPage() {
         startDate,
         endDate,
         imageCache = {},
-        isPdf = false
+        isPdf = false,
+        pageSplitMode = "split"
     }: {
         docTitle: string;
         periodStr: string;
@@ -308,6 +310,7 @@ export default function RecapPage() {
         endDate: Date;
         imageCache?: Record<string, string>;
         isPdf?: boolean;
+        pageSplitMode?: "split" | "combine";
     }) => {
         const escapeHTML = (value: any): string => {
             if (value === null || value === undefined) return "";
@@ -628,7 +631,7 @@ export default function RecapPage() {
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; }
         body { background: #eeeeee; color: #0f172a; font-family: Arial, Helvetica, sans-serif; font-size: 7.5pt; }
-        .report { width: 100%; max-width: 1050px; margin: 10px auto; padding: 10px 14px; background: #ffffff; page-break-after: always; page-break-inside: auto; break-inside: auto; }
+        .report { width: 100%; max-width: 1050px; margin: 10px auto; padding: 10px 14px; background: #ffffff; page-break-after: ${pageSplitMode === "split" ? "always" : "auto"}; page-break-inside: avoid; break-inside: avoid; }
         .report:last-child { page-break-after: auto; }
         .letterhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; min-height: 36px; }
         .logo-img { height: 36px; max-width: 110px; object-fit: contain; flex-shrink: 0; }
@@ -687,7 +690,7 @@ export default function RecapPage() {
             @page { size: A4 landscape; margin: 6mm 10mm 6mm 10mm; }
             body { background: white; padding: 0; margin: 0; font-size: 6.5pt; }
             .print-container, .footer { display: none !important; }
-            .report { width: 100% !important; max-width: none !important; min-height: auto !important; margin: 0 !important; padding: 2mm 4mm !important; box-shadow: none !important; page-break-after: always !important; page-break-inside: auto !important; break-inside: auto !important; }
+            .report { width: 100% !important; max-width: none !important; min-height: auto !important; margin: 0 !important; padding: 2mm 4mm !important; box-shadow: none !important; page-break-after: ${pageSplitMode === "split" ? "always !important" : "auto !important"}; page-break-inside: avoid !important; break-inside: avoid !important; }
             .attendance-table { page-break-inside: auto !important; break-inside: auto !important; }
             .attendance-table thead { display: table-header-group !important; }
             .attendance-table tbody tr { page-break-inside: avoid !important; break-inside: avoid !important; break-inside: avoid-page !important; }
@@ -860,7 +863,8 @@ export default function RecapPage() {
                 startDate,
                 endDate,
                 imageCache,
-                isPdf: false
+                isPdf: false,
+                pageSplitMode
             });
 
             const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
@@ -1039,7 +1043,8 @@ export default function RecapPage() {
                 startDate,
                 endDate,
                 imageCache,
-                isPdf: true
+                isPdf: true,
+                pageSplitMode
             });
 
             const container = document.createElement('div');
@@ -1719,6 +1724,15 @@ export default function RecapPage() {
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                                 <Input placeholder="Cari nama..." className="pl-9 h-10" value={searchName} onChange={(e) => setSearchName(e.target.value)} />
                             </div>
+                            <Select value={pageSplitMode} onValueChange={(val: any) => setPageSplitMode(val)}>
+                                <SelectTrigger className="w-[170px] bg-white h-10 font-medium">
+                                    <SelectValue placeholder="Tata Letak Halaman" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="split">Pisah Per Karyawan</SelectItem>
+                                    <SelectItem value="combine">Gabung Halaman</SelectItem>
+                                </SelectContent>
+                            </Select>
                             <Button variant="outline" className="gap-2 bg-green-50 text-green-700 border-green-200 hover:bg-green-100 h-10 font-bold" onClick={() => handleOpenManualModal()}>
                                 <Plus className="h-4 w-4" /> Input Manual
                             </Button>
