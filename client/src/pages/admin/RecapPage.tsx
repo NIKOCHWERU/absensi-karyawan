@@ -631,8 +631,23 @@ export default function RecapPage() {
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; }
         body { background: #eeeeee; color: #0f172a; font-family: Arial, Helvetica, sans-serif; font-size: 7.5pt; }
-        .report { width: 100%; max-width: 1050px; margin: 10px auto; padding: 10px 14px; background: #ffffff; page-break-after: ${pageSplitMode === "split" ? "always" : "auto"}; page-break-inside: avoid; break-inside: avoid; }
-        .report:last-child { page-break-after: auto; }
+        .report { 
+            width: 100%; 
+            max-width: 1050px; 
+            margin: 10px auto 30px auto; 
+            padding: 10px 14px; 
+            background: #ffffff; 
+            page-break-after: ${pageSplitMode === "split" ? "always" : "auto"}; 
+            page-break-inside: avoid; 
+            break-inside: avoid; 
+            border-bottom: ${pageSplitMode === "combine" ? "3px double #94a3b8" : "none"};
+            padding-bottom: ${pageSplitMode === "combine" ? "35px" : "10px"};
+        }
+        .report:last-child { 
+            page-break-after: auto; 
+            border-bottom: none;
+            padding-bottom: 10px;
+        }
         .letterhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; min-height: 36px; }
         .logo-img { height: 36px; max-width: 110px; object-fit: contain; flex-shrink: 0; }
         .company-block { text-align: right; flex-grow: 1; margin-left: 12px; }
@@ -690,7 +705,23 @@ export default function RecapPage() {
             @page { size: A4 landscape; margin: 6mm 10mm 6mm 10mm; }
             body { background: white; padding: 0; margin: 0; font-size: 6.5pt; }
             .print-container, .footer { display: none !important; }
-            .report { width: 100% !important; max-width: none !important; min-height: auto !important; margin: 0 !important; padding: 2mm 4mm !important; box-shadow: none !important; page-break-after: ${pageSplitMode === "split" ? "always !important" : "auto !important"}; page-break-inside: avoid !important; break-inside: avoid !important; }
+            .report { 
+                width: 100% !important; 
+                max-width: none !important; 
+                min-height: auto !important; 
+                margin: 0 0 10mm 0 !important; 
+                padding: 2mm 4mm 6mm 4mm !important; 
+                box-shadow: none !important; 
+                page-break-after: ${pageSplitMode === "split" ? "always !important" : "auto !important"}; 
+                page-break-inside: avoid !important; 
+                break-inside: avoid !important; 
+                border-bottom: ${pageSplitMode === "combine" ? "2px dashed #0f172a !important" : "none !important"}; 
+            }
+            .report:last-child { 
+                border-bottom: none !important; 
+                padding-bottom: 2mm !important; 
+                margin-bottom: 0 !important; 
+            }
             .attendance-table { page-break-inside: auto !important; break-inside: auto !important; }
             .attendance-table thead { display: table-header-group !important; }
             .attendance-table tbody tr { page-break-inside: avoid !important; break-inside: avoid !important; break-inside: avoid-page !important; }
