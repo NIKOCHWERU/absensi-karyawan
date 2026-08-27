@@ -667,10 +667,10 @@ export default function RecapPage() {
         .summary { display: flex; width: 100%; margin-bottom: 6px; border: 1px solid #cbd5e1; background: #f8fafc; page-break-inside: avoid; }
         .summary-item { flex: 1; padding: 2.5px 4px; border-right: 1px solid #cbd5e1; text-align: center; }
         .summary-item:last-child { border-right: none; }
-        .summary-item-highlight { background: #f0fdf4; }
+        .summary-item-highlight { background: #f1f5f9; }
         .summary-label { display: block; margin-bottom: 1px; color: #64748b; font-size: 6pt; text-transform: uppercase; }
         .summary-value { font-size: 8pt; font-weight: bold; color: #0f172a; }
-        .summary-value-work { color: #166534; font-weight: 800; }
+        .summary-value-work { color: #0f172a; font-weight: 800; }
         .attendance-table { width: 100%; border-collapse: collapse; table-layout: fixed; page-break-inside: auto; break-inside: auto; }
         .attendance-table thead { display: table-header-group; }
         .attendance-table tbody tr { page-break-inside: avoid !important; break-inside: avoid !important; break-inside: avoid-page !important; }
@@ -678,18 +678,18 @@ export default function RecapPage() {
         .attendance-table td { border: 1px solid #cbd5e1; padding: 2px 4px; vertical-align: middle; font-size: 6.5pt; line-height: 1.2; page-break-inside: avoid !important; break-inside: avoid !important; }
         .attendance-table tbody tr:nth-child(even) { background: #f8fafc; }
         .date-column { font-weight: bold; }
-        .status-hadir { color: #166534; font-weight: bold; }
-        .status-telat { color: #9a3412; font-weight: bold; }
-        .status-sakit { color: #1d4ed8; font-weight: bold; }
-        .status-izin { color: #7c3aed; font-weight: bold; }
-        .status-cuti { color: #0f766e; font-weight: bold; }
-        .status-alpha { color: #991b1b; font-weight: bold; }
-        .status-lain { color: #374151; font-weight: bold; }
-        .tidak-absen { color: #991b1b; font-weight: bold; letter-spacing: .4px; margin-bottom: 2px; }
+        .status-hadir { color: #0f172a; font-weight: bold; }
+        .status-telat { color: #334155; font-weight: bold; }
+        .status-sakit { color: #334155; font-weight: bold; }
+        .status-izin { color: #334155; font-weight: bold; }
+        .status-cuti { color: #334155; font-weight: bold; }
+        .status-alpha { color: #0f172a; font-weight: bold; }
+        .status-lain { color: #475569; font-weight: bold; }
+        .tidak-absen { color: #0f172a; font-weight: bold; letter-spacing: .4px; margin-bottom: 2px; }
         .jam { color: #334155; margin-top: 1px; }
-        .jam-istirahat { color: #d97706; margin-top: 1px; font-weight: 500; }
+        .jam-istirahat { color: #475569; margin-top: 1px; font-weight: 500; }
         .jam-kerja { color: #475569; margin-top: 1px; }
-        .alasan-telat { color: #dc2626; margin-top: 1px; font-size: 6pt; }
+        .alasan-telat { color: #475569; margin-top: 1px; font-size: 6pt; }
         .keterangan { color: #64748b; margin-top: 1px; font-size: 6pt; }
         .photo-grid { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; page-break-inside: avoid !important; break-inside: avoid !important; }
         .photo-item { display: flex; flex-direction: column; align-items: center; border: 1px solid #cbd5e1; border-radius: 3px; padding: 2px; background: #ffffff; width: 54px; page-break-inside: avoid !important; break-inside: avoid !important; }
