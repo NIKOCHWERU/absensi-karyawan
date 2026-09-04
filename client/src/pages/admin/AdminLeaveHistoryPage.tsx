@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { Loader2, ArrowLeft, Calendar, User as UserIcon, Search, Filter, Image as ImageIcon, Printer, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Loader2, ArrowLeft, Calendar, User as UserIcon, Search, Filter, Image as ImageIcon, Printer, Trash2, Eye } from "lucide-react";
 import { api } from "@shared/routes";
 import { useLocation } from "wouter";
 import { useState } from "react";
@@ -16,6 +17,7 @@ import { toTitleCase } from "@/lib/utils";
 export default function AdminLeaveHistoryPage() {
     const [, setLocation] = useLocation();
     const [searchTerm, setSearchTerm] = useState("");
+    const [viewingRequest, setViewingRequest] = useState<LeaveRequest | null>(null);
     const { toast } = useToast();
     const queryClient = useQueryClient();
 
@@ -389,6 +391,15 @@ export default function AdminLeaveHistoryPage() {
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
+                                                            className="rounded-lg text-emerald-600 border-emerald-100 hover:bg-emerald-50 h-8 w-8 p-0"
+                                                            onClick={() => setViewingRequest(req)}
+                                                            title="Lihat Detail Permohonan"
+                                                        >
+                                                            <Eye className="w-3.5 h-3.5" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
                                                             className="rounded-lg text-blue-600 border-blue-100 hover:bg-blue-50 h-8 w-8 p-0"
                                                             onClick={() => handlePrintLeave(req)}
                                                             title="Cetak Formulir Cuti"
@@ -417,6 +428,124 @@ export default function AdminLeaveHistoryPage() {
                 </Card>
             </div>
         </div>
+
+        {/* Modal Detail Permohonan Cuti */}
+        <Dialog open={!!viewingRequest} onOpenChange={(open) => !open && setViewingRequest(null)}>
+            <DialogContent className="sm:max-w-lg rounded-2xl p-6">
+                <DialogHeader>
+                    <div className="flex items-center justify-between gap-2 pr-6">
+                        <DialogTitle className="text-lg font-bold text-gray-900">
+                            Detail Permohonan Cuti
+                        </DialogTitle>
+                        {viewingRequest && (
+                            <span className={`px-2.5 py-1 rounded-md text-xs font-bold ${
+                                viewingRequest.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                viewingRequest.status === 'rejected' ? 'bg-red-100 text-red-700' :
+                                'bg-orange-100 text-orange-700'
+                            }`}>
+                                {viewingRequest.status === 'approved' ? 'Disetujui' : viewingRequest.status === 'rejected' ? 'Ditolak' : 'Pending'}
+                            </span>
+                        )}
+                    </div>
+                    <DialogDescription className="text-xs text-gray-500">
+                        Rincian data permohonan cuti karyawan sesuai input pengajuan.
+                    </DialogDescription>
+                </DialogHeader>
+
+                {viewingRequest && (() => {
+                    const userObj = users?.find(u => u.id === viewingRequest.userId);
+                    const userName = getUserName(viewingRequest.userId);
+                    const nik = userObj?.nik || userObj?.username || '-';
+                    const branch = userObj?.branch || '-';
+                    const position = userObj?.position || '-';
+                    const remaining = userObj?.remainingLeave ?? 12;
+
+                    let totalDays = 0;
+                    let dateList: string[] = [];
+                    if (viewingRequest.selectedDates) {
+                        dateList = viewingRequest.selectedDates.split(',').filter(Boolean);
+                        totalDays = dateList.length;
+                    } else {
+                        const start = new Date(viewingRequest.startDate);
+                        const end = new Date(viewingRequest.endDate);
+                        totalDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                    }
+
+                    return (
+                        <div className="space-y-4 py-2 text-sm">
+                            {/* Informasi Karyawan */}
+                            <div className="bg-gray-50 p-4 rounded-xl space-y-2 border border-gray-100">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Karyawan</p>
+                                        <p className="font-bold text-gray-900 text-base">{userName}</p>
+                                        <p className="text-xs text-gray-500 font-mono">NIK: {nik}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Sisa Cuti</p>
+                                        <p className="font-extrabold text-emerald-600">{remaining}/12 Hari</p>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 text-xs text-gray-600">
+                                    <div><span className="text-gray-400">Cabang:</span> {branch}</div>
+                                    <div><span className="text-gray-400">Jabatan:</span> {position}</div>
+                                </div>
+                            </div>
+
+                            {/* Rincian Cuti */}
+                            <div className="space-y-3">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                                        <p className="text-[10px] text-gray-400 font-bold uppercase">Durasi Cuti</p>
+                                        <p className="font-extrabold text-gray-800 text-base">{totalDays} Hari</p>
+                                    </div>
+                                    <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                                        <p className="text-[10px] text-gray-400 font-bold uppercase">Tgl Pengajuan</p>
+                                        <p className="font-bold text-gray-800 text-xs mt-1">
+                                            {viewingRequest.createdAt ? format(new Date(viewingRequest.createdAt), "d MMM yyyy, HH:mm", { locale: id }) : '-'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm space-y-1">
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase">Periode / Tanggal Cuti</p>
+                                    <p className="font-semibold text-gray-800">
+                                        {format(new Date(viewingRequest.startDate), "d MMMM yyyy", { locale: id })} - {format(new Date(viewingRequest.endDate), "d MMMM yyyy", { locale: id })}
+                                    </p>
+                                    {dateList.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5 pt-2">
+                                            {dateList.map((d, i) => (
+                                                <span key={i} className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-xs font-medium">
+                                                    {format(new Date(d), "d MMM yyyy", { locale: id })}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm space-y-1">
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase">Alasan Cuti / Keterangan</p>
+                                    <p className="text-gray-700 italic bg-gray-50 p-2.5 rounded-lg border border-gray-100 text-xs">
+                                        "{viewingRequest.reason}"
+                                    </p>
+                                </div>
+                            </div>
+
+                            <DialogFooter className="flex justify-between items-center gap-2 pt-2">
+                                <Button
+                                    variant="outline"
+                                    className="gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50"
+                                    onClick={() => handlePrintLeave(viewingRequest)}
+                                >
+                                    <Printer className="w-4 h-4" /> Cetak Form
+                                </Button>
+                                <Button variant="ghost" onClick={() => setViewingRequest(null)}>Tutup</Button>
+                            </DialogFooter>
+                        </div>
+                    );
+                })()}
+            </DialogContent>
+        </Dialog>
         </div>
     );
 }
