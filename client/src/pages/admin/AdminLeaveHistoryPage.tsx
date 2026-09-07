@@ -475,16 +475,10 @@ export default function AdminLeaveHistoryPage() {
                         <div className="space-y-4 py-2 text-sm">
                             {/* Informasi Karyawan */}
                             <div className="bg-gray-50 p-4 rounded-xl space-y-2 border border-gray-100">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Karyawan</p>
-                                        <p className="font-bold text-gray-900 text-base">{userName}</p>
-                                        <p className="text-xs text-gray-500 font-mono">NIK: {nik}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Sisa Cuti</p>
-                                        <p className="font-extrabold text-emerald-600">{remaining}/12 Hari</p>
-                                    </div>
+                                <div>
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Karyawan</p>
+                                    <p className="font-bold text-gray-900 text-base">{userName}</p>
+                                    <p className="text-xs text-gray-500 font-mono">NIK: {nik}</p>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 text-xs text-gray-600">
                                     <div><span className="text-gray-400">Cabang:</span> {branch}</div>
