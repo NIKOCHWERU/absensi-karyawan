@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Camera, RefreshCw, X, Check, SwitchCamera } from "lucide-react";
+import { Camera, RefreshCw, X, Check, SwitchCamera, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -175,24 +175,30 @@ export function CameraModal({ open, onClose, onCapture, locationAddress }: Camer
 
           {/* Top Controls - Hide when submitting */}
           {!isSubmitting && (
-            <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-10">
+            <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-10 gap-2">
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-full bg-black/20 text-white hover:bg-black/40 backdrop-blur-md"
+                className="rounded-full bg-black/20 text-white hover:bg-black/40 backdrop-blur-md shrink-0"
                 onClick={onClose}
               >
                 <X className="w-6 h-6" />
               </Button>
-              {!capturedPhoto && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/40 text-white text-[11px] backdrop-blur-md max-w-[210px] border border-white/10 shadow-sm">
+                <MapPin className={`w-3.5 h-3.5 shrink-0 ${locationAddress && !locationAddress.includes("tidak tersedia") ? "text-emerald-400" : "text-amber-400 animate-pulse"}`} />
+                <span className="truncate">{locationAddress || "Mendeteksi lokasi..."}</span>
+              </div>
+              {!capturedPhoto ? (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="rounded-full bg-black/20 text-white hover:bg-black/40 backdrop-blur-md"
+                  className="rounded-full bg-black/20 text-white hover:bg-black/40 backdrop-blur-md shrink-0"
                   onClick={toggleCamera}
                 >
                   <SwitchCamera className="w-6 h-6" />
                 </Button>
+              ) : (
+                <div className="w-10" />
               )}
             </div>
           )}

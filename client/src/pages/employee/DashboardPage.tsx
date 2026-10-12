@@ -391,25 +391,49 @@ export default function EmployeeDashboard() {
             return lastFetchResult.current;
         }
 
-        if (!navigator.geolocation) {
-            throw new Error("Geolocation is not supported by your browser");
+        setProcessingLocation(true);
+
+        const tryGetPosition = (options: PositionOptions): Promise<GeolocationPosition> => {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    return reject(new Error("Browser tidak mendukung geolokasi"));
+                }
+                navigator.geolocation.getCurrentPosition(resolve, reject, options);
+            });
+        };
+
+        let position: GeolocationPosition | null = null;
+
+        // Tier 1: Try high accuracy GPS (good outdoors)
+        if (navigator.geolocation) {
+            try {
+                position = await tryGetPosition({
+                    enableHighAccuracy: true,
+                    timeout: 6000,
+                    maximumAge: 60000
+                });
+            } catch (err) {
+                // Tier 2: Fallback to low accuracy (Cell towers / Wi-Fi, works indoors)
+                try {
+                    position = await tryGetPosition({
+                        enableHighAccuracy: false,
+                        timeout: 8000,
+                        maximumAge: 300000
+                    });
+                } catch (fallbackErr) {
+                    console.warn("GPS and network geolocation both failed:", fallbackErr);
+                }
+            }
         }
 
-        setProcessingLocation(true);
-        try {
-            const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-                navigator.geolocation.getCurrentPosition(resolve, reject, {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
-                });
-            });
-
+        if (position) {
             const { latitude, longitude } = position.coords;
-            let address = `${latitude},${longitude}`;
+            let address = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
 
             try {
-                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`, {
+                    headers: { 'Accept': 'application/json' }
+                });
                 const data = await res.json();
                 if (data && data.display_name) {
                     address = data.display_name;
@@ -419,30 +443,51 @@ export default function EmployeeDashboard() {
             }
 
             // Detection for Mock GPS (Best effort for Web)
-            // 1. Check for 'mocked' property (Android/Chrome non-standard)
-            // 2. Check for exactly 0 or 1 accuracy (standard in many mock apps)
             const isFakeGps = (position as any).mocked === true || position.coords.accuracy === 0 || position.coords.accuracy === 1;
 
             const result = { lat: latitude, lng: longitude, address, isFakeGps };
             setLocationAddress(address);
             lastLocationFetch.current = Date.now();
             lastFetchResult.current = result;
-            return result;
-        } catch (err: any) {
-            if (err.code === 1) { // PERMISSION_DENIED
-                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
-                if (isIOS) {
-                    throw new Error("Akses lokasi ditolak. Buka Pengaturan iPhone -> Privasi -> Layanan Lokasi (Aktifkan), lalu pastikan Browser memiliki izin.");
-                } else {
-                    throw new Error("Akses lokasi ditolak. Silakan aktifkan izin lokasi di pengaturan browser atau HP Anda.");
-                }
-            } else if (err.code === 3) { // TIMEOUT
-                throw new Error("Gagal mengambil lokasi (Timeout). Pastikan Anda berada di area terbuka dan koneksi internet stabil.");
-            }
-            throw err;
-        } finally {
             setProcessingLocation(false);
+            return result;
         }
+
+        // Tier 3: Fallback via Network / IP Geolocation if browser GPS is blocked
+        try {
+            const ipRes = await fetch("https://ipapi.co/json/");
+            if (ipRes.ok) {
+                const ipData = await ipRes.json();
+                if (ipData && (ipData.city || ipData.latitude)) {
+                    const lat = ipData.latitude || 0;
+                    const lng = ipData.longitude || 0;
+                    const cityParts = [ipData.city, ipData.region, ipData.country_name].filter(Boolean);
+                    const address = cityParts.length > 0 ? `${cityParts.join(", ")} (Estimasi Jaringan)` : "Lokasi Terdeteksi Jaringan";
+                    const result = { lat, lng, address, isFakeGps: false };
+                    setLocationAddress(address);
+                    lastLocationFetch.current = Date.now();
+                    lastFetchResult.current = result;
+                    setProcessingLocation(false);
+                    return result;
+                }
+            }
+        } catch (ipErr) {
+            console.warn("IP Geolocation fallback failed:", ipErr);
+        }
+
+        // Tier 4: Graceful fallback so attendance is NEVER blocked / trapped in an error loop!
+        setProcessingLocation(false);
+        const fallbackAddress = "Lokasi tidak tersedia (Izin Lokasi Belum Aktif)";
+        const fallbackResult = { lat: 0, lng: 0, address: fallbackAddress, isFakeGps: false };
+        setLocationAddress(fallbackAddress);
+
+        toast({
+            title: "Akses Lokasi Belum Aktif",
+            description: "Ketuk ikon 🔒 di sebelah URL Chrome -> Izin -> aktifkan Lokasi. Absensi tetap dapat disimpan.",
+            className: "bg-amber-600 text-white"
+        });
+
+        return fallbackResult;
     };
 
     const handleError = (err: any) => {
@@ -455,6 +500,9 @@ export default function EmployeeDashboard() {
     };
 
     const startAttendanceFlow = async (actionFn: (data: any) => Promise<any>, successTitle: string, isClockIn = false) => {
+        // Pre-fetch location immediately when flow is triggered
+        getCoordinates(false).catch(console.error);
+
         if (isClockIn && sessionCount === 0) {
             setActiveAction({ fn: actionFn, successTitle, type: 'attendance' });
             setIsShiftModalOpen(true);
