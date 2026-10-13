@@ -1687,30 +1687,26 @@ export default function RecapPage() {
                         splitMode: pageSplitMode
                     });
 
-                    // Unduh langsung file PDF per sub-periode (misal 8-9, 9-12, 12-13)
-                    triggerBlobDownload(pdfBlob, pdfFileName);
-
-                    // Simpan juga ke dalam bundel ZIP beserta versi HTML siap cetak
+                    // Simpan ke dalam bundel ZIP beserta versi HTML siap cetak
                     zip.file(pdfFileName, pdfBlob);
                     zip.file(`HTML_SIAP_CETAK/${htmlFileName}`, printableHtml);
                 } catch (e) {
                     console.error("Gagal membuat PDF untuk periode", periodStr, e);
                 }
 
-                await new Promise(resolve => setTimeout(resolve, 450));
+                await new Promise(resolve => setTimeout(resolve, 250));
             }
 
-            if (periods.length > 1) {
-                setExportProgress("Mengemas seluruh PDF ke dalam file ZIP...");
-                const zipContent = await zip.generateAsync({ type: "blob" });
-                const startStr = format(firstStart, "yyyyMMdd");
-                const endStr = format(lastEnd, "yyyyMMdd");
-                triggerBlobDownload(zipContent, `REKAP_ABSENSI_MASSAL_${startStr}_to_${endStr}.zip`);
-            }
+            setExportProgress("Mengemas seluruh PDF ke dalam 1 file ZIP...");
+            const zipContent = await zip.generateAsync({ type: "blob" });
+            const startStr = format(firstStart, "yyyyMMdd");
+            const endStr = format(lastEnd, "yyyyMMdd");
+            const zipFileName = `REKAP_ABSENSI_MASSAL_${startStr}_to_${endStr}.zip`;
+            triggerBlobDownload(zipContent, zipFileName);
 
             toast({
                 title: "✅ Export Harian Massal Selesai",
-                description: `${periods.length} laporan PDF (${periodLabels}) berhasil diunduh.`,
+                description: `${periods.length} laporan PDF (${periodLabels}) berhasil dikemas dalam ${zipFileName}.`,
             });
         } catch (err: any) {
             console.error("Gagal melakukan export massal", err);

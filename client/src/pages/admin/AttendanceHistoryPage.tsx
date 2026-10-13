@@ -868,16 +868,6 @@ export default function AttendanceHistoryPage() {
                         .toCanvas()
                         .toPdf()
                         .output('blob');
-                    const pdfUrl = URL.createObjectURL(blob);
-                    const dlLink = document.createElement("a");
-                    dlLink.href = pdfUrl;
-                    dlLink.download = `${docTitle}.pdf`;
-                    document.body.appendChild(dlLink);
-                    dlLink.click();
-                    setTimeout(() => {
-                        if (dlLink.parentNode) dlLink.parentNode.removeChild(dlLink);
-                        URL.revokeObjectURL(pdfUrl);
-                    }, 5000);
                     zip.file(`${docTitle}.pdf`, blob);
                 } catch (e) {
                     console.error("Gagal membuat PDF untuk periode", periodStr, e);
@@ -887,34 +877,37 @@ export default function AttendanceHistoryPage() {
                     container.parentNode.removeChild(container);
                 }
 
-                await new Promise(resolve => setTimeout(resolve, 600));
+                await new Promise(resolve => setTimeout(resolve, 300));
             }
 
-            if (periods.length > 1) {
-                try {
-                    toast({
-                        title: "Mengompresi File",
-                        description: "Menyatukan semua laporan foto PDF ke dalam satu file ZIP...",
-                    });
-                    const zipContent = await zip.generateAsync({ type: "blob" });
-                    const zipUrl = URL.createObjectURL(zipContent);
-                    const a = document.createElement("a");
-                    a.href = zipUrl;
-                    const startStr = format(periods[0].start, "yyyyMMdd");
-                    const endStr = format(periods[periods.length - 1].end, "yyyyMMdd");
-                    a.download = `REKAP_ABSENSI_FOTO_MASSAL_${startStr}_to_${endStr}.zip`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(zipUrl);
-                } catch (zipErr: any) {
-                    console.error("Gagal membuat file ZIP rekap foto", zipErr);
-                }
+            try {
+                toast({
+                    title: "Mengompresi File",
+                    description: "Menyatukan semua laporan foto PDF ke dalam satu file ZIP...",
+                });
+                const zipContent = await zip.generateAsync({ type: "blob" });
+                const zipUrl = URL.createObjectURL(zipContent);
+                const a = document.createElement("a");
+                a.href = zipUrl;
+                const startStr = format(periods[0].start, "yyyyMMdd");
+                const endStr = format(periods[periods.length - 1].end, "yyyyMMdd");
+                a.download = `REKAP_ABSENSI_FOTO_MASSAL_${startStr}_to_${endStr}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(zipUrl);
+                toast({
+                    title: "Ekspor Selesai",
+                    description: `${periods.length} laporan PDF (${periodLabels}) berhasil diunduh dalam 1 file ZIP.`,
+                });
+            } catch (zipErr: any) {
+                console.error("Gagal membuat file ZIP rekap foto", zipErr);
+                toast({
+                    title: "Error",
+                    description: "Gagal membuat file ZIP: " + zipErr.message,
+                    variant: "destructive"
+                });
             }
-            toast({
-                title: "Ekspor Selesai",
-                description: `${periods.length} laporan PDF (${periodLabels}) berhasil diunduh.`,
-            });
         } finally {
             setIsExporting(false);
         }
