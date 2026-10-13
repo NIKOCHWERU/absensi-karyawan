@@ -627,22 +627,20 @@ export default function RecapPage() {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${escapeHTML(docTitle)}</title>
     <style>
-        @page { size: A4 landscape; margin: 8mm 12mm 8mm 12mm; }
+        @page { size: A4 landscape; margin: 6mm 10mm 6mm 10mm; }
         * { box-sizing: border-box; }
-        ${isPdf ? `.html2pdf__overlay { left: 0 !important; top: 0 !important; right: auto !important; bottom: auto !important; margin: 0 !important; padding: 0 !important; }
-        .html2pdf__container { left: 0 !important; right: auto !important; top: 0 !important; margin: 0 !important; padding: 0 !important; }
-        .pdf-recap-root { margin: 0 !important; padding: 0 !important; background: #ffffff; color: #0f172a; font-family: Arial, Helvetica, sans-serif; font-size: 7.5pt; width: 100% !important; }` : 'html, body { margin: 0; padding: 0; }\n        body { background: #eeeeee; color: #0f172a; font-family: Arial, Helvetica, sans-serif; font-size: 7.5pt; }'}
+        ${isPdf ? `.pdf-recap-root { margin: 0 !important; padding: 0 !important; background: #ffffff; color: #0f172a; font-family: Arial, Helvetica, sans-serif; font-size: 6.5pt; width: 1047px !important; }` : 'html, body { margin: 0; padding: 0; }\n        body { background: #eeeeee; color: #0f172a; font-family: Arial, Helvetica, sans-serif; font-size: 7.5pt; }'}
         .report { 
             width: 100%; 
-            max-width: ${isPdf ? "none" : "1050px"}; 
-            margin: ${isPdf ? "0 0 6px 0" : "10px auto 30px auto"}; 
-            padding: ${isPdf ? "4px 8px" : "10px 14px"}; 
+            max-width: ${isPdf ? "1047px" : "1050px"}; 
+            margin: ${isPdf ? "0 0 6mm 0" : "10px auto 30px auto"}; 
+            padding: ${isPdf ? "2mm 4mm 4mm 4mm" : "10px 14px"}; 
             background: #ffffff; 
             page-break-after: ${pageSplitMode === "split" ? "always" : "auto"}; 
             page-break-inside: avoid; 
             break-inside: avoid; 
             border-bottom: ${pageSplitMode === "combine" ? "3px double #94a3b8" : "none"};
-            padding-bottom: ${pageSplitMode === "combine" ? (isPdf ? "16px" : "35px") : (isPdf ? "6px" : "10px")};
+            padding-bottom: ${pageSplitMode === "combine" ? (isPdf ? "16px" : "35px") : (isPdf ? "4mm" : "10px")};
         }
         .report:last-child { 
             page-break-after: auto; 
@@ -1076,107 +1074,75 @@ export default function RecapPage() {
         const savedScrollY = window.scrollY;
         window.scrollTo(0, 0);
 
-        const globalFixStyle = document.createElement('style');
-        globalFixStyle.innerHTML = `
-            .html2pdf__overlay { left: 0 !important; top: 0 !important; right: auto !important; bottom: auto !important; margin: 0 !important; padding: 0 !important; }
-            .html2pdf__container { left: 0 !important; right: auto !important; top: 0 !important; margin: 0 !important; padding: 0 !important; }
-        `;
-        document.head.appendChild(globalFixStyle);
+        // Container mounted directly with explicit A4 landscape inner printable width (277mm ~ 1047px)
+        const container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.left = '0';
+        container.style.top = '0';
+        container.style.width = '1047px';
+        container.style.backgroundColor = '#ffffff';
+        container.style.zIndex = '-9999';
+        container.style.opacity = '0';
+        container.style.pointerEvents = 'none';
+        container.style.margin = '0';
+        container.style.padding = '0';
 
-        const stagingRoot = document.createElement('div');
-        stagingRoot.style.position = 'fixed';
-        stagingRoot.style.left = '0';
-        stagingRoot.style.top = '0';
-        stagingRoot.style.width = '287mm';
-        stagingRoot.style.backgroundColor = '#ffffff';
-        stagingRoot.style.opacity = '0';
-        stagingRoot.style.pointerEvents = 'none';
-        stagingRoot.style.zIndex = '-9999';
-        document.body.appendChild(stagingRoot);
+        const wrapper = document.createElement('div');
+        wrapper.className = 'pdf-recap-root';
+        wrapper.style.width = '1047px';
+        wrapper.style.margin = '0';
+        wrapper.style.padding = '0';
+        wrapper.style.backgroundColor = '#ffffff';
+
+        if (reportSections.length === 0) {
+            const laporanEl = parsedDoc.getElementById('laporan');
+            wrapper.innerHTML = `<style>${styleTags}</style>${laporanEl ? laporanEl.innerHTML : parsedDoc.body.innerHTML}`;
+        } else {
+            wrapper.innerHTML = `<style>${styleTags}</style>` + reportSections.map(sec => sec.outerHTML).join('\n');
+        }
+
+        container.appendChild(wrapper);
+        document.body.appendChild(container);
 
         try {
-            const sectionsPerBatch = splitMode === "split" ? 5 : 8;
-            const batchElements: HTMLElement[] = [];
-
-            if (reportSections.length === 0) {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'pdf-recap-root';
-                wrapper.style.width = '100%';
-                wrapper.style.backgroundColor = '#ffffff';
-                const laporanEl = parsedDoc.getElementById('laporan');
-                wrapper.innerHTML = `<style>${styleTags}</style>${laporanEl ? laporanEl.innerHTML : parsedDoc.body.innerHTML}`;
-                stagingRoot.appendChild(wrapper);
-                batchElements.push(wrapper);
-            } else {
-                for (let i = 0; i < reportSections.length; i += sectionsPerBatch) {
-                    const slice = reportSections.slice(i, i + sectionsPerBatch);
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'pdf-recap-root';
-                    wrapper.style.width = '100%';
-                    wrapper.style.backgroundColor = '#ffffff';
-                    wrapper.innerHTML = `<style>${styleTags}</style>` + slice.map(sec => sec.outerHTML).join('\n');
-                    stagingRoot.appendChild(wrapper);
-                    batchElements.push(wrapper);
-                }
-            }
-
-            const imgs = Array.from(stagingRoot.querySelectorAll('img'));
+            // Tunggu seluruh gambar di dalam container selesai dimuat
+            const imgs = Array.from(container.querySelectorAll('img'));
             await Promise.all(imgs.map(img => {
                 if (img.complete) return Promise.resolve();
                 return new Promise(res => { img.onload = res; img.onerror = res; });
             }));
 
+            // Margin [6mm, 10mm, 6mm, 10mm] persis seperti @media print CSS pada file referensi
             const opt = {
-                margin: [5, 5, 5, 5],
+                margin: [6, 10, 6, 10],
                 filename: pdfFileName,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, logging: false, x: 0, y: 0, scrollX: 0, scrollY: 0, letterRendering: true },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape', compress: true },
-                pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.attendance-table tbody tr', '.summary', '.header', '.photo-item'] }
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    scrollX: 0,
+                    scrollY: 0,
+                    letterRendering: true
+                },
+                jsPDF: {
+                    unit: 'mm',
+                    format: 'a4',
+                    orientation: 'landscape',
+                    compress: true
+                },
+                pagebreak: {
+                    mode: ['css', 'legacy'],
+                    avoid: ['tr', '.attendance-table tbody tr', '.summary', '.header', '.photo-item']
+                }
             };
 
-            const alignContainerLeft = function (this: any) {
-                if (this?.prop?.container) {
-                    this.prop.container.style.left = '0px';
-                    this.prop.container.style.right = 'auto';
-                    this.prop.container.style.margin = '0px';
-                }
-                if (this?.prop?.overlay) {
-                    this.prop.overlay.style.left = '0px';
-                    this.prop.overlay.style.top = '0px';
-                }
-            };
-
-            let worker = html2pdfLib()
-                .set(opt)
-                .from(batchElements[0])
-                .toContainer()
-                .then(alignContainerLeft)
-                .toCanvas()
-                .toPdf();
-
-            for (let i = 1; i < batchElements.length; i++) {
-                const nextBatch = batchElements[i];
-                worker = worker
-                    .get('pdf')
-                    .then((pdf: any) => {
-                        pdf.addPage();
-                    })
-                    .from(nextBatch)
-                    .toContainer()
-                    .then(alignContainerLeft)
-                    .toCanvas()
-                    .toPdf();
-            }
-
+            const worker = html2pdfLib().set(opt).from(wrapper);
             const blob: Blob = await worker.output('blob');
             return blob;
         } finally {
-            if (stagingRoot.parentNode) {
-                stagingRoot.parentNode.removeChild(stagingRoot);
-            }
-            if (globalFixStyle.parentNode) {
-                globalFixStyle.parentNode.removeChild(globalFixStyle);
+            if (container.parentNode) {
+                container.parentNode.removeChild(container);
             }
             window.scrollTo(savedScrollX, savedScrollY);
         }
