@@ -525,15 +525,26 @@ export default function AttendanceHistoryPage() {
     };
 
     const handleBulkExport = async () => {
-        const dates: Date[] = [];
-        let curr = new Date(startDate);
-        const end = new Date(endDate);
-        while (curr <= end) {
-            dates.push(new Date(curr));
-            curr = addDays(curr, 1);
+        const periods: Array<{ start: Date; end: Date }> = [];
+        let curr = startOfDay(new Date(startDate));
+        const end = startOfDay(new Date(endDate));
+
+        if (curr.getTime() === end.getTime()) {
+            const dayOfWeek = curr.getDay();
+            const stepDays = dayOfWeek === 5 ? 3 : dayOfWeek === 6 ? 2 : 1;
+            periods.push({ start: new Date(curr), end: addDays(curr, stepDays) });
+        } else {
+            while (curr < end) {
+                const pStart = new Date(curr);
+                const dayOfWeek = pStart.getDay();
+                const stepDays = dayOfWeek === 5 ? 3 : dayOfWeek === 6 ? 2 : 1;
+                const pEnd = addDays(pStart, stepDays);
+                periods.push({ start: pStart, end: pEnd });
+                curr = pEnd;
+            }
         }
 
-        if (dates.length === 0) {
+        if (periods.length === 0) {
             toast({
                 title: "Info",
                 description: "Tidak ada data untuk rentang tanggal yang dipilih.",
@@ -558,9 +569,13 @@ export default function AttendanceHistoryPage() {
             return;
         }
 
+        const periodLabels = periods.map(
+            p => `${format(p.start, "d")}-${format(p.end, "d")} ${format(p.end, "MMM", { locale: id }).toUpperCase()}`
+        ).join(", ");
+
         toast({
             title: "Export Massal Dimulai",
-            description: `Mengekspor ${dates.length} laporan foto harian dalam format PDF ke dalam file ZIP. Mohon tunggu...`,
+            description: `Mengekspor ${periods.length} laporan foto (${periodLabels}) dalam format PDF...`,
         });
 
         const zip = new JSZip();
@@ -616,18 +631,16 @@ export default function AttendanceHistoryPage() {
                 });
             } catch (_) { }
 
-            // Loop through each day and export
-            for (let dIdx = 0; dIdx < dates.length; dIdx++) {
-                const d1 = dates[dIdx];
-                const d2 = addDays(d1, 1);
+            for (let pIdx = 0; pIdx < periods.length; pIdx++) {
+                const { start: d1, end: d2 } = periods[pIdx];
                 
                 const dayStr1 = format(d1, "d");
-                const monthStr1 = format(d1, "MMMM", { locale: id }).toUpperCase();
+                const monthStr1 = format(d1, "MMM yyyy", { locale: id }).toUpperCase();
                 const dayStr2 = format(d2, "d");
-                const monthStr2 = format(d2, "MMMM", { locale: id }).toUpperCase();
-                const yearStr = format(d1, "yyyy");
+                const monthStr2 = format(d2, "MMM yyyy", { locale: id }).toUpperCase();
                 
-                const docTitle = `REKAP ABSENSI FOTO NON MANAJEMEN ${dayStr1} ${monthStr1} - ${dayStr2} ${monthStr2} ${yearStr} PT EJA`;
+                const periodStr = `${format(d1, "dd MMM yyyy", { locale: id })} - ${format(d2, "dd MMM yyyy", { locale: id })}`.toUpperCase();
+                const docTitle = `LAPORAN REKAP ABSENSI TENAGA KERJA PT EJA - ${periodStr}`;
 
                 const dayRecords = attendanceHistory?.filter(att => {
                     const emp = getEmployee(att.userId);
@@ -635,12 +648,16 @@ export default function AttendanceHistoryPage() {
                     
                     if (searchName && !emp.fullName.toLowerCase().includes(searchName.toLowerCase())) return false;
                     
-                    const attDate = new Date(att.date);
-                    return format(attDate, "yyyy-MM-dd") === format(d1, "yyyy-MM-dd");
+                    const d = startOfDay(new Date(att.date));
+                    const s = startOfDay(d1);
+                    const e = endOfDay(d2);
+                    return (isAfter(d, s) || isEqual(d, s)) && (isBefore(d, e) || isEqual(d, e));
                 }).sort((a, b) => {
                     const nameA = getEmployee(a.userId)?.fullName || '';
                     const nameB = getEmployee(b.userId)?.fullName || '';
                     if (nameA !== nameB) return nameA.localeCompare(nameB);
+                    const dateDiff = new Date(a.date).getTime() - new Date(b.date).getTime();
+                    if (dateDiff !== 0) return dateDiff;
                     const timeA = a.checkIn ? new Date(a.checkIn).getTime() : 0;
                     const timeB = b.checkIn ? new Date(b.checkIn).getTime() : 0;
                     return timeA - timeB;
@@ -665,57 +682,43 @@ export default function AttendanceHistoryPage() {
                 let lastShownName = "";
                 let lastShownDate = "";
 
-                let html = `<!DOCTYPE html>
-<html>
-<head>
-  <title>${docTitle}</title>
+                let html = `<div class="pdf-content">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { display: none !important; }
+    .pdf-content * { box-sizing: border-box; margin: 0; padding: 0; }
     .pdf-content { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #1e293b; background: white; padding: 15px; width: 794px; box-sizing: border-box; }
-    .letterhead { display: flex; align-items: center; gap: 16px; padding-bottom: 10px; }
-    .logo-img { width: 60px; height: 60px; object-fit: contain; }
-    .company-block h1 { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; }
-    .company-block .tagline { font-size: 10px; color: #64748b; margin-top: 2px; }
-    .hr-thick { border: none; border-top: 2px solid #cbd5e1; margin: 6px 0 2px; }
-    .hr-thin  { border: none; border-top: 1px solid #e2e8f0; margin-bottom: 18px; }
-    .report-meta { text-align: center; margin-bottom: 20px; }
-    .report-meta h2 { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; color: #1e293b; }
-    .report-meta .sub { font-size: 10.5px; margin-top: 4px; color: #475569; }
-    table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
-    thead tr { background-color: #f8fafc; }
-    th { color: #374151; font-weight: 700; text-align: left; padding: 8px 8px; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 2px solid #1e293b; border-right: 1px solid #e2e8f0; }
-    th.c { text-align: center; }
-    td { padding: 8px 8px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; vertical-align: top; }
-    tbody tr:nth-child(even) { background-color: #f8fafc; }
-    .photo-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-    .photo-item { width: 100px; text-align: center; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px; background: white; }
-    .photo-img { width: 100%; height: 90px; object-fit: cover; border-radius: 2px; }
-    .photo-label { font-size: 8px; font-weight: bold; color: #64748b; margin-top: 2px; text-transform: uppercase; }
-    .status-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 9px; text-transform: uppercase; margin-bottom: 4px; }
-    .st-hadir { background: #dcfce7; color: #16a34a; }
-    .st-telat { background: #ffedd5; color: #ea580c; }
-    .st-sakit { background: #dbeafe; color: #2563eb; }
-    .st-izin  { background: #f3e8ff; color: #7c3aed; }
-    .st-cuti  { background: #e0f2fe; color: #0369a1; }
-    .st-alpha { background: #fee2e2; color: #dc2626; }
-    .st-unknown { background: #f1f5f9; color: #64748b; }
-    .signature-section { margin-top: 48px; display: flex; justify-content: space-between; padding: 0 24px; }
-    .sig-box { text-align: center; width: 160px; }
-    .sig-label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #374151; margin-bottom: 64px; }
-    .sig-name { font-size: 11px; font-weight: 800; border-top: 1.5px solid #374151; padding-top: 6px; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; }
-    .footer { margin-top: 18px; font-size: 8.5px; color: #94a3b8; border-top: 1px dashed #cbd5e1; padding-top: 8px; }
-    .btn-wrap { text-align: center; margin-top: 20px; }
-    .download-btn { display: inline-flex; align-items: center; gap: 8px; background: #1d4ed8; color: #fff; border: none; padding: 10px 28px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; letter-spacing: 0.5px; text-decoration: none; }
-    @media print {
-      body { padding: 12px 16px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .btn-wrap { display: none !important; }
-      tr { page-break-inside: avoid; }
-    }
+    .pdf-content .letterhead { display: flex; align-items: center; gap: 16px; padding-bottom: 10px; }
+    .pdf-content .logo-img { width: 60px; height: 60px; object-fit: contain; }
+    .pdf-content .company-block h1 { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; }
+    .pdf-content .company-block .tagline { font-size: 10px; color: #64748b; margin-top: 2px; }
+    .pdf-content .hr-thick { border: none; border-top: 2px solid #cbd5e1; margin: 6px 0 2px; }
+    .pdf-content .hr-thin  { border: none; border-top: 1px solid #e2e8f0; margin-bottom: 18px; }
+    .pdf-content .report-meta { text-align: center; margin-bottom: 20px; }
+    .pdf-content .report-meta h2 { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; color: #1e293b; }
+    .pdf-content .report-meta .sub { font-size: 10.5px; margin-top: 4px; color: #475569; }
+    .pdf-content table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+    .pdf-content thead tr { background-color: #f8fafc; }
+    .pdf-content th { color: #374151; font-weight: 700; text-align: left; padding: 8px 8px; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 2px solid #1e293b; border-right: 1px solid #e2e8f0; }
+    .pdf-content th.c { text-align: center; }
+    .pdf-content td { padding: 8px 8px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; vertical-align: top; }
+    .pdf-content tbody tr:nth-child(even) { background-color: #f8fafc; }
+    .pdf-content .photo-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .pdf-content .photo-item { width: 100px; text-align: center; border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px; background: white; }
+    .pdf-content .photo-img { width: 100%; height: 90px; object-fit: cover; border-radius: 2px; }
+    .pdf-content .photo-label { font-size: 8px; font-weight: bold; color: #64748b; margin-top: 2px; text-transform: uppercase; }
+    .pdf-content .status-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 9px; text-transform: uppercase; margin-bottom: 4px; }
+    .pdf-content .st-hadir { background: #dcfce7; color: #16a34a; }
+    .pdf-content .st-telat { background: #ffedd5; color: #ea580c; }
+    .pdf-content .st-sakit { background: #dbeafe; color: #2563eb; }
+    .pdf-content .st-izin  { background: #f3e8ff; color: #7c3aed; }
+    .pdf-content .st-cuti  { background: #e0f2fe; color: #0369a1; }
+    .pdf-content .st-alpha { background: #fee2e2; color: #dc2626; }
+    .pdf-content .st-unknown { background: #f1f5f9; color: #64748b; }
+    .pdf-content .signature-section { margin-top: 48px; display: flex; justify-content: space-between; padding: 0 24px; }
+    .pdf-content .sig-box { text-align: center; width: 160px; }
+    .pdf-content .sig-label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #374151; margin-bottom: 64px; }
+    .pdf-content .sig-name { font-size: 11px; font-weight: 800; border-top: 1.5px solid #374151; padding-top: 6px; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; }
+    .pdf-content .footer { margin-top: 18px; font-size: 8.5px; color: #94a3b8; border-top: 1px dashed #cbd5e1; padding-top: 8px; }
   </style>
-</head>
-<body>
-  <div class="pdf-content">
     <div class="letterhead">
       <img src="${logoDataUrl}" class="logo-img" alt="Logo" />
       <div class="company-block">
@@ -727,7 +730,7 @@ export default function AttendanceHistoryPage() {
     <hr class="hr-thin" />
     <div class="report-meta">
       <h2>Laporan Riwayat Kehadiran (Foto)</h2>
-      <p class="sub">Periode: ${format(d1, "EEEE, d MMMM yyyy", { locale: id })}</p>
+      <p class="sub">Periode: ${dayStr1} ${monthStr1} - ${dayStr2} ${monthStr2}</p>
     </div>
     <table>
       <thead>
@@ -742,7 +745,7 @@ export default function AttendanceHistoryPage() {
       <tbody>
         ${dayRecords.length === 0 ? `
           <tr>
-            <td colSpan="5" style="text-align:center;padding:20px;color:#94a3b8;">Tidak ada data absensi untuk hari ini.</td>
+            <td colSpan="5" style="text-align:center;padding:20px;color:#94a3b8;">Tidak ada data absensi untuk periode ini.</td>
           </tr>
         ` : dayRecords.map((r, index) => {
               const dateStr = format(new Date(r.date), 'EEEE, d MMMM yyyy', { locale: id });
@@ -823,9 +826,7 @@ export default function AttendanceHistoryPage() {
         }).join('')}
 </tbody>
 </table>
-</div>
-</body>
-</html>`;
+</div>`;
 
                 const opt = {
                     margin:       [4, 8, 4, 8],
@@ -837,14 +838,14 @@ export default function AttendanceHistoryPage() {
                 };
 
                 const container = document.createElement('div');
-                container.style.position = 'absolute';
+                container.style.position = 'fixed';
                 container.style.left = '0';
                 container.style.top = '0';
-                container.style.zIndex = '9999';
+                container.style.zIndex = '-9999';
                 container.style.width = '794px';
                 container.style.backgroundColor = '#ffffff';
                 container.style.pointerEvents = 'none';
-                container.style.opacity = '1';
+                container.style.opacity = '0';
                 container.innerHTML = html;
 
                 document.body.appendChild(container);
@@ -852,9 +853,19 @@ export default function AttendanceHistoryPage() {
 
                 try {
                     const blob = await html2pdf().set(opt).from(container).output('blob');
+                    const pdfUrl = URL.createObjectURL(blob);
+                    const dlLink = document.createElement("a");
+                    dlLink.href = pdfUrl;
+                    dlLink.download = `${docTitle}.pdf`;
+                    document.body.appendChild(dlLink);
+                    dlLink.click();
+                    setTimeout(() => {
+                        if (dlLink.parentNode) dlLink.parentNode.removeChild(dlLink);
+                        URL.revokeObjectURL(pdfUrl);
+                    }, 5000);
                     zip.file(`${docTitle}.pdf`, blob);
                 } catch (e) {
-                    console.error("Gagal membuat PDF untuk tanggal", d1, e);
+                    console.error("Gagal membuat PDF untuk periode", periodStr, e);
                 }
 
                 if (container.parentNode) {
@@ -864,34 +875,31 @@ export default function AttendanceHistoryPage() {
                 await new Promise(resolve => setTimeout(resolve, 600));
             }
 
-            try {
-                toast({
-                    title: "Mengompresi File",
-                    description: "Menyatukan semua laporan foto PDF ke dalam satu file ZIP...",
-                });
-                const zipContent = await zip.generateAsync({ type: "blob" });
-                const zipUrl = URL.createObjectURL(zipContent);
-                const a = document.createElement("a");
-                a.href = zipUrl;
-                const startStr = format(dates[0], "yyyyMMdd");
-                const endStr = format(dates[dates.length - 1], "yyyyMMdd");
-                a.download = `REKAP_ABSENSI_FOTO_MASSAL_${startStr}_to_${endStr}.zip`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(zipUrl);
-                toast({
-                    title: "Ekspor Selesai",
-                    description: "File ZIP rekap foto berhasil diunduh.",
-                });
-            } catch (zipErr: any) {
-                console.error("Gagal membuat file ZIP rekap foto", zipErr);
-                toast({
-                    title: "Error",
-                    description: "Gagal membuat file ZIP: " + zipErr.message,
-                    variant: "destructive"
-                });
+            if (periods.length > 1) {
+                try {
+                    toast({
+                        title: "Mengompresi File",
+                        description: "Menyatukan semua laporan foto PDF ke dalam satu file ZIP...",
+                    });
+                    const zipContent = await zip.generateAsync({ type: "blob" });
+                    const zipUrl = URL.createObjectURL(zipContent);
+                    const a = document.createElement("a");
+                    a.href = zipUrl;
+                    const startStr = format(periods[0].start, "yyyyMMdd");
+                    const endStr = format(periods[periods.length - 1].end, "yyyyMMdd");
+                    a.download = `REKAP_ABSENSI_FOTO_MASSAL_${startStr}_to_${endStr}.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(zipUrl);
+                } catch (zipErr: any) {
+                    console.error("Gagal membuat file ZIP rekap foto", zipErr);
+                }
             }
+            toast({
+                title: "Ekspor Selesai",
+                description: `${periods.length} laporan PDF (${periodLabels}) berhasil diunduh.`,
+            });
         } finally {
             setIsExporting(false);
         }
