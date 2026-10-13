@@ -684,8 +684,10 @@ export default function AttendanceHistoryPage() {
 
                 let html = `<div class="pdf-content">
   <style>
+    .html2pdf__overlay { left: 0 !important; top: 0 !important; right: auto !important; bottom: auto !important; margin: 0 !important; padding: 0 !important; }
+    .html2pdf__container { left: 0 !important; right: auto !important; top: 0 !important; margin: 0 !important; padding: 0 !important; }
     .pdf-content * { box-sizing: border-box; margin: 0; padding: 0; }
-    .pdf-content { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #1e293b; background: white; padding: 15px; width: 794px; box-sizing: border-box; }
+    .pdf-content { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #1e293b; background: white; padding: 15px; width: 100%; box-sizing: border-box; }
     .pdf-content .letterhead { display: flex; align-items: center; gap: 16px; padding-bottom: 10px; }
     .pdf-content .logo-img { width: 60px; height: 60px; object-fit: contain; }
     .pdf-content .company-block h1 { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; }
@@ -832,7 +834,7 @@ export default function AttendanceHistoryPage() {
                     margin:       [4, 8, 4, 8],
                     filename:     `${docTitle}.pdf`,
                     image:        { type: 'jpeg', quality: 0.98 },
-                    html2canvas:  { scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: 0, windowWidth: 794 },
+                    html2canvas:  { scale: 2, useCORS: true, logging: false, x: 0, y: 0, scrollX: 0, scrollY: 0 },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
                     pagebreak:    { mode: ['css', 'legacy'] }
                 };
@@ -842,7 +844,7 @@ export default function AttendanceHistoryPage() {
                 container.style.left = '0';
                 container.style.top = '0';
                 container.style.zIndex = '-9999';
-                container.style.width = '794px';
+                container.style.width = '100%';
                 container.style.backgroundColor = '#ffffff';
                 container.style.pointerEvents = 'none';
                 container.style.opacity = '0';
@@ -852,7 +854,20 @@ export default function AttendanceHistoryPage() {
                 await new Promise(r => setTimeout(r, 150));
 
                 try {
-                    const blob = await html2pdf().set(opt).from(container).output('blob');
+                    const blob = await html2pdf()
+                        .set(opt)
+                        .from(container)
+                        .toContainer()
+                        .then(function (this: any) {
+                            if (this?.prop?.container) {
+                                this.prop.container.style.left = '0px';
+                                this.prop.container.style.right = 'auto';
+                                this.prop.container.style.margin = '0px';
+                            }
+                        })
+                        .toCanvas()
+                        .toPdf()
+                        .output('blob');
                     const pdfUrl = URL.createObjectURL(blob);
                     const dlLink = document.createElement("a");
                     dlLink.href = pdfUrl;

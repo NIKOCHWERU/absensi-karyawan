@@ -629,12 +629,14 @@ export default function RecapPage() {
     <style>
         @page { size: A4 landscape; margin: 8mm 12mm 8mm 12mm; }
         * { box-sizing: border-box; }
-        ${isPdf ? '.pdf-recap-root { margin: 0; padding: 0; background: #ffffff; color: #0f172a; font-family: Arial, Helvetica, sans-serif; font-size: 7.5pt; width: 1050px; }' : 'html, body { margin: 0; padding: 0; }\n        body { background: #eeeeee; color: #0f172a; font-family: Arial, Helvetica, sans-serif; font-size: 7.5pt; }'}
+        ${isPdf ? `.html2pdf__overlay { left: 0 !important; top: 0 !important; right: auto !important; bottom: auto !important; margin: 0 !important; padding: 0 !important; }
+        .html2pdf__container { left: 0 !important; right: auto !important; top: 0 !important; margin: 0 !important; padding: 0 !important; }
+        .pdf-recap-root { margin: 0 !important; padding: 0 !important; background: #ffffff; color: #0f172a; font-family: Arial, Helvetica, sans-serif; font-size: 7.5pt; width: 100% !important; }` : 'html, body { margin: 0; padding: 0; }\n        body { background: #eeeeee; color: #0f172a; font-family: Arial, Helvetica, sans-serif; font-size: 7.5pt; }'}
         .report { 
             width: 100%; 
-            max-width: 1050px; 
-            margin: ${isPdf ? "0 auto 6px auto" : "10px auto 30px auto"}; 
-            padding: ${isPdf ? "6px 10px" : "10px 14px"}; 
+            max-width: ${isPdf ? "none" : "1050px"}; 
+            margin: ${isPdf ? "0 0 6px 0" : "10px auto 30px auto"}; 
+            padding: ${isPdf ? "4px 8px" : "10px 14px"}; 
             background: #ffffff; 
             page-break-after: ${pageSplitMode === "split" ? "always" : "auto"}; 
             page-break-inside: avoid; 
@@ -1070,11 +1072,22 @@ export default function RecapPage() {
         const styleTags = Array.from(parsedDoc.querySelectorAll('style')).map(s => s.innerHTML).join('\n');
         const reportSections = Array.from(parsedDoc.querySelectorAll('section.report'));
 
+        const savedScrollX = window.scrollX;
+        const savedScrollY = window.scrollY;
+        window.scrollTo(0, 0);
+
+        const globalFixStyle = document.createElement('style');
+        globalFixStyle.innerHTML = `
+            .html2pdf__overlay { left: 0 !important; top: 0 !important; right: auto !important; bottom: auto !important; margin: 0 !important; padding: 0 !important; }
+            .html2pdf__container { left: 0 !important; right: auto !important; top: 0 !important; margin: 0 !important; padding: 0 !important; }
+        `;
+        document.head.appendChild(globalFixStyle);
+
         const stagingRoot = document.createElement('div');
         stagingRoot.style.position = 'fixed';
         stagingRoot.style.left = '0';
         stagingRoot.style.top = '0';
-        stagingRoot.style.width = '1050px';
+        stagingRoot.style.width = '287mm';
         stagingRoot.style.backgroundColor = '#ffffff';
         stagingRoot.style.opacity = '0';
         stagingRoot.style.pointerEvents = 'none';
@@ -1088,7 +1101,7 @@ export default function RecapPage() {
             if (reportSections.length === 0) {
                 const wrapper = document.createElement('div');
                 wrapper.className = 'pdf-recap-root';
-                wrapper.style.width = '1050px';
+                wrapper.style.width = '100%';
                 wrapper.style.backgroundColor = '#ffffff';
                 const laporanEl = parsedDoc.getElementById('laporan');
                 wrapper.innerHTML = `<style>${styleTags}</style>${laporanEl ? laporanEl.innerHTML : parsedDoc.body.innerHTML}`;
@@ -1099,7 +1112,7 @@ export default function RecapPage() {
                     const slice = reportSections.slice(i, i + sectionsPerBatch);
                     const wrapper = document.createElement('div');
                     wrapper.className = 'pdf-recap-root';
-                    wrapper.style.width = '1050px';
+                    wrapper.style.width = '100%';
                     wrapper.style.backgroundColor = '#ffffff';
                     wrapper.innerHTML = `<style>${styleTags}</style>` + slice.map(sec => sec.outerHTML).join('\n');
                     stagingRoot.appendChild(wrapper);
@@ -1117,12 +1130,31 @@ export default function RecapPage() {
                 margin: [5, 5, 5, 5],
                 filename: pdfFileName,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: 0, windowWidth: 1050, letterRendering: true },
+                html2canvas: { scale: 2, useCORS: true, logging: false, x: 0, y: 0, scrollX: 0, scrollY: 0, letterRendering: true },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape', compress: true },
                 pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.attendance-table tbody tr', '.summary', '.header', '.photo-item'] }
             };
 
-            let worker = html2pdfLib().set(opt).from(batchElements[0]).toPdf();
+            const alignContainerLeft = function (this: any) {
+                if (this?.prop?.container) {
+                    this.prop.container.style.left = '0px';
+                    this.prop.container.style.right = 'auto';
+                    this.prop.container.style.margin = '0px';
+                }
+                if (this?.prop?.overlay) {
+                    this.prop.overlay.style.left = '0px';
+                    this.prop.overlay.style.top = '0px';
+                }
+            };
+
+            let worker = html2pdfLib()
+                .set(opt)
+                .from(batchElements[0])
+                .toContainer()
+                .then(alignContainerLeft)
+                .toCanvas()
+                .toPdf();
+
             for (let i = 1; i < batchElements.length; i++) {
                 const nextBatch = batchElements[i];
                 worker = worker
@@ -1132,6 +1164,7 @@ export default function RecapPage() {
                     })
                     .from(nextBatch)
                     .toContainer()
+                    .then(alignContainerLeft)
                     .toCanvas()
                     .toPdf();
             }
@@ -1142,6 +1175,10 @@ export default function RecapPage() {
             if (stagingRoot.parentNode) {
                 stagingRoot.parentNode.removeChild(stagingRoot);
             }
+            if (globalFixStyle.parentNode) {
+                globalFixStyle.parentNode.removeChild(globalFixStyle);
+            }
+            window.scrollTo(savedScrollX, savedScrollY);
         }
     };
 
